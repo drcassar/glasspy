@@ -7,7 +7,7 @@ setup(
     author_email='daniel.r.cassar@gmail.com',
     packages=['glasspy',],
     license='GPL',
-    description='Python tools for glass science',
+    description='Python module for materials scientists working with glasses.',
     long_description=open('README.md').read(),
     install_requires=['numpy', 'scipy',],
 )
