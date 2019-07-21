@@ -1,14 +1,19 @@
-# glasspy
-Python module for materials scientists working with glasses.
+# Welcome to glasspy
+Glasspy is a Python module for materials scientists working with glasses.
 
 ## What is it?
-The aim is to provide classes and functions written in Python for the materials scientists working with glass. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research.
+The aim is to provide classes and functions written in Python for the materials scientists working with glass. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on glass materials.
 
-## Official project git repository
-https://github.com/drcassar/glasspy
+## Development
+Glasspy was born as a personal tool back in 2013 when I started coding with Python.
+Right now, I'm sorting all my code and properly documenting it to build this Python module. My main objective is to increase the reproducibility of my research in specific and hopefully glass science in general.
+
+## Roadmap
+This repository is in its infancy. The current version is 0.1dev, which means that it is not intended for public use right now.
+My objective for version 0.1 is to have working classes for the regression of nucleation density data.
 
 ## Documentation
-FIXME
+There is no documentation right now.
 
 ## Dependencies
 - [NumPy](https://www.numpy.org)
