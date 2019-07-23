@@ -1,13 +1,13 @@
-# Welcome to glasspy
-Glasspy is a Python module for materials scientists working with glasses.
+![Screenshot](doc/logo/logo_text_small.png)
 
-![Screenshot](logo_small.png)
+# Welcome to GlassPy
+GlassPy is a Python module for materials scientists working with glasses.
 
 ## What is it?
 The aim is to provide classes and functions written in Python for the materials scientists working with glass. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on glass materials.
 
 ## Development
-Glasspy was born as a personal tool back in 2013 when I started coding with Python.
+GlassPy was born as a personal tool back in 2013 when I started coding with Python.
 Right now, I'm sorting all my code and properly documenting it to build this Python module. My main objective is to increase the reproducibility of my research in specific and hopefully glass science in general.
 
 ## Roadmap
