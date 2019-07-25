@@ -1,7 +1,7 @@
-![Screenshot](doc/logo/logo_text_small.png)
-
 # Welcome to GlassPy
 GlassPy is a Python module for materials scientists working with glasses.
+
+![Screenshot](doc/logo/logo_text_small.png)
 
 ## What is it?
 The aim is to provide classes and functions written in Python for the materials scientists working with glass. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on glass materials.
@@ -18,6 +18,7 @@ My objective for version 0.1 is to have working classes for the regression of nu
 There is no documentation right now.
 
 ## Dependencies
+- Python 3
 - [NumPy](https://www.numpy.org)
 - [SciPy](https://www.scipy.org/)
 
