@@ -15,7 +15,7 @@ This repository is in its infancy. The current version is 0.1dev, which means th
 My objective for version 0.1 is to have working classes for the regression of nucleation density data.
 
 ## Documentation
-There is no documentation right now.
+There is no documentation right now, but all the functions have a detailed docstring.
 
 ## Dependencies
 - Python 3
