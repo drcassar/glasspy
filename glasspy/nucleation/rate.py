@@ -83,8 +83,7 @@ def kashchiev(time, steady_state_rate, time_lag, time_shift=0,
     [1] Kashchiev, D. (1969). Solution of the non-steady state problem in
         nucleation kinetics. Surface Science 14, 209–220.
 
-    [2] Kashchiev, D. (2000). Nucleation basic theory with applications
-        (Oxford; Boston: Butterworth Heinemann).
+    [2] Kashchiev, D. (2000). Nucleation basic theory with applications.
     """
     @np.vectorize
     def _kashchiev(t):
@@ -97,7 +96,7 @@ def kashchiev(time, steady_state_rate, time_lag, time_shift=0,
             time_ratio = np.inf
 
         def summationParticle(n):
-            return ((-1)**(n%2))*exp(-n**2*tovertau)/n**2
+            return ((-1)**(n%2))*exp(-n**2*time_ratio)/n**2
 
         summation = np.sum(summationParticle(np.arange(1, summation_ub)))
         I = steady_state_rate*(1 + 2*summation)
