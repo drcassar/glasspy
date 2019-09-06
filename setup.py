@@ -9,5 +9,5 @@ setup(
     license='GPL',
     description='Python module for materials scientists working with glasses.',
     long_description=open('README.md').read(),
-    install_requires=['numpy', 'scipy',],
+    install_requires=['numpy', 'scipy', 'pandas', 'lmfit'],
 )

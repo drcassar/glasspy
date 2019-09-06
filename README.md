@@ -21,6 +21,8 @@ There is no documentation right now, but all the functions have a detailed docst
 - Python 3
 - [NumPy](https://www.numpy.org)
 - [SciPy](https://www.scipy.org/)
+- [Pandas](https://pandas.pydata.org/)
+- [lmfit](https://lmfit.github.io/lmfit-py/)
 
 ## License
 [GPL](LICENSE)
