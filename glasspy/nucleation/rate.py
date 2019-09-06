@@ -96,7 +96,7 @@ def kashchiev(time, steady_state_rate, time_lag, time_shift=0,
             time_ratio = np.inf
 
         def summationParticle(n):
-            return ((-1)**(n%2))*exp(-n**2*time_ratio)/n**2
+            return ((-1)**(n%2))*exp(-n**2*time_ratio)
 
         summation = np.sum(summationParticle(np.arange(1, summation_ub)))
         I = steady_state_rate*(1 + 2*summation)
@@ -104,6 +104,46 @@ def kashchiev(time, steady_state_rate, time_lag, time_shift=0,
 
     nucleation_rate = _kashchiev(time)
     return nucleation_rate
+
+
+def kashchievMasterCurve(time_ratio, summation_ub=1000):
+    """
+    Computes the normalized nucleation rate using the Kashchiev equation.
+
+    Parameters
+    ----------
+    time_ratio : float or array_like
+        The ratio between the difference of time and time-shift over time-lag.
+
+    summation_ub : int, optional
+        Upper boundary of the infinite summation. Default value is 1000. It is
+        advisable to choose an even integer.
+
+    Returns
+    -------
+    normalized_nucleation_rate : float or array_like
+        Returns the ration between the nucleation rate and the steady-state
+        nucleation rate.
+
+    References
+    ----------
+    [1] Kashchiev, D. (1969). Solution of the non-steady state problem in
+        nucleation kinetics. Surface Science 14, 209–220.
+
+    [2] Kashchiev, D. (2000). Nucleation basic theory with applications.
+    """
+    @np.vectorize
+    def _kashchiev(time_ratio):
+
+        def summationParticle(n):
+            return ((-1)**(n%2))*exp(-n**2*time_ratio)
+
+        summation = np.sum(summationParticle(np.arange(1, summation_ub)))
+        normalized_I = 1 + 2*summation
+        return normalized_I if normalized_I > 0 else 0
+
+    normalized_nucleation_rate = _kashchiev(time_ratio)
+    return normalized_nucleation_rate
 
 
 def shneidman(time, steady_state_rate, time_lag, time_incubation):
