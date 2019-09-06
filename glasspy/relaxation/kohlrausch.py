@@ -1,12 +1,12 @@
 '''Functions related to the Kohlrausch equation for relaxation, also known as
-streched exponential.'''
+stretched exponential.'''
 
 from math import gamma
 from numpy import exp
 
 
 def kohlrausch(time, tau_k, beta):
-    '''Streched exponential function commonly used for relaxation studies
+    '''Stretched exponential function commonly used for relaxation studies
 
     Parameters
     ----------
@@ -18,7 +18,7 @@ def kohlrausch(time, tau_k, beta):
         same as time.
 
     beta : float
-        Streched exponent. Must be greater than zero. Usually less than or
+        Stretched exponent. Must be greater than zero. Usually less than or
         equal to 1.
 
     Returns
@@ -50,7 +50,7 @@ def tau_k2tau_ave(tau_k, beta):
         Characteristic time for the relaxation process.
 
     beta : float
-        Streched exponent. Must be greater than zero. Usually less than or
+        Stretched exponent. Must be greater than zero. Usually less than or
         equal to 1.
 
     Returns
@@ -72,7 +72,7 @@ def tau_ave2tau_k(tau_ave, beta):
         Average relaxation time.
 
     beta : float
-        Streched exponent. Must be greater than zero. Usually less than or
+        Stretched exponent. Must be greater than zero. Usually less than or
         equal to 1.
 
     Returns
@@ -97,7 +97,7 @@ def propertyRelaxation(time, tau_k, beta, p_0, p_inf):
         same as time.
 
     beta : float
-        Streched exponent. Must be greater than zero. Usually less than or
+        Stretched exponent. Must be greater than zero. Usually less than or
         equal to 1.
 
     p_0 : float 
