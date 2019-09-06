@@ -1,0 +1,8 @@
+[yapf]
+based_on_style = pep8
+spaces_before_comment = 4
+split_before_logical_operator = true
+column_limit = 79
+no_spaces_around_selected_binary_operators = true
+spaces_before_comment = 15, 20
+split_before_arithmetic_operator = true
