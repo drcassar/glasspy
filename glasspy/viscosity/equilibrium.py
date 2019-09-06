@@ -23,7 +23,7 @@ def MYEGA(T, eta_inf, K, C):
 
     Returns
     -------
-    out : float or array_like
+    viscosity : float or array_like
         Returns the viscosity in the units of eta_inf. Note: it is *not* the
         logarithm of viscosity.
 
@@ -40,4 +40,7 @@ def MYEGA(T, eta_inf, K, C):
         Academy of Sciences of the United States of America 106, 19780–19784.
     """
 
-    return eta_inf*exp(log(10)*K/T*exp(C/T))
+    viscosity = eta_inf * exp(log(10) * K / T * exp(C / T))
+    return viscosity
+
+
