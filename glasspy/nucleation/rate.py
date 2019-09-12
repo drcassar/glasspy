@@ -135,6 +135,11 @@ def kashchievMasterCurve(time_ratio, summation_ub=1000):
     @np.vectorize
     def _kashchiev(time_ratio):
 
+        if time_ratio < 0.1:
+            return 0.
+        elif time_ratio > 20:
+            return 1.
+
         def summationParticle(n):
             return ((-1)**(n%2))*exp(-n**2*time_ratio)
 
