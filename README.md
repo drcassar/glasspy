@@ -24,5 +24,9 @@ There is no documentation right now, but all the functions have a detailed docst
 - [Pandas](https://pandas.pydata.org/)
 - [lmfit](https://lmfit.github.io/lmfit-py/)
 
+## Other python repositories for glass science
+- [RelaxPy](https://github.com/Mauro-Glass-Group/RelaxPy) - Module to compute glass relaxation kinetics.
+- [PyGlass](https://github.com/jrafolsr/PyGlass) - Module to simulate the specific heat signature of glasses with a specified thermal treatment following the Tool-Narayanaswamy-Moynihan model.
+
 ## License
 [GPL](LICENSE)
