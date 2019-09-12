@@ -8,7 +8,7 @@ The aim is to provide classes and functions written in Python for the materials 
 
 ## Development
 GlassPy was born as a personal tool back in 2013 when I started coding with Python.
-Right now, I'm sorting all my code and properly documenting it to build this Python module. My main objective is to increase the reproducibility of my research in specific and hopefully glass science in general.
+Right now, I'm sorting all my code and adequately documenting it to build this Python module. My main objective is to increase the reproducibility of my research in specific and hopefully glass science in general.
 
 ## Roadmap
 This repository is in its infancy. The current version is 0.1dev, which means that it is not intended for public use right now.
@@ -16,6 +16,7 @@ My objective for version 0.1 is to have working classes for the regression of nu
 
 ## Documentation
 There is no documentation right now, but all the functions have a detailed docstring.
+The first example is available as a Jupyter Notebook [here](doc/examples/nucleation/regression_of_nucleation_density_data.ipynb).
 
 ## Dependencies
 - Python 3
