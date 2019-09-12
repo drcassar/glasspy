@@ -1,5 +1,5 @@
 # Welcome to GlassPy
-GlassPy is a Python module for materials scientists working with glasses.
+GlassPy is a Python module for scientists working with glass materials.
 
 ![Screenshot](doc/logo/logo_text_small.png)
 
