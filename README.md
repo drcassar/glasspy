@@ -16,7 +16,7 @@ My objective for version 0.1 is to have working classes for the regression of nu
 
 ## Documentation
 There is no documentation right now, but all the functions have a detailed docstring.
-The first example is available as a Jupyter Notebook [here](doc/examples/nucleation/regression_of_nucleation_density_data.ipynb).
+Examples in the form of Jupyter Notebooks can be found [here](doc/examples/).
 
 ## Dependencies
 - Python 3
