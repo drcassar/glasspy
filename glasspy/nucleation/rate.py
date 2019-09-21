@@ -38,14 +38,18 @@ def wakeshima(time, steady_state_rate, time_lag):
 
     [5] Wakeshima, H. (1955). Errata: Time Lag in the Self-Nucleation. The
         Journal of Chemical Physics 23, 763–763.
+
     """
-    time_ratio = time/time_lag
-    nucleation_rate = steady_state_rate*(1 - exp(-time_ratio))
+    time_ratio = time / time_lag
+    nucleation_rate = steady_state_rate * (1 - exp(-time_ratio))
     return nucleation_rate
 
 
-def kashchiev(time, steady_state_rate, time_lag, time_shift=0,
-             summation_ub=1000):
+def kashchiev(time,
+              steady_state_rate,
+              time_lag,
+              time_shift=0,
+              summation_ub=1000):
     """
     Computes the time-dependent nucleation rate using the Kashchiev equation.
 
@@ -91,15 +95,15 @@ def kashchiev(time, steady_state_rate, time_lag, time_shift=0,
             return 0
 
         try:
-            time_ratio = (t - time_shift)/time_lag
+            time_ratio = (t - time_shift) / time_lag
         except ZeroDivisionError:
             time_ratio = np.inf
 
         def summationParticle(n):
-            return ((-1)**(n%2))*exp(-n**2*time_ratio)
+            return ((-1)**(n % 2)) * exp(-n**2 * time_ratio)
 
         summation = np.sum(summationParticle(np.arange(1, summation_ub)))
-        I = steady_state_rate*(1 + 2*summation)
+        I = steady_state_rate * (1 + 2 * summation)
         return I if I > 0 else 0
 
     nucleation_rate = _kashchiev(time)
@@ -141,10 +145,10 @@ def kashchievMasterCurve(time_ratio, summation_ub=1000):
             return 1.
 
         def summationParticle(n):
-            return ((-1)**(n%2))*exp(-n**2*time_ratio)
+            return ((-1)**(n % 2)) * exp(-n**2 * time_ratio)
 
         summation = np.sum(summationParticle(np.arange(1, summation_ub)))
-        normalized_I = 1 + 2*summation
+        normalized_I = 1 + 2 * summation
         return normalized_I if normalized_I > 0 else 0
 
     normalized_nucleation_rate = _kashchiev(time_ratio)
@@ -180,6 +184,6 @@ def shneidman(time, steady_state_rate, time_lag, time_incubation):
         regime. Theory and comparison with experimental data for glasses. Sov.
         Phys. Tech. Phys. 33, 1338–1342.
     """
-    time_ratio = (time - time_incubation)/time_lag
-    nucleation_rate = steady_state_rate*exp(-exp(-time_ratio))
+    time_ratio = (time - time_incubation) / time_lag
+    nucleation_rate = steady_state_rate * exp(-exp(-time_ratio))
     return nucleation_rate

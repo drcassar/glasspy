@@ -38,7 +38,6 @@ class _BaseDensityRegression:
         treated as a separate dataset. If 'table' is given then this argument
         is ignored.
     '''
-
     def __init__(self, **kwargs):
 
         if 'table' in kwargs:
@@ -64,7 +63,7 @@ class _BaseDensityRegression:
             table = pd.DataFrame({
                 'time': kwargs['time'],
                 'density': kwargs['density'],
-                })
+            })
 
             if 'ID' in kwargs:
                 table['ID'] = kwargs['ID']
@@ -80,7 +79,6 @@ class _BaseDensityRegression:
             raise RuntimeError(msg)
 
         self.table = table
-
 
     def dataGenerator(self):
         '''
@@ -109,7 +107,6 @@ class _BaseDensityRegression:
 
             yield ID, time, density, table_slice
 
-
     def guess(self, time, density):
         '''
         Guess the steady-state nucleation rate and induction time
@@ -134,13 +131,12 @@ class _BaseDensityRegression:
             Guess for the induction time for the yielded dataset
         '''
         slope, intercept, _, _ = theilslopes(x=time, y=density)
-        guess_rate, guess_induction_time = slope, -intercept/slope
+        guess_rate, guess_induction_time = slope, -intercept / slope
 
         if guess_induction_time < 1e-3:
             guess_induction_time = 1e-3
 
         return guess_rate, guess_induction_time
-
 
     def dataGeneratorWithGuess(self):
         '''
@@ -174,9 +170,13 @@ class _BaseDensityRegression:
 
             yield ID, time, density, guess_rate, guess_induction_time
 
-
-    def _fit(self, model, time, density, density_weights=None, params=None,
-            fitmethod='leastsq'):
+    def _fit(self,
+             model,
+             time,
+             density,
+             density_weights=None,
+             params=None,
+             fitmethod='leastsq'):
         '''
         Regression of nucleation density data.
 
@@ -211,15 +211,22 @@ class _BaseDensityRegression:
             Result of the regression. See lmfit for documentation on the
             ModelResult class.
         '''
-        fitresult = model.fit(density, time=time, method=fitmethod,
-                              params=params, weights=density_weights,
+        fitresult = model.fit(density,
+                              time=time,
+                              method=fitmethod,
+                              params=params,
+                              weights=density_weights,
                               nan_policy='propagate')
 
         return fitresult
 
-
-    def _fitBrute(self, model, time, density, time_weights=None, params=None,
-            fitmethod='leastsq'):
+    def _fitBrute(self,
+                  model,
+                  time,
+                  density,
+                  time_weights=None,
+                  params=None,
+                  fitmethod='leastsq'):
         '''
         Brute-force regression of nucleation density data.
 
@@ -257,20 +264,30 @@ class _BaseDensityRegression:
             Result of the regression. See lmfit for documentation on the
             ModelResult class.
         '''
-        fitresult = self._fit(model, time, density, time_weights, params,
-                             fitmethod='brute')
+        fitresult = self._fit(model,
+                              time,
+                              density,
+                              time_weights,
+                              params,
+                              fitmethod='brute')
 
-        fitresult = self._fit(model, time, density, time_weights,
-                             fitresult.params,
-                             fitmethod='differential_evolution')
+        fitresult = self._fit(model,
+                              time,
+                              density,
+                              time_weights,
+                              fitresult.params,
+                              fitmethod='differential_evolution')
 
-        fitresult = self._fit(model, time, density, time_weights,
-                             fitresult.params, fitmethod=fitmethod)
+        fitresult = self._fit(model,
+                              time,
+                              density,
+                              time_weights,
+                              fitresult.params,
+                              fitmethod=fitmethod)
 
         return fitresult
 
-
-    def __confidenceInterval(self, fitresult, ci_names, ci_sigmas=(0.95,)):
+    def __confidenceInterval(self, fitresult, ci_names, ci_sigmas=(0.95, )):
         # TODO
         pass
 
@@ -308,7 +325,6 @@ class Wakeshima(_BaseDensityRegression):
     [1] Wakeshima, H. (1954). Time Lag in the Self‐Nucleation. The Journal of
         Chemical Physics 22, 1614–1615.
     '''
-
     def getModel(self, guess_rate, guess_induction_time):
         '''
         Creates a model for regression of the Wakeshima equation.
@@ -328,21 +344,30 @@ class Wakeshima(_BaseDensityRegression):
         '''
         model = Model(wakeshima)
 
-        model.set_param_hint('log_rate', vary=True, max=25,
+        model.set_param_hint('log_rate',
+                             vary=True,
+                             max=25,
                              value=log10(guess_rate))
-        model.set_param_hint('steady_state_rate', vary=False,
+        model.set_param_hint('steady_state_rate',
+                             vary=False,
                              expr=r'10**log_rate')
-        model.set_param_hint('log_induction_time', vary=True,
+        model.set_param_hint('log_induction_time',
+                             vary=True,
                              value=log10(guess_induction_time))
-        model.set_param_hint('time_lag', vary=False,
+        model.set_param_hint('time_lag',
+                             vary=False,
                              expr=r'10**log_induction_time')
-        model.set_param_hint('induction_time', vary=False,
+        model.set_param_hint('induction_time',
+                             vary=False,
                              expr=r'10**log_induction_time')
 
         return model
 
-
-    def fit(self, time, density, density_weights=None, params=None,
+    def fit(self,
+            time,
+            density,
+            density_weights=None,
+            params=None,
             fitmethod='leastsq'):
         '''
         Regression of nucleation density data.
@@ -431,12 +456,10 @@ class Kashchiev(_BaseDensityRegression):
 
     [2] Kashchiev, D. (2000). Nucleation basic theory with applications.
     '''
-
     def __init__(self, **kwargs):
         _BaseDensityRegression.__init__(self, **kwargs)
         self.summation_ub = kwargs.get('summation_ub', 1000)
         self.use_time_shift = kwargs.get('use_time_shift', False)
-
 
     def __str__(self):
         if self.use_time_shift:
@@ -444,7 +467,6 @@ class Kashchiev(_BaseDensityRegression):
         else:
             time_shift_info = ''
         return f'Kaschiev{time_shift_info} with {self.summation_ub} summation terms'
-
 
     def getModel(self, guess_rate, guess_induction_time, time=None):
         '''
@@ -469,37 +491,54 @@ class Kashchiev(_BaseDensityRegression):
         '''
         model = Model(kashchiev)
 
-        model.set_param_hint('log_rate', vary=True, min=5, max=25,
-                             value=log10(guess_rate), brute_step=1)
-        model.set_param_hint('steady_state_rate', vary=False,
+        model.set_param_hint('log_rate',
+                             vary=True,
+                             min=5,
+                             max=25,
+                             value=log10(guess_rate),
+                             brute_step=1)
+        model.set_param_hint('steady_state_rate',
+                             vary=False,
                              expr=r'10**log_rate')
-        model.set_param_hint('log_time_lag', vary=True, min=-1, max=9,
-                             value=log10(guess_induction_time*6/pi**2),
+        model.set_param_hint('log_time_lag',
+                             vary=True,
+                             min=-1,
+                             max=9,
+                             value=log10(guess_induction_time * 6 / pi**2),
                              brute_step=0.5)
-        model.set_param_hint('time_lag', vary=False,
-                             expr=r'10**log_time_lag')
-        model.set_param_hint('summation_ub', vary=False,
+        model.set_param_hint('time_lag', vary=False, expr=r'10**log_time_lag')
+        model.set_param_hint('summation_ub',
+                             vary=False,
                              value=self.summation_ub)
 
         if self.use_time_shift:
-            time_shift_guess = min(min(time), guess_induction_time)/2
+            time_shift_guess = min(min(time), guess_induction_time) / 2
 
-            model.set_param_hint('log_time_shift', vary=True, min=-1,
+            model.set_param_hint('log_time_shift',
+                                 vary=True,
+                                 min=-1,
                                  max=log10(max(time)),
                                  value=log10(time_shift_guess),
                                  brute_step=0.5)
-            model.set_param_hint('time_shift', vary=False,
+            model.set_param_hint('time_shift',
+                                 vary=False,
                                  expr=r'10**log_time_shift')
         else:
             model.set_param_hint('time_shift', vary=False, value=0)
 
-        model.set_param_hint('induction_time', vary=False,
+        model.set_param_hint('induction_time',
+                             vary=False,
                              expr='time_lag*pi**2/6 + time_shift')
         return model
 
-
-    def fit(self, time, density, density_weights=None, params=None,
-            fitmethod='leastsq', time_shift_threshold=0, time_lag_threshold=0):
+    def fit(self,
+            time,
+            density,
+            density_weights=None,
+            params=None,
+            fitmethod='leastsq',
+            time_shift_threshold=0,
+            time_lag_threshold=0):
         '''
         Regression of nucleation density data.
 
@@ -539,7 +578,7 @@ class Kashchiev(_BaseDensityRegression):
         When considering the Kashchiev equation with time-shift, the fitting
         procedure checks if the standard deviation of the time-shift is greater
         than the actual value of the time-shift. If so, then the time-shift is
-        forced to zero. 
+        forced to zero.
 
         Returns
         -------
@@ -552,8 +591,8 @@ class Kashchiev(_BaseDensityRegression):
         '''
         guess_rate, guess_induction_time = self.guess(time, density)
         model = self.getModel(guess_rate, guess_induction_time, time)
-        fitresult = self._fit(model, time, density, density_weights,
-                              params, fitmethod)
+        fitresult = self._fit(model, time, density, density_weights, params,
+                              fitmethod)
 
         if self.use_time_shift:
             fitparams = fitresult.params
@@ -567,11 +606,12 @@ class Kashchiev(_BaseDensityRegression):
 
         fitparams = fitresult.params
         time_lag = fitparams['time_lag'].value
-        if time_lag < time_lag_threshold:
+        time_lag_std = fitparams['time_lag'].stderr
+        if time_lag < time_lag_threshold or time_lag_std > time_lag:
             fitparams.add('time_lag', vary=False, value=0)
             fitparams.add('log_time_lag', vary=False, value=-np.inf)
             fitresult = self._fit(model, time, density, density_weights,
-                                    fitparams, fitmethod)
+                                  fitparams, fitmethod)
 
         return fitresult, model
 
@@ -621,19 +661,16 @@ class __Shneidman(_BaseDensityRegression):
         regime. Theory and comparison with experimental data for glasses. Sov.
         Phys. Tech. Phys. 33, 1338–1342.
     '''
-
     def __init__(self, **kwargs):
         _BaseDensityRegression.__init__(self, **kwargs)
         self.detectable_radius = kwargs.get('detectable_radius', 1e-6)
         self.time_ratio_fun = kwargs.get('time_ratio_fun', None)
-
 
     def __str__(self):
         if self.time_ratio_fun:
             return 'Shneidman with 2 free adjustable parameteres'
         else:
             return 'Shneidman with 3 free adjustable parameters'
-
 
     def getModel(self, guess_rate, guess_induction_time):
         '''
@@ -658,41 +695,56 @@ class __Shneidman(_BaseDensityRegression):
         '''
         model = Model(shneidman)
 
-        params = Parameters(usersyms={
-            'euler_gamma': np.euler_gamma,
-            'time_ratio_fun': self.time_ratio_fun,
-            'detectable_radius': self.detectable_radius,
-        })
+        params = Parameters(
+            usersyms={
+                'euler_gamma': np.euler_gamma,
+                'time_ratio_fun': self.time_ratio_fun,
+                'detectable_radius': self.detectable_radius,
+            })
 
-        params.add('log_rate', vary=True, min=5, max=25,
-                             value=log10(guess_rate), brute_step=1)
-        params.add('steady_state_rate', vary=False,
-                             expr=r'10**log_rate')
-        params.add('log_time_lag', vary=True, min=-1, max=9,
-                             value=log10(guess_induction_time/(2*np.euler_gamma)),
-                             brute_step=0.5)
-        params.add('time_lag', vary=False,
-                             expr=r'10**log_time_lag')
+        params.add('log_rate',
+                   vary=True,
+                   min=5,
+                   max=25,
+                   value=log10(guess_rate),
+                   brute_step=1)
+        params.add('steady_state_rate', vary=False, expr=r'10**log_rate')
+        params.add('log_time_lag',
+                   vary=True,
+                   min=-1,
+                   max=9,
+                   value=log10(guess_induction_time / (2 * np.euler_gamma)),
+                   brute_step=0.5)
+        params.add('time_lag', vary=False, expr=r'10**log_time_lag')
 
         if self.time_ratio_fun:
             expr = r'time_lag*time_ratio_fun(steady_state_rate, time_lag, detectable_radius)'
             params.add('incubation_time', vary=False, expr=expr)
 
         else:
-            params.add('log_incubation_time', vary=True, min=-1, max=9,
-                                value=log10(guess_induction_time/2),
-                                brute_step=0.5)
-            params.add('incubation_time', vary=False,
-                                expr=r'10**log_incubation_time')
+            params.add('log_incubation_time',
+                       vary=True,
+                       min=-1,
+                       max=9,
+                       value=log10(guess_induction_time / 2),
+                       brute_step=0.5)
+            params.add('incubation_time',
+                       vary=False,
+                       expr=r'10**log_incubation_time')
 
-        params.add('induction_time', vary=False,
-                            expr=r'incubation_time + euler_gamma*time_lag')
+        params.add('induction_time',
+                   vary=False,
+                   expr=r'incubation_time + euler_gamma*time_lag')
 
         return model, params
 
-
-    def fit(self, time, density, density_weights=None, params=None,
-            fitmethod='leastsq', time_shift_threshold=0):
+    def fit(self,
+            time,
+            density,
+            density_weights=None,
+            params=None,
+            fitmethod='leastsq',
+            time_shift_threshold=0):
         '''
         Regression of nucleation density data.
 
@@ -737,8 +789,8 @@ class __Shneidman(_BaseDensityRegression):
         if params is None:
             params = params_
 
-        fitresult = self._fit(model, time, density, density_weights,
-                              params, fitmethod)
+        fitresult = self._fit(model, time, density, density_weights, params,
+                              fitmethod)
 
         fitparams = fitresult.params
         incubation_time = fitparams['incubation_time'].value
@@ -746,7 +798,7 @@ class __Shneidman(_BaseDensityRegression):
             fitparams.add('incubation_time', vary=False, value=0)
             fitparams.add('log_incubation_time', vary=False, value=-np.inf)
             fitresult = self._fit(model, time, density, density_weights,
-                                    fitparams, fitmethod)
+                                  fitparams, fitmethod)
 
         fitparams = fitresult.params
         time_lag = fitparams['time_lag'].value
@@ -754,6 +806,6 @@ class __Shneidman(_BaseDensityRegression):
             fitparams.add('time_lag', vary=False, value=0)
             fitparams.add('log_time_lag', vary=False, value=-np.inf)
             fitresult = self._fit(model, time, density, density_weights,
-                                    fitparams, fitmethod)
+                                  fitparams, fitmethod)
 
         return fitresult, model
