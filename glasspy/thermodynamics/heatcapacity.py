@@ -105,7 +105,7 @@ def heatCapacityFunFromTuple(C_tuple, extrapolate_borders=False):
         '_T1': coefficient that multiplies T**(-1)
         '_T2': coefficient that multiplies T**(-2)
         '_T3': coefficient that multiplies T**(-3)
-        '_T_1_2': coefficient that multiplies T**(-1/2)
+        '_T1_2': coefficient that multiplies T**(-1/2)
 
     These are the usual coefficients found in the literature. More coefficients
     can be easily added by modifying '_getCFunction'.
