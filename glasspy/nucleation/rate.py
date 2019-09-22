@@ -19,7 +19,7 @@ def wakeshima(time, steady_state_rate, time_lag):
 
     Returns
     -------
-    out : float or array_like
+    nucleation_rate : float or array_like
         Returns the nucleation rate.
 
     References
