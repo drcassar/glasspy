@@ -325,7 +325,7 @@ def KauzmannTemperature(Cp_crystal_fun,
     SexcFun = excessEntropyFun(Cp_crystal_fun, Cp_liquid_fun, Tm, delta_Hm,
                                H_transformations)
 
-    temperatures = np.linspace(1, Tm, Tm / 10)
+    temperatures = np.linspace(1, Tm, max(15, int(Tm / 100)))
 
     if Tm > 300:
         temperatures = np.append(temperatures, 300)

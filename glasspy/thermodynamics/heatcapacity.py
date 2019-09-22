@@ -23,7 +23,8 @@ def _getCFunction(info):
         def Cfun(T_):
             T = float(T_)
             return T0 + T1 * T + T2 * T**2 + T3 * T**3 + T4 * T**4 \
-                + _T1**(-1) + _T2 * T**(-2) + _T3 * T**(-3) + _T1_2 * T**(-1/2)
+                + _T1 * T**(-1) + _T2 * T**(-2) + _T3 * T**(-3) \
+                + _T1_2 * T**(-1/2)
 
     else:
         raise TypeError('A dictionary or None must be provided as an argument')
