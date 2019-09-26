@@ -607,7 +607,7 @@ class Kashchiev(_BaseDensityRegression):
         fitparams = fitresult.params
         time_lag = fitparams['time_lag'].value
         time_lag_std = fitparams['time_lag'].stderr
-        if time_lag < time_lag_threshold or time_lag_std > time_lag:
+        if time_lag < time_lag_threshold:
             fitparams.add('time_lag', vary=False, value=0)
             fitparams.add('log_time_lag', vary=False, value=-np.inf)
             fitresult = self._fit(model, time, density, density_weights,
