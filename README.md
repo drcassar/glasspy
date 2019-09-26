@@ -11,7 +11,6 @@ The source code is hosted on GitHub at: https://github.com/drcassar/glasspy
 Binary installers for the latest released version are available at the [Python package index](https://pypi.org/project/glasspy/). To install GlassPy run
 
 ```sh
-# or PyPI
 pip install glasspy
 ```
 
