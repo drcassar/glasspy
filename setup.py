@@ -5,7 +5,7 @@ with open("README_PyPI.md", "r") as fh:
 
 setuptools.setup(
     name='glasspy',
-    version='0.1.dev1',
+    version='0.1.dev2',
     author='Daniel Roberto Cassar',
     author_email='daniel.r.cassar@gmail.com',
     description='Python module for scientists working with glass materials',

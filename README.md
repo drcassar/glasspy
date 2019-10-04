@@ -21,13 +21,14 @@ GlassPy was born as a personal tool back in 2013 when I started coding with Pyth
 Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase the reproducibility of my research and hopefully be useful for researchers working with glass science.
 
 ## Roadmap
-This repository is in its infancy. The current version is 0.1.dev1, which means that it is not intended for public use right now.
+This repository is in its infancy. The current version is 0.1.dev2, which means that it is not intended for public use right now.
 
 My objective for version 0.1 is to have working classes for the regression of nucleation density data.
 
 ## Documentation
 There is no documentation right now, but all the functions have a detailed docstring.
-Examples in the form of Jupyter Notebooks can be found [here](doc/examples/).
+
+Examples in the form of Jupyter Notebooks can be found [here](https://github.com/drcassar/glasspy/tree/master/doc/examples).
 
 ## Dependencies
 - [Python 3.6+](https://www.python.org/)
@@ -41,7 +42,7 @@ Examples in the form of Jupyter Notebooks can be found [here](doc/examples/).
 - [PyGlass](https://github.com/jrafolsr/PyGlass) - Module to simulate the specific heat signature of glasses with a specified thermal treatment following the Tool-Narayanaswamy-Moynihan model.
 
 ## License
-[GPL](LICENSE)
+[GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
 
 GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019 Daniel Roberto Cassar
 
