@@ -28,7 +28,7 @@ My objective for version 0.1 is to have working classes for the regression of nu
 ## Documentation
 There is no documentation right now, but all the functions have a detailed docstring.
 
-Examples in the form of Jupyter Notebooks can be found [here](https://github.com/drcassar/glasspy/tree/master/doc/examples). Some examples are also provided as notebooks in Google Colab (they run in the cloud, so you can see GlassPy and test in in the confort of the clound):
+Examples in the form of Jupyter Notebooks can be found [here](https://github.com/drcassar/glasspy/tree/master/doc/examples). Some examples are also provided as notebooks in Google Colab (they run in the cloud, so you can test GlassPy without the need of installing anything):
 
 - [Finding the Kauzmann Temperature](https://colab.research.google.com/drive/1WAVddrOSDG7_pydV9g-WBfBisKQrMVeF)
 - [Regression of nucleation density data](https://colab.research.google.com/drive/139ke_S3eNq6MvJ3A_GnTWtlI8rn2QwKf)
