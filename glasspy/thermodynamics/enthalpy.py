@@ -59,7 +59,7 @@ def totalTransformationEnthalpy(H_of_transformations, lower_temperature,
 
         for temperature in H_of_transformations:
             if lower_temperature <= temperature <= upper_temperature:
-                total_transformation_entropy += \
+                total_transformation_enthalpy += \
                     H_of_transformations[temperature]
 
     return total_transformation_enthalpy
@@ -97,7 +97,7 @@ def excessEnthalpyFun(Cp_crystal_fun,
         information must be given as a dictionary were the keys are the
         temperature where the transition happens (in Kelvin) and the values are
         the enthalpy of transformations (in J/mol) during heating. See the
-        documentation for the function totalTransformationEntropy for more
+        documentation for the function totalTransformationEnthalpy for more
         details. Default value is None.
 
     Returns
@@ -119,7 +119,7 @@ def excessEnthalpyFun(Cp_crystal_fun,
         sum_transformation_enthalpy = \
             totalTransformationEnthalpy(H_transformations, T, Tm)
         integral = quad(fun, Tm, T, limit=100)[0]
-        excess_enthalpy = delta_Hm + integral + sum_transformation_entropy
+        excess_enthalpy = delta_Hm + integral + sum_transformation_enthalpy
 
         return excess_enthalpy
 
