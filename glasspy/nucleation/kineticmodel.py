@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from numpy import exp, log10
 from copy import deepcopy as copy
 from scipy.constants import N_A, pi, k
