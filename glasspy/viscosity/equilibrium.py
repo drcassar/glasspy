@@ -25,7 +25,7 @@ def logMYEGA(T, log_eta_inf, T12, m):
     Returns
     -------
     log10_viscosity : float or array_like
-        Returns the base-10 logarithmo of viscosity.
+        Returns the base-10 logarithm of viscosity.
 
     References
     ----------
@@ -129,7 +129,7 @@ def MYEGA_alt(T, eta_inf, K, C):
 
 def VFT(T, eta_inf, A, T0):
     """
-    Computes the viscosity using the empirical equation Vogel-Fulcher-Tammann eq.
+    Computes the viscosity using the empirical Vogel-Fulcher-Tammann eq.
 
     Parameters
     ----------
@@ -165,6 +165,46 @@ def VFT(T, eta_inf, A, T0):
     """
     viscosity = eta_inf * exp(log(10) * A / (T - T0))
     return viscosity
+
+
+def logVFT(T, log_eta_inf, A, T0):
+    """
+    Computes the base-10 log of viscosity using the Vogel-Fulcher-Tammann eq.
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    A : float
+        Adjustable parameter inside the exponential. Unit: Kelvin.
+
+    T0 : float
+        Divergence temperature. Unit: Kelvin.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    References
+    ----------
+    [1] Vogel, H. (1921). Das Temperatureabhängigketsgesetz der Viskosität von
+        Flüssigkeiten. Physikalische Zeitschrift 22, 645–646.
+
+    [2] Fulcher, G.S. (1925). Analysis of recent measurements of the viscosity
+        of glasses. Journal of the American Ceramic Society 8, 339–355.
+
+    [3] Tammann, G., and Hesse, W. (1926). Die Abhängigkeit der Viscosität von
+        der Temperatur bie unterkühlten Flüssigkeiten. Z. Anorg. Allg. Chem.
+        156, 245–257.
+    """
+    log10_viscosity = log_eta_inf + A / (T - T0)
+    return log10_viscosity
 
 
 def AM(T, eta_inf, alpha, beta):
