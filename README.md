@@ -27,7 +27,7 @@ GlassPy was born as a personal tool back in 2013 when I started coding with Pyth
 Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase the reproducibility of my research and hopefully be useful for researchers working in the field of glass science.
 
 ## Documentation
-There is no documentation right now, but all the functions have a detailed docstring.
+There is no documentation right now, but all the functions have detailed docstring.
 
 Some examples are provided as notebooks in Google Colab (they run in the cloud, so you can test GlassPy without the need of installing anything on your machine):
 
