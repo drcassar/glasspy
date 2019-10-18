@@ -54,14 +54,14 @@ class KineticModelIsotropicSphere:
         Dictionaly with the arguments to pass to 'init_cluster_pop_function'.
         Default value is an empty dictionary.
 
-    accuracy : 'Nv' or 'cluster size' or None, optional
-        It is not possible to be accurate in both the nuclei density (Nv)
-        calculation and the cluster size distribution calculation. If
-        'accuracy' is 'Nv' then the Nv calculation will be accurate. If
-        'accuracy' is 'cluster size', then the cluster size distribution will
-        be accurate. If 'accuracy' is None then both Nv and cluster size
+    accuracy : 'cluster density' or 'cluster distribution' or None, optional
+        It is not possible to be accurate in both the cluster density
+        calculation and the cluster distribution calculation. If 'accuracy' is
+        'cluster density' then the density calculation will be accurate. If
+        'accuracy' is 'cluster distribution', then the cluster distribution
+        will be accurate. If 'accuracy' is None then both Nv and cluster size
         distribution will be innacurate for cluster sizes close to the
-        max_cluster_size. Default value is 'Nv'
+        max_cluster_size. Default value is 'cluster density'
 
     References
     ----------
@@ -74,7 +74,7 @@ class KineticModelIsotropicSphere:
                  min_cluster_size=1,
                  init_cluster_dictionary={},
                  init_cluster_pop_function=clusterPopGenOnlyMonomers,
-                 accuracy='Nv'):
+                 accuracy='cluster density'):
 
         self.max_cluster_size = max_cluster_size
         self.min_cluster_size = min_cluster_size
@@ -188,9 +188,9 @@ class KineticModelIsotropicSphere:
         K[i == j - 1] = kminus[1:]
         K[i == j + 1] = kplus[:-1]
 
-        if self.accuracy.lower() in ['nv']:
+        if self.accuracy.lower() in ['cluster density', 'density']:
             K[-1, -1] += kplus[-1]
-        elif self.accuracy.lower() in ['cluster', 'cluster size']:
+        elif self.accuracy.lower() in ['cluster distribution', 'distribution']:
             K[-1, -1] += kminus[-1]
 
         return K
