@@ -4,34 +4,37 @@ GlassPy is a Python module for scientists working with glass materials.
 ![Screenshot](doc/logo/logo_text_small.png)
 
 ## What is it?
-The aim is to provide classes and functions written in Python for the materials scientists working with glass. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on glass materials.
+The aim is to provide classes and functions written in Python for materials scientists working with glass and non-crystalline materials. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on this topic.
 
 ## How to install
 The source code is hosted on GitHub at: https://github.com/drcassar/glasspy.
 
-Binary installers for the latest released version are available at the [Python package index](https://pypi.org/project/glasspy/). To install GlassPy run
+Binary installers for the latest released version are available at the [Python Package Index](https://pypi.org/project/glasspy/). To install GlassPy using pip run
 
 ```sh
 pip install glasspy
 ```
 
+To install the latest development version of GlassPy run
+
+```sh
+pip install --upgrade git+git://github.com/drcassar/glasspy
+```
+
 ## Development
-GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a colection of MATLAB code that I wrote for the Glass State graduate course of 2010 and for the numerical analysis for my PhD.
+GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a colection of MATLAB code that I wrote for the Glass State graduate course of 2010 and for the numerical analysis during my PhD.
 
-Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase the reproducibility of my research and hopefully be useful for researchers working with glass science.
-
-## Roadmap
-This repository is in its infancy. The current version is 0.1.dev2, which means that it is not intended for public use right now.
-
-My objective for version 0.1 is to have working classes for the regression of nucleation density data.
+Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase the reproducibility of my research and hopefully be useful for researchers working in the field of glass science.
 
 ## Documentation
 There is no documentation right now, but all the functions have a detailed docstring.
 
-Examples in the form of Jupyter Notebooks can be found [here](https://github.com/drcassar/glasspy/tree/master/doc/examples). Some examples are also provided as notebooks in Google Colab (they run in the cloud, so you can test GlassPy without the need of installing anything):
+Some examples are provided as notebooks in Google Colab (they run in the cloud, so you can test GlassPy without the need of installing anything on your machine):
 
 - [Finding the Kauzmann Temperature](https://colab.research.google.com/drive/1WAVddrOSDG7_pydV9g-WBfBisKQrMVeF)
 - [Regression of nucleation density data](https://colab.research.google.com/drive/139ke_S3eNq6MvJ3A_GnTWtlI8rn2QwKf)
+- [Regression of viscosity data](https://colab.research.google.com/drive/1U_xSg4H-de9QDlXChCN9Tsda8VlBlbAI)
+- [Nucleation kinetic model](https://colab.research.google.com/drive/1mRAr0HNXcO5YaAFktir-Kb9K4ZUdiXk_)
 
 ## Dependencies
 - [Python 3.6+](https://www.python.org/)
