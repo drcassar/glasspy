@@ -127,8 +127,9 @@ class KineticModelIsotropicSphere:
             applications in materials and biology (Amsterdam: Elsevier).
 
         '''
-        work_of_formation = cluster_size * driving_force + surface_energy * (
-            36 * pi * (cluster_size * monomer_volume)**2)**(1 / 3)
+        surface = (36 * pi * (cluster_size * monomer_volume)**2)**(1 / 3)
+        work_of_formation = surface_energy * surface \
+            - cluster_size * driving_force
         return work_of_formation
 
     def _generate_matrix_K(self, temperature, diffusion_coeff, driving_force,
