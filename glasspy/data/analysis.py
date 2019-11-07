@@ -20,7 +20,7 @@ def relativeNeighborhoodDeviation(X, Y, distance_threshold,
 
     distance_threshold : float
         Minimum distance for two examples from X to be considered part of the
-        same neighbourhood. A value of 0.01 was used in Ref. [1].
+        same neighbourhood. A value of 1% was used in Ref. [1].
 
     metric : string or callable, optional
         The distance metric to use. See Ref [2] for more information. If a
