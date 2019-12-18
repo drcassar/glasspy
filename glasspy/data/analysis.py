@@ -23,7 +23,7 @@ def relativeNeighborhoodDeviation(X, Y, distance_threshold,
         same neighbourhood. A value of 1% was used in Ref. [1].
 
     metric : string or callable, optional
-        The distance metric to use. See Ref [2] for more information. If a
+        The distance metric to use. See Ref. [2] for more information. If a
         string, the distance function can be ‘braycurtis’, ‘canberra’,
         ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
         ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulsinski’, ‘mahalanobis’,
