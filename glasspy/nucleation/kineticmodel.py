@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from numpy import exp, log10
 from copy import deepcopy as copy
+from operator import gt, lt
 from scipy.constants import N_A, pi, k
 from scipy.integrate import odeint, solve_ivp
 from scipy.misc import derivative
@@ -350,6 +351,52 @@ class KineticModelIsotropicSphere:
         self.cluster_distribution = np.concatenate(
             (self.cluster_distribution, cluster_distribution_array), axis=0)
 
-    def __ramp(self, T1, T2, time, Dfun, sigmaFun, DGfun, lambdaFun,
-               monomerVolFun, rampFun):
-        pass
+    def __linearRamp(self,
+                     initial_temperature,
+                     final_temperature,
+                     temperature_change_rate,
+                     diffusion_coeff_fun,
+                     surface_energy_fun,
+                     driving_force_fun,
+                     jump_distance_fun,
+                     monomer_volume_fun,
+                     temperature_resolution=1):
+
+        T = initial_temperature
+
+        T2 = final_temperature
+        rate = abs(temperature_change_rate)
+        resolution = temperature_resolution
+        default_time = resolution / rate
+
+        sign = np.sign(T2 - T1)
+
+        if sign > 0:
+            compare_fun = lt
+        else:
+            compare_fun = gt
+
+        # the ramp stays half the default time at the initial temperature
+        time = default_time / 2
+
+        while T != T2:
+
+            self.isothermalTreatment(T, time, diffusion_coeff_fun(T),
+                                     surface_energy_fun(T),
+                                     driving_force_fun(T),
+                                     monomer_volume_fun(T),
+                                     jump_distance_fun(T))
+
+            if compare_fun(T + sign * resolution, T2):
+                time = default_time
+                next_T = T + sign * resolution
+            else:
+                time = abs(T - T2) / rate
+                next_T = T2
+
+            T = next_T
+
+        # the ramp stays half the default time at the final temperature
+        self.isothermalTreatment(T, default_time / 2, diffusion_coeff_fun(T),
+                                 surface_energy_fun(T), driving_force_fun(T),
+                                 monomer_volume_fun(T), jump_distance_fun(T))
