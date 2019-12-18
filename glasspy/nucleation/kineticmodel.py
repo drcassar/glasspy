@@ -351,16 +351,16 @@ class KineticModelIsotropicSphere:
         self.cluster_distribution = np.concatenate(
             (self.cluster_distribution, cluster_distribution_array), axis=0)
 
-    def __linearRamp(self,
-                     initial_temperature,
-                     final_temperature,
-                     temperature_change_rate,
-                     diffusion_coeff_fun,
-                     surface_energy_fun,
-                     driving_force_fun,
-                     jump_distance_fun,
-                     monomer_volume_fun,
-                     temperature_resolution=1):
+    def _linearRamp(self,
+                    initial_temperature,
+                    final_temperature,
+                    temperature_change_rate,
+                    diffusion_coeff_fun,
+                    surface_energy_fun,
+                    driving_force_fun,
+                    jump_distance_fun,
+                    monomer_volume_fun,
+                    temperature_resolution=1):
 
         T = initial_temperature
 
