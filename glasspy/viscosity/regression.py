@@ -1,5 +1,6 @@
 '''Classes for regression of viscosity data.'''
 
+import pandas as pd
 from scipy.stats import linregress
 from lmfit import Model
 from .equilibrium import logMYEGA
