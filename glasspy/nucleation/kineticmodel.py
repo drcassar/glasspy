@@ -275,9 +275,15 @@ class KineticModelIsotropicSphere:
 
         return supercritical_cluster_density
 
-    def isothermalTreatment(self, temperature, time, diffusion_coeff,
-                            surface_energy, driving_force, monomer_volume,
-                            jump_distance):
+    def isothermalTreatment(self,
+                            temperature,
+                            time,
+                            diffusion_coeff,
+                            surface_energy,
+                            driving_force,
+                            monomer_volume,
+                            jump_distance,
+                            time_resolution='default'):
         ''' Perform an isothermal treatment.
 
         Parameters
@@ -307,6 +313,12 @@ class KineticModelIsotropicSphere:
             Average distance for an effective attachment or deattachment event.
             Units of meter.
 
+        time_resolution : 'default' or integer
+            If default then the time resolution is set automatically. If
+            integer then it is the number of times to consider for the
+            isothermal treatment is.
+
+
         References
         ----------
         [1] Kelton, K., and Greer, A.L. (2010). Nucleation in condensed matter:
@@ -321,8 +333,12 @@ class KineticModelIsotropicSphere:
         def dN_dt(N, t, K):
             return K @ N  # dot product of K and N
 
-        time_resolution = max(10, int(np.ceil(log10(time) * 5)))
-        times = np.logspace(0, log10(time), time_resolution)
+        if time_resolution is 'default':
+            time_resolution_ = max(10, int(np.ceil(log10(time) * 5)))
+        else:
+            time_resolution_ = time_resolution
+
+        times = np.logspace(0, log10(time), time_resolution_)
         cluster_distribution_array = odeint(dN_dt,
                                             current_cluster_distribution,
                                             times,
@@ -338,16 +354,16 @@ class KineticModelIsotropicSphere:
                     critical_cluster_size,
                     monomer_volume)
             self.critical_cluster_size.extend([critical_cluster_size] *
-                                              time_resolution)
+                                              time_resolution_)
             self.supercritical_cluster_density.extend(
                 supercritical_cluster_density)
         else:
-            self.critical_cluster_size.extend([np.nan] * time_resolution)
+            self.critical_cluster_size.extend([np.nan] * time_resolution_)
             self.supercritical_cluster_density.extend([np.nan] *
-                                                      time_resolution)
+                                                      time_resolution_)
 
         self.time.extend(times + self.time[-1])
-        self.temperature.extend([temperature] * time_resolution)
+        self.temperature.extend([temperature] * time_resolution_)
         self.cluster_distribution = np.concatenate(
             (self.cluster_distribution, cluster_distribution_array), axis=0)
 
@@ -369,7 +385,7 @@ class KineticModelIsotropicSphere:
         resolution = temperature_resolution
         default_time = resolution / rate
 
-        sign = np.sign(T2 - T1)
+        sign = np.sign(final_temperature - initial_temperature)
 
         if sign > 0:
             compare_fun = lt
