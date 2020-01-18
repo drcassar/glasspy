@@ -2,7 +2,9 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 
-def relativeNeighborhoodDeviation(X, Y, distance_threshold,
+def relativeNeighborhoodDeviation(X,
+                                  Y,
+                                  distance_threshold,
                                   metric='euclidean'):
     '''Computes the Relative Neighbourhood Deviation (RND).
 
@@ -47,7 +49,7 @@ def relativeNeighborhoodDeviation(X, Y, distance_threshold,
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
 
     '''
-    all_distances = spatial.distance.cdist(X, X, metric=metric)
+    all_distances = cdist(X, X, metric=metric)
     relative_neighborhood_error = []
 
     for distance in all_distances:
