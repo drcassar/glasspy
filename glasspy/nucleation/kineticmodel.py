@@ -9,10 +9,6 @@ from scipy.misc import derivative
 from scipy.optimize import brentq
 
 
-def test():
-    print('working')
-
-
 def clusterPopGenOnlyMonomers(lenght, number_of_monomers=N_A, **kwargs):
     '''Generate a cluster population consisting of only monomers.
 
