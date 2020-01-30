@@ -93,9 +93,15 @@ class KineticModelIsotropicSphere:
         self.supercritical_cluster_density = [np.nan]
 
     def resetTime(self):
+        '''Reset internal time maintaining last attributes
 
+        Time is reset to zero while last values of cluster distribution,
+        temperature, critical cluster size and supercritical cluster size are
+        kept. Values of these internar attributes other than these last values
+        are discarted.
+
+        '''
         self.cluster_distribution = [self.cluster_distribution[-1]]
-
         self.time = [0]
         self.temperature = [self.temperature[-1]]
         self.critical_cluster_size = [self.critical_cluster_size[-1]]
