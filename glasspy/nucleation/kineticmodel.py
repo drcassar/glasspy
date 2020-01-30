@@ -77,18 +77,31 @@ class KineticModelIsotropicSphere:
                  init_cluster_pop_function=clusterPopGenOnlyMonomers,
                  accuracy='cluster density'):
 
+        self.accuracy = accuracy
         self.max_cluster_size = max_cluster_size
         self.min_cluster_size = min_cluster_size
-        self.accuracy = accuracy
+        self.cluster_size = np.arange(self.min_cluster_size,
+                                      self.max_cluster_size + 1)
+
         initial_cluster_distribution = init_cluster_pop_function(
             self.max_cluster_size, **init_cluster_dictionary)
         self.cluster_distribution = [initial_cluster_distribution]
+
         self.time = [0]
         self.temperature = [np.nan]
-        self.cluster_size = np.arange(self.min_cluster_size,
-                                      self.max_cluster_size + 1)
         self.critical_cluster_size = [np.nan]
         self.supercritical_cluster_density = [np.nan]
+
+    def resetTime(self):
+
+        self.cluster_distribution = [self.cluster_distribution[-1]]
+
+        self.time = [0]
+        self.temperature = [self.temperature[-1]]
+        self.critical_cluster_size = [self.critical_cluster_size[-1]]
+        self.supercritical_cluster_density = [
+            self.supercritical_cluster_density[-1]
+        ]
 
     def W(self, cluster_size, driving_force, surface_energy, monomer_volume):
         '''Compute the work of formation of a cluster of size n.
