@@ -94,7 +94,7 @@ class _BaseDensityRegression:
         table_slice : pandas DataFrame
             An instance of the table DataFrame of the yielded dataset
         '''
-        if self.table:
+        if self.table is not None:
             for ID in self.table['ID'].unique():
 
                 logic = self.table['ID'] == ID
@@ -160,7 +160,7 @@ class _BaseDensityRegression:
         guess_induction_time : float
             Guess for the induction time for the yielded dataset
         '''
-        if self.table:
+        if self.table is not None:
             for ID in self.table['ID'].unique():
 
                 logic = self.table['ID'] == ID
@@ -467,12 +467,20 @@ class Kashchiev(_BaseDensityRegression):
         self.summation_ub = kwargs.get('summation_ub', 1000)
         self.use_time_shift = kwargs.get('use_time_shift', False)
 
-    def __str__(self):
-        if self.use_time_shift:
-            time_shift_info = ' considering the time-shift'
+    def __str__(self, full_name=False):
+        if full_name:
+            if self.use_time_shift:
+                time_shift_info = ' considering the time-shift'
+            else:
+                time_shift_info = ''
+            return f'Kaschiev{time_shift_info} with {self.summation_ub} summation terms'
+
         else:
-            time_shift_info = ''
-        return f'Kaschiev{time_shift_info} with {self.summation_ub} summation terms'
+            if self.use_time_shift:
+                time_shift_info = ' with time-shift'
+            else:
+                time_shift_info = ''
+            return f'Kaschiev{time_shift_info}'
 
     def getModel(self, guess_rate, guess_induction_time, time=None):
         '''
