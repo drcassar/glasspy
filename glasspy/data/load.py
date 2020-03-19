@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import pandas as pd
+import os
 
-SCIGLASS_DATABASE_PATH = r'../../data/sciglass.zip'
+cur_path = os.path.dirname(__file__)
+SCIGLASS_DATABASE_PATH = os.path.relpath(r'../../data/sciglass.zip', cur_path)
 
 CHEMICAL_ELEMENTS_SYMBOL = [
     'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
