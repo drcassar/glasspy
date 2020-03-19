@@ -1,3 +1,6 @@
+# Caution, here be dragons!
+This is a test branch.
+
 # Welcome to GlassPy
 GlassPy is a Python module for scientists working with glass materials.
 
@@ -15,10 +18,10 @@ Binary installers for the latest released version are available at the [Python P
 pip install glasspy
 ```
 
-To install the latest development version of GlassPy run
+To install this branch version of GlassPy run
 
 ```sh
-pip install --upgrade git+git://github.com/drcassar/glasspy
+pip install --upgrade git+git://github.com/drcassar/glasspy.git@sciglass
 ```
 
 ## Development
