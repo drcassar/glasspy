@@ -26,6 +26,41 @@ def sciglass():
     on GitHub at https://github.com/epam/SciGlass. A portion of SciGlass
     database is shipped with GlassPy, so no additional downloads are necessary.
 
+    The pandas DataFrame returned from this function has some columns that are
+    related to the chemical composition of the glasses and some columns that are
+    related to attributes of the glasses. The index of this DataFrame is a
+    combination of the Glass Number and the Publication Code, separated by an
+    underline. These two numbers give an unique ID per glass and were defined by
+    the creators of SciGlass.
+
+    Chemical composition is in atomic fraction of the chemical elements that are
+    present in the glass.
+
+    The attributes are:
+
+        ND300 : refractive index at wavelenght of 589.3 nm. Dimensionless.
+
+        AbbeNum : Abbe number. Dimensionless.
+
+        TEC_below_Tg : linear thermal expansion coefficient below the glass
+            transition temperature. Unit: K^{-1}.
+
+        Tg : glass transition temperature. Unit: K.
+
+        Tliquidus: liquidus temperature. Unit: K.
+
+        T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
+            viscosity (in Pa.s) is "n". Example: T4 is the temperature wher
+            log10(viscosity) = 4. Unit: K.
+
+        ViscosityAt773K to ViscosityAt2473K : value of base-10 logarithm of
+            viscosity (in Pa.s) at a certain temperature. Example:
+            ViscosityAt1073K is the log10(viscosity) at 1073 Kelvin.
+            Dimensionless.
+
+        num_elements : number of different chemical elements that are present in
+            the glass
+
     Returns
     -------
     sg_data : pandas DataFrame
@@ -36,24 +71,18 @@ def sciglass():
         glasses. Composition information is in atomic fraction.
 
     attributes_column_names : list
-        List containing all the column names related to attributes of the glasses.
-        TODO: units and definition
-        TODO: explain what the index is
+        List containing all the column names related to attributes of the
+        glasses.
 
     """
-
     sg_data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
-
     columns_set = set(sg_data.columns)
-
     composition_column_names = \
         list(sorted(columns_set.intersection(CHEMICAL_ELEMENTS_SYMBOL)))
-
+    sg_data['num_elements'] = \
+        sg_data[composition_column_names].astype('bool').sum(axis=1)
+    columns_set = set(sg_data.columns)
     attributes_column_names = \
         list(sorted(columns_set - set(composition_column_names)))
 
     return sg_data, composition_column_names, attributes_column_names
-
-
-def sciglassQuery():
-    pass
