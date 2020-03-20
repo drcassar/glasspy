@@ -25,8 +25,8 @@ def sciglass():
 
     SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
     and licensed under ODC Open Database License (ODbL). The database is hosted
-    on GitHub at https://github.com/epam/SciGlass. A portion of SciGlass
-    database is shipped with GlassPy, so no additional downloads are necessary.
+    on GitHub [1]. A portion of SciGlass database is shipped with GlassPy, so no
+    additional downloads are necessary.
 
     The pandas DataFrame returned from this function has some columns that are
     related to the chemical composition of the glasses and some columns that are
@@ -40,19 +40,22 @@ def sciglass():
 
     The attributes are:
 
-        ND300 : refractive index at wavelenght of 589.3 nm. Dimensionless.
+        RefractiveIndex : refractive index measured at wavelenght of 589.3 nm.
+            Dimensionless.
 
-        AbbeNum : Abbe number. Dimensionless.
+        AbbeNumber : Abbe number. Dimensionless.
 
-        TEC_below_Tg : linear thermal expansion coefficient below the glass
-            transition temperature. Unit: K^{-1}.
+        CTE : linear coefficient of thermal expansion below the glass transition
+            temperature. Unit: K^{-1}.
+
+        ElasticModulus : Elastic of Young's Modulus. Unit: GPa.
 
         Tg : glass transition temperature. Unit: K.
 
         Tliquidus: liquidus temperature. Unit: K.
 
         T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
-            viscosity (in Pa.s) is "n". Example: T4 is the temperature wher
+            viscosity (in Pa.s) is "n". Example: T4 is the temperature where
             log10(viscosity) = 4. Unit: K.
 
         ViscosityAt773K to ViscosityAt2473K : value of base-10 logarithm of
@@ -75,6 +78,11 @@ def sciglass():
     attributes_column_names : list
         List containing all the column names related to attributes of the
         glasses.
+
+    References
+    ----------
+    [1] Epam/SciGlass. 2019. EPAM Systems, 2019.
+        https://github.com/epam/SciGlass.
 
     """
     sg_data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
