@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import pandas as pd
+import numpy as np
 import os
 
 __cur_path = os.path.dirname(__file__)
@@ -88,11 +89,11 @@ def sciglass():
     sg_data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
     columns_set = set(sg_data.columns)
     composition_column_names = \
-        list(sorted(columns_set.intersection(CHEMICAL_ELEMENTS_SYMBOL)))
+        np.array(sorted(columns_set.intersection(CHEMICAL_ELEMENTS_SYMBOL)))
     sg_data['num_elements'] = \
         sg_data[composition_column_names].astype('bool').sum(axis=1)
     columns_set = set(sg_data.columns)
     attributes_column_names = \
-        list(sorted(columns_set - set(composition_column_names)))
+        np.array(sorted(columns_set - set(composition_column_names)))
 
     return sg_data, composition_column_names, attributes_column_names
