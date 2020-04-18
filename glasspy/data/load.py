@@ -74,7 +74,7 @@ def sciglass():
 
     composition_column_names : list
         List containing all the column names related to the composition of the
-        glasses. Composition information is in atomic fraction.
+        glasses. Composition is in atomic fraction.
 
     attributes_column_names : list
         List containing all the column names related to attributes of the
@@ -95,5 +95,108 @@ def sciglass():
     columns_set = set(sg_data.columns)
     attributes_column_names = \
         np.array(sorted(columns_set - set(composition_column_names)))
+
+    return sg_data, composition_column_names, attributes_column_names
+
+
+def sciglassOxides(
+        minimum_fraction_oxygen=0.3,
+        elements_to_remove=['S', 'H', 'C', 'Pt', 'Au', 'F', 'Cl', 'N', 'Br', 'I'],
+):
+    '''Load only the oxides from SciGlass database into a pandas DataFrame
+
+    The default settings of this function follow the definion of an oxide glass
+    used in [1]. These can be changed with the parameters of the function.
+
+    SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
+    and licensed under ODC Open Database License (ODbL). The database is hosted
+    on GitHub [2]. A portion of SciGlass database is shipped with GlassPy, so no
+    additional downloads are necessary.
+
+    The pandas DataFrame returned from this function has some columns that are
+    related to the chemical composition of the glasses and some columns that are
+    related to attributes of the glasses. The index of this DataFrame is a
+    combination of the Glass Number and the Publication Code, separated by an
+    underline. These two numbers give an unique ID per glass and were defined by
+    the creators of SciGlass.
+
+    Chemical composition is in atomic fraction of the chemical elements that are
+    present in the glass.
+
+    The attributes are:
+
+        RefractiveIndex : refractive index measured at wavelenght of 589.3 nm.
+            Dimensionless.
+
+        AbbeNumber : Abbe number. Dimensionless.
+
+        CTE : linear coefficient of thermal expansion below the glass transition
+            temperature. Unit: K^{-1}.
+
+        ElasticModulus : Elastic of Young's Modulus. Unit: GPa.
+
+        Tg : glass transition temperature. Unit: K.
+
+        Tliquidus: liquidus temperature. Unit: K.
+
+        T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
+            viscosity (in Pa.s) is "n". Example: T4 is the temperature where
+            log10(viscosity) = 4. Unit: K.
+
+        ViscosityAt773K to ViscosityAt2473K : value of base-10 logarithm of
+            viscosity (in Pa.s) at a certain temperature. Example:
+            ViscosityAt1073K is the log10(viscosity) at 1073 Kelvin.
+            Dimensionless.
+
+        num_elements : number of different chemical elements that are present in
+            the glass
+
+    Parameters
+    ----------
+    minimum_fraction_oxygen : float
+        Minimum atomic fraction of oxygen for the glass to be considered an
+        oxide. A value between 0 and 1 is expected.
+
+    elements_to_remove : list or 1-d array
+        Iterable with the chemical elements (strings) that must not be present
+        in the glass in. If None then no chemical element is removed.
+
+    Returns
+    -------
+    sg_data : pandas DataFrame
+        DataFrame containing a portion of the oxide glasses in SciGlass database. 
+
+    composition_column_names : list
+        List containing all the column names related to the composition of the
+        glasses. Composition is in atomic fraction.
+
+    attributes_column_names : list
+        List containing all the column names related to attributes of the
+        glasses.
+
+    References
+    ----------
+    [1] Alcobaça, E., Mastelini, S.M., Botari, T., Pimentel, B.A., Cassar, D.R.,
+        de Carvalho, A.C.P. de L.F., and Zanotto, E.D. (2020). Explainable
+        Machine Learning Algorithms For Predicting Glass Transition
+        Temperatures. Acta Materialia 188, 92–100.
+
+    [2] Epam/SciGlass. 2019. EPAM Systems, 2019.
+        https://github.com/epam/SciGlass.
+    
+    '''
+    sg_data, composition_column_names, attributes_column_names = sciglass()
+
+    sg_data = sg_data.query(f'O >= {minimum_fraction_oxygen}')
+
+    if elements_to_remove:
+        for el in elements_to_remove:
+            sg_data = sg_data[sg_data[el] == 0]
+
+    # Removing obsolete chemical element columns
+    nonzero_cols = sg_data[composition_column_names].sum(axis=0).astype(bool)
+    composition_column_names = composition_column_names[nonzero_cols]
+    sg_data = sg_data[list(composition_column_names) +
+                      list(attributes_column_names)]
 
     return sg_data, composition_column_names, attributes_column_names
