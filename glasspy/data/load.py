@@ -86,17 +86,31 @@ def sciglass():
         https://github.com/epam/SciGlass.
 
     """
-    sg_data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
-    columns_set = set(sg_data.columns)
+    data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
+
+    # Composition
+    columns_set = set(data.columns)
     composition_column_names = \
         np.array(sorted(columns_set.intersection(CHEMICAL_ELEMENTS_SYMBOL)))
-    sg_data['num_elements'] = \
-        sg_data[composition_column_names].astype('bool').sum(axis=1)
-    columns_set = set(sg_data.columns)
-    attributes_column_names = \
+
+    # Property
+    columns_set = set(data.columns)
+    property_column_names = \
         np.array(sorted(columns_set - set(composition_column_names)))
 
-    return sg_data, composition_column_names, attributes_column_names
+    # Feature
+    data['num_elements'] = \
+        data[composition_column_names].astype('bool').sum(axis=1)
+
+    d = {
+        'at_frac': data[composition_column_names],
+        'feat': data['num_elements'],
+        'prop': data[property_column_names],
+        }
+
+    data = pd.concat(data, axis=1)
+
+    return data
 
 
 def sciglassOxides(
@@ -185,18 +199,22 @@ def sciglassOxides(
         https://github.com/epam/SciGlass.
     
     '''
-    sg_data, composition_column_names, attributes_column_names = sciglass()
+    data = sciglass()
 
-    sg_data = sg_data.query(f'O >= {minimum_fraction_oxygen}')
+    logic = data['at_frac']['O'] >= minimum_fraction_oxygen
+    data = data[logic]
 
     if elements_to_remove:
         for el in elements_to_remove:
-            sg_data = sg_data[sg_data[el] == 0]
+            logic = data['at_frac'][el] == 0
+            data = data[logic]
 
     # Removing obsolete chemical element columns
-    nonzero_cols = sg_data[composition_column_names].sum(axis=0).astype(bool)
-    composition_column_names = composition_column_names[nonzero_cols]
-    sg_data = sg_data[list(composition_column_names) +
-                      list(attributes_column_names)]
+    nonzero_cols_bool = data['at_frac'].sum(axis=0).astype(bool)
+    zero_cols = data['at_frac'].columns.values[~nonzero_cols_bool]
 
-    return sg_data, composition_column_names, attributes_column_names
+    data = data.swaplevel(axis=1)
+    data.drop(zero_cols, inplace=True)
+    data = data.swaplevel(axis=1)
+
+    return data
