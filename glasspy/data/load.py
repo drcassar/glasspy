@@ -6,6 +6,7 @@ import os
 
 __cur_path = os.path.dirname(__file__)
 SCIGLASS_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass.zip')
+SCIGLASS_COMP_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_comp.zip')
 
 CHEMICAL_ELEMENTS_SYMBOL = [
     'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
@@ -21,8 +22,10 @@ CHEMICAL_ELEMENTS_SYMBOL = [
 ]
 
 
-def sciglass():
+def sciglass(load_compounds=False):
     """Load SciGlass data into a pandas DataFrame
+
+    TODO: update docstring
 
     SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
     and licensed under ODC Open Database License (ODbL). The database is hosted
@@ -98,15 +101,32 @@ def sciglass():
     property_column_names = \
         np.array(sorted(columns_set - set(composition_column_names)))
 
-    # Feature
-    data['num_elements'] = \
+    # Features
+    data['NumberChemicalElements'] = \
         data[composition_column_names].astype('bool').sum(axis=1)
+    feature_column_names = ['NumberChemicalElements', 'ChemicalAnalysis']
 
-    d = {
-        'at_frac': data[composition_column_names],
-        'feat': data['num_elements'],
-        'prop': data[property_column_names],
-        }
+    # Compounds
+    if load_compounds:
+        cdata = pd.read_csv(SCIGLASS_COMP_DATABASE_PATH, index_col=0)
+        compounds_column_names = cdata.columns.values.tolist()
+        data['NumberCompounds'] = \
+            cdata[compounds_column_names].astype('bool').sum(axis=1)
+        feature_column_names.append('NumberCompounds')
+        
+        d = {
+            'at_frac': data[composition_column_names],
+            'comp': cdata,
+            'feat': data[feature_column_names],
+            'prop': data[property_column_names],
+            }
+
+    else:
+        d = {
+            'at_frac': data[composition_column_names],
+            'feat': data[feature_column_names],
+            'prop': data[property_column_names],
+            }
 
     data = pd.concat(d, axis=1)
 
@@ -116,8 +136,11 @@ def sciglass():
 def sciglassOxides(
         minimum_fraction_oxygen=0.3,
         elements_to_remove=['S', 'H', 'C', 'Pt', 'Au', 'F', 'Cl', 'N', 'Br', 'I'],
+        load_compounds=False,
 ):
     '''Load only the oxides from SciGlass database into a pandas DataFrame
+
+    TODO: update docstring
 
     The default settings of this function follow the definion of an oxide glass
     used in [1]. These can be changed with the parameters of the function.
@@ -199,7 +222,7 @@ def sciglassOxides(
         https://github.com/epam/SciGlass.
     
     '''
-    data = sciglass()
+    data = sciglass(load_compounds)
 
     logic = data['at_frac']['O'] >= minimum_fraction_oxygen
     data = data[logic]
