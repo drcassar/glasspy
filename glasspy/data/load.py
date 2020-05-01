@@ -108,7 +108,7 @@ def sciglass():
         'prop': data[property_column_names],
         }
 
-    data = pd.concat(data, axis=1)
+    data = pd.concat(d, axis=1)
 
     return data
 
@@ -214,7 +214,7 @@ def sciglassOxides(
     zero_cols = data['at_frac'].columns.values[~nonzero_cols_bool]
 
     data = data.swaplevel(axis=1)
-    data.drop(zero_cols, inplace=True)
+    data.drop(zero_cols, axis=1, inplace=True)
     data = data.swaplevel(axis=1)
 
     return data
