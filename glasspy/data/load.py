@@ -18,7 +18,7 @@ CHEMICAL_ELEMENTS_SYMBOL = [
     'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',
     'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',
     'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
-    'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og'
+    'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og',
 ]
 
 
@@ -91,6 +91,8 @@ def sciglass(load_compounds=False):
     """
     data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
 
+    feature_column_names = ['NumberChemicalElements', 'ChemicalAnalysis']
+
     # Composition
     columns_set = set(data.columns)
     composition_column_names = \
@@ -99,12 +101,13 @@ def sciglass(load_compounds=False):
     # Property
     columns_set = set(data.columns)
     property_column_names = \
-        np.array(sorted(columns_set - set(composition_column_names)))
+        np.array(sorted(columns_set - set(composition_column_names) -
+                        set(feature_column_names)))
 
     # Features
     data['NumberChemicalElements'] = \
         data[composition_column_names].astype('bool').sum(axis=1)
-    feature_column_names = ['NumberChemicalElements', 'ChemicalAnalysis']
+
 
     # Compounds
     if load_compounds:
