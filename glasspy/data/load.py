@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import os
 
+from .manipulate import removeColumnsWithOnlyZerosMultiIndex
+
 __cur_path = os.path.dirname(__file__)
 SCIGLASS_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass.zip')
 SCIGLASS_COMP_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_comp.zip')
@@ -235,12 +237,9 @@ def sciglassOxides(
             logic = data['at_frac'][el] == 0
             data = data[logic]
 
-    # Removing obsolete chemical element columns
-    nonzero_cols_bool = data['at_frac'].sum(axis=0).astype(bool)
-    zero_cols = data['at_frac'].columns.values[~nonzero_cols_bool]
+    data = removeColumnsWithOnlyZerosMultiIndex(data, 'at_frac')
 
-    data = data.swaplevel(axis=1)
-    data.drop(zero_cols, axis=1, inplace=True)
-    data = data.swaplevel(axis=1)
+    if load_compounds:
+        data = removeColumnsWithOnlyZerosMultiIndex(data, 'comp')
 
     return data
