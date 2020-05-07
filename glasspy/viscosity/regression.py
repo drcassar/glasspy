@@ -1,18 +1,22 @@
 '''Classes for regression of viscosity data.'''
 
-import pandas as pd
+from pandas import DataFrame
 from scipy.stats import linregress
 from lmfit import Model
+from abc import ABC, abstractmethod
 
-from .equilibrium_log import MYEGA
+import glasspy.viscosity.equilibrium_log as eq
 
 
-class _BaseViscosityRegression:
+class _BaseViscosityRegression(ABC):
     '''
     Base class for viscosity regression.
 
     Parameters
     ----------
+    autofit : boolean, optional
+        'True' if the regression should be performed during the Class initiation.
+        'False' otherwise. Default value is True.
 
     table : pandas DataFrame, optional, must be a named argument
         DataFrame with a 'temperature' column and a 'log_viscosity' column. A
@@ -32,6 +36,7 @@ class _BaseViscosityRegression:
 
     '''
     def __init__(self, **kwargs):
+        super().__init__()
 
         if 'table' in kwargs:
 
@@ -50,7 +55,7 @@ class _BaseViscosityRegression:
 
         elif 'temperature' in kwargs and 'log_viscosity' in kwargs:
 
-            table = pd.DataFrame({
+            table = DataFrame({
                 'temperature': kwargs['temperature'],
                 'log_viscosity': kwargs['log_viscosity'],
             })
@@ -61,6 +66,9 @@ class _BaseViscosityRegression:
             raise RuntimeError(msg)
 
         self.table = table
+
+        if kwargs.get('autofit', True):
+            self.fitresult, self.model = self.fit()
 
     def guess(self):
         '''
@@ -87,7 +95,7 @@ class _BaseViscosityRegression:
         guess_log_eta_inf = -3
         guess_fragility = 50
 
-        model = Model(MYEGA)
+        model = Model(eq.MYEGA)
         fitresult = model.fit(log_viscosity,
                               T=temperature,
                               log_eta_inf=guess_log_eta_inf,
@@ -100,7 +108,11 @@ class _BaseViscosityRegression:
 
         return guess_T12, guess_fragility, guess_log_eta_inf
 
-    def _fit(self, model, weights=None, params=None, fitmethod='leastsq'):
+    @abstractmethod
+    def getModel(self):
+        pass
+    @abstractmethod
+    def fit(self, model, weights=None, params=None, fitmethod='leastsq'):
         '''
         Regression of nucleation density data.
 
@@ -170,8 +182,6 @@ class MYEGA(_BaseViscosityRegression):
     '''
     def __init__(self, autofit=True, **kwargs):
         _BaseViscosityRegression.__init__(self, **kwargs)
-        if autofit:
-            self.fitresult, self.model = self.fit()
 
     def __str__(self):
         return 'MYEGA'
@@ -208,7 +218,7 @@ class MYEGA(_BaseViscosityRegression):
             Academy of Sciences of the United States of America 106, 19780–19784.
 
         '''
-        model = Model(MYEGA, name="MYEGA")
+        model = Model(eq.MYEGA, name="MYEGA")
 
         model.set_param_hint('T12', vary=True, min=0, value=guess_T12)
         model.set_param_hint('m', vary=True, min=0, value=guess_fragility)
@@ -257,6 +267,6 @@ class MYEGA(_BaseViscosityRegression):
         '''
         guess_T12, guess_fragility, guess_log_eta_inf = self.guess()
         model = self.getModel(guess_T12, guess_fragility, guess_log_eta_inf)
-        fitresult = self._fit(model, weights, params, fitmethod)
+        fitresult = super().fit(model, weights, params, fitmethod)
 
         return fitresult, model
