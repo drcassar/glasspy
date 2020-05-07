@@ -3,7 +3,8 @@
 import pandas as pd
 from scipy.stats import linregress
 from lmfit import Model
-from .equilibrium import logMYEGA
+
+from .equilibrium_log import MYEGA
 
 
 class _BaseViscosityRegression:
@@ -86,7 +87,7 @@ class _BaseViscosityRegression:
         guess_log_eta_inf = -3
         guess_fragility = 50
 
-        model = Model(logMYEGA)
+        model = Model(MYEGA)
         fitresult = model.fit(log_viscosity,
                               T=temperature,
                               log_eta_inf=guess_log_eta_inf,
@@ -207,7 +208,7 @@ class MYEGA(_BaseViscosityRegression):
             Academy of Sciences of the United States of America 106, 19780–19784.
 
         '''
-        model = Model(logMYEGA, name="MYEGA")
+        model = Model(MYEGA, name="MYEGA")
 
         model.set_param_hint('T12', vary=True, min=0, value=guess_T12)
         model.set_param_hint('m', vary=True, min=0, value=guess_fragility)
