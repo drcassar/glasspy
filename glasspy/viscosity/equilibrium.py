@@ -205,3 +205,41 @@ def AG(T, eta_inf, B, S_conf_fun):
     viscosity = eta_inf * exp(-B / (T * S_conf_fun(T)))
 
     return viscosity
+
+
+def Dienes(T, eta_inf, A, B, T0):
+    """
+    Computes the viscosity using the Dienes eq.
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    eta_inf : float
+        Asymptotic viscosity at the limit of infinite temperature.
+
+    A : float
+        Adjustable parameter. Unit: Kelvin.
+
+    B : float
+        Adjustable parameter. Unit: Kelvin.
+
+    T0 : float
+        Divergence temperature. Unit: Kelvin.
+
+    Returns
+    -------
+    viscosity : float or array_like
+        Returns the viscosity in the units of eta_inf. Note: it is *not* the
+        logarithm of viscosity.
+
+    References
+    ----------
+    [1] Dienes, G.J. (1953). Activation Energy for Viscous Flow and Short‐Range
+        Order. Journal of Applied Physics 24, 779–782.
+
+    """
+    viscosity = eta_inf / 2 * exp(B / T) * (exp(A / (T - T0)) + 1)
+
+    return viscosity
