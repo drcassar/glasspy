@@ -3,9 +3,59 @@
 from numpy import exp, log, log10
 
 
-def MYEGA(T, log_eta_inf, T12, m):
+def MYEGA(T, log_eta_inf, K, C):
+    """
+    Computes the viscosity using the equation developed by Mauro and co-authors
+
+    Mathematicaly, this equation is the same as that proposed in ref. [2].
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    K : float
+        See the original reference for the meaning. Unit: Kelvin.
+
+    C : float
+        See the original reference for the meaning. Unit: Kelvin.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    Notes
+    -----
+    In the original reference the equation is in base-10 logarithm, see Eq. (6)
+    in [1]. To maintain the same meaning for the parameter K a log(10) is
+    included in the double exponential expression here.
+
+    References
+    ----------
+    [1] Mauro, J.C., Yue, Y., Ellison, A.J., Gupta, P.K., and Allan, D.C.
+        (2009). Viscosity of glass-forming liquids. Proceedings of the National
+        Academy of Sciences of the United States of America 106, 19780–19784.
+
+    [2] Waterton, S.C. (1932). The viscosity-temperature relationship and some
+        inferences on the nature of molten and of plastic glass. J Soc Glass
+        Technol 16, 244–249.
+
+    """
+    log10_viscosity = log_eta_inf + K / T * exp(C / T)
+
+    return log10_viscosity
+
+
+def MYEGA_alt(T, log_eta_inf, T12, m):
     """
     Computes the base-10 log of viscosity using the MYEGA equation.
+
+    This is an alternate form of the MYEGA equation found in [1]
 
     Parameters
     ----------
@@ -40,48 +90,6 @@ def MYEGA(T, log_eta_inf, T12, m):
     """
     log10_viscosity = log_eta_inf + \
         (12-log_eta_inf)*(T12/T)*exp((m/(12-log_eta_inf)-1)*(T12/T-1))
-
-    return log10_viscosity
-
-
-def MYEGA_alt(T, log_eta_inf, K, C):
-    """
-    Computes the viscosity using the equation developed by Mauro and co-authors
-
-    Parameters
-    ----------
-    T : float or array_like
-        Temperature. Unit: Kelvin.
-
-    log_eta_inf : float
-        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
-        temperature.
-
-    K : float
-        See the original reference for the meaning. Unit: Kelvin.
-
-    C : float
-        See the original reference for the meaning. Unit: Kelvin.
-
-    Returns
-    -------
-    log10_viscosity : float or array_like
-        Returns the base-10 logarithm of viscosity.
-
-    Notes
-    -----
-    In the original reference the equation is in base-10 logarithm, see Eq. (6)
-    in [1]. To maintain the same meaning for the parameter K a log(10) is
-    included in the double exponential expression here.
-
-    References
-    ----------
-    [1] Mauro, J.C., Yue, Y., Ellison, A.J., Gupta, P.K., and Allan, D.C.
-        (2009). Viscosity of glass-forming liquids. Proceedings of the National
-        Academy of Sciences of the United States of America 106, 19780–19784.
-
-    """
-    log10_viscosity = log_eta_inf + K / T * exp(C / T)
 
     return log10_viscosity
 
@@ -128,6 +136,59 @@ def VFT(T, log_eta_inf, A, T0):
     return log10_viscosity
 
 
+def VFT_alt(T, log_eta_inf, T12, m):
+    """
+    Computes the base-10 log of viscosity using the Vogel-Fulcher-Tammann eq.
+
+    This is the rewriten VFT equation found in ref. [4].
+    
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    T12 : float
+        Temperature were the viscosity is 10**12 Pa.s. Unit: Kelvin.
+
+    m : float
+        Fragility index as defined by Angell, see refs. [5]. Unitless.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    References
+    ----------
+    [1] Vogel, H. (1921). Das Temperatureabhängigketsgesetz der Viskosität von
+        Flüssigkeiten. Physikalische Zeitschrift 22, 645–646.
+
+    [2] Fulcher, G.S. (1925). Analysis of recent measurements of the viscosity
+        of glasses. Journal of the American Ceramic Society 8, 339–355.
+
+    [3] Tammann, G., and Hesse, W. (1926). Die Abhängigkeit der Viscosität von
+        der Temperatur bie unterkühlten Flüssigkeiten. Z. Anorg. Allg. Chem.
+        156, 245–257.
+
+    [4] Mauro, J.C., Yue, Y., Ellison, A.J., Gupta, P.K., and Allan, D.C.
+        (2009). Viscosity of glass-forming liquids. Proceedings of the National
+        Academy of Sciences of the United States of America 106, 19780–19784.
+
+    [5] Angell, C.A. (1985). Strong and fragile liquids. In Relaxation in
+        Complex Systems, K.L. Ngai, and G.B. Wright, eds. (Springfield: Naval
+        Research Laboratory), pp. 3–12.
+
+    """
+    log10_viscosity = log_eta_inf + (12 - log_eta_inf)**2 / \
+        (m * (T / T12 - 1) + (12 - log_eta_inf))
+
+    return log10_viscosity
+
+
 def CLU(T, log_pre_exp, A, T0):
     """
     Computes the base-10 log of viscosity using the Cukierman-Lane-Uhlmann eq.
@@ -165,7 +226,7 @@ def CLU(T, log_pre_exp, A, T0):
 
 def BS(T, log_eta_inf, A, T0, gamma=1):
     """
-    Computes the base-10 log of viscosity using the Be eq.
+    Computes the base-10 log of viscosity using the BS eq.
 
     Parameters
     ----------
@@ -196,14 +257,16 @@ def BS(T, log_eta_inf, A, T0, gamma=1):
         glass-forming liquids. J Stat Phys 53, 531–541.
 
     """
-    log10_viscosity = log_eta_inf + A / (T - T0)**(3 * gamma / 2)
+    log10_viscosity = log_eta_inf + A / (T - T0)**(3 * gamma / 2) / log(10)
 
     return log10_viscosity
 
 
 def Dienes(T, log_eta_inf, A, B, T0):
     """
-    Computes the base-10 log of viscosity using the Vogel-Fulcher-Tammann eq.
+    Computes the base-10 log of viscosity using the Dienes eq.
+
+    This is eq. (9) in ref. [1]
 
     Parameters
     ----------
@@ -236,5 +299,49 @@ def Dienes(T, log_eta_inf, A, B, T0):
     """
     log10_viscosity = log_eta_inf - log10(2) + (B / T * log(10)) + \
         log10(exp(A / (T - T0)) + 1)
+
+    return log10_viscosity
+
+
+def DML(T, log_eta_inf, A, B, T0):
+    """
+    Computes the base-10 log of viscosity using the DML Dienes eq.
+
+    This is eq. (10) in ref. [1] and eq. (19) in ref. [2]
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    A : float
+        Adjustable parameter inside the exponential. Unit: Kelvin.
+
+    B : float
+        Adjustable parameter. Unit: Kelvin.
+
+    T0 : float
+        Divergence temperature. Unit: Kelvin.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    References
+    ----------
+    [1] Dienes, G.J. (1953). Activation Energy for Viscous Flow and Short‐Range
+        Order. Journal of Applied Physics 24, 779–782.
+
+    [2] Macedo, P.B., and Litovitz, T.A. (1965). On the Relative Roles of Free
+        Volume and Activation Energy in the Viscosity of Liquids. The Journal of
+        Chemical Physics 42, 245–256.
+
+    """
+    log10_viscosity = log_eta_inf + (B / T * log(10)) + A / ((T - T0) * log(10))
 
     return log10_viscosity

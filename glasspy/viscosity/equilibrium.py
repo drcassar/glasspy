@@ -207,6 +207,45 @@ def AG(T, eta_inf, B, S_conf_fun):
     return viscosity
 
 
+def BS(T, eta_inf, A, T0, gamma=1):
+    """
+    Computes the viscosity using the Bendler-Shlesinger eq.
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    A : float
+        Adjustable parameter inside the exponential. Unit: Kelvin.
+
+    T0 : float
+        Divergence temperature. Unit: Kelvin.
+
+    gamma : float
+        See ref. [1].
+
+    Returns
+    -------
+    viscosity : float or array_like
+        Returns the viscosity in the units of eta_inf. Note: it is *not* the
+        logarithm of viscosity.
+
+    References
+    ----------
+    [1] Bendler, J.T., and Shlesinger, M.F. (1988). Generalized Vogel law for
+        glass-forming liquids. J Stat Phys 53, 531–541.
+
+    """
+    viscosity = eta_inf * exp(A / (T - T0)**(3 * gamma / 2))
+
+    return viscosity
+
+
 def Dienes(T, eta_inf, A, B, T0):
     """
     Computes the viscosity using the Dienes eq.
