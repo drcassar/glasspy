@@ -1,16 +1,13 @@
 '''Classes for regression of viscosity data.'''
 
-from pandas import DataFrame
-from scipy.stats import linregress
-from lmfit import Model
 from abc import ABC, abstractmethod
-from matplotlib import pyplot as plt
-import numpy as np
 from numpy import log
-from scipy.misc import derivative as diff
 from scipy.constants import R
+from scipy.misc import derivative as diff
 from scipy.optimize import brentq
-
+from scipy.stats import linregress
+from pandas import DataFrame
+from lmfit import Model
 
 import glasspy.viscosity.equilibrium_log as eq
 
@@ -90,6 +87,7 @@ class _BaseViscosityRegression(ABC):
             Guess for the fragility index
 
         guess_log_eta_inf : float
+            Guess for the viscosity limit at infinite temperature.
 
         '''
         temperature = self.table['temperature']
@@ -143,11 +141,16 @@ class _BaseViscosityRegression(ABC):
             Method to use for the regression. See lmfit's documentation for
             more information. Default value is 'leastsq'.
 
+        extra_computation : bool, optional
+            If True then T12 and fragility are also computed. Default value is
+            True.
+
         Returns
         -------
         fitresult : instance of lmfit's ModelResult class
             Result of the regression. See lmfit for documentation on the
             ModelResult class.
+
         '''
         temperature = self.table['temperature']
         log_viscosity = self.table['log_viscosity']
@@ -162,50 +165,50 @@ class _BaseViscosityRegression(ABC):
         self.fitresult = fitresult
 
         if extra_computation:
-            self.getT12(model, fitresult.params)
+            self.getT12()
             if 'm' in fitresult.params:
                 self.m = fitresult.params['m'].value
             else:
-                self.m = self.fragilityAngell()
+                self.m = self.fragility()
 
         return fitresult
 
     def plot(self):
+        '''
+        Plot the datapoints with the regression and residuals.
 
-        fig, axe = plt.subplots(
-            ncols=1,
-            nrows=1,
-            figsize=(5, 5),
-            dpi=150,
+        Returns
+        -------
+        fig : instance of matplotlib's Figure object.
+
+        axe : instance of matplotlib's GridSpec object.
+
+        '''
+        fig, axe = self.fitresult.plot(
+            xlabel='Temperature',
+            ylabel='Log of Viscosity',
+            numpoints=100
         )
-
-        axe.plot(
-            self.table['temperature'],
-            self.table['log_viscosity'],
-            marker='o',
-            ls='none',
-            markeredgecolor='black',
-        )
-
-        x_range = np.linspace(min(self.table['temperature']),
-                              max(self.table['temperature']))
-
-        axe.plot(
-            x_range,
-            self.model.eval(params=self.fitresult.params, T=x_range),
-        )
-
-        axe.set_xlabel('$T$  [K]')
-        axe.set_ylabel(r'$\log_{10}(\eta)$')
-        axe.set_title(self.__str__())
 
         return fig, axe
 
-    def getT12(self, model, params):
-        '''TODO: docstring'''
+    def getT12(self):
+        '''
+        Compute T12 using the fitted viscosity model.
+
+        Returns
+        -------
+        T12 : float
+            T12 is the temperature where viscosity is equal to 10^12 Pa.s.
+        
+        '''
+        params = self.fitresult.params
+        model = self.model
+
         if 'T12' in params:
             T12 = params['T12'].value
             self.T12 = T12
+
         else:
             if 'T0' in params:
                 min_T, max_T = params['T0'].value + 5, 5000
@@ -220,26 +223,78 @@ class _BaseViscosityRegression(ABC):
 
         return T12
 
-    def activationEnergy(self, T, degree=1, multiply_by=log(10)*R):
-        '''TODO: docstring'''
+    def activationEnergy(self, T):
+        '''
+        Computes the effective activation energy in units of R.
+
+        Parameters
+        ----------
+        T : float or numpy array
+            Temperature. Unit: Kelvin.
+
+        Returns
+        -------
+        activation_energy : float or numpy array
+            Effective activation energy for viscous flow in units of R.
+
+        '''
+        params = self.fitresult.params
         def fun(inverse_temperature):
-            params = self.fitresult.params
             return self.model.eval(params, T=1/inverse_temperature)
 
-        return diff(fun, 1/T, dx=1e-6, n=degree) * multiply_by
+        activation_energy = diff(fun, 1/T, dx=1e-6, n=1) * log(10) * R
 
-    def fragility(self, T, relative_T, degree=1, multiply_by=1):
-        '''TODO: docstring'''
-        return (1 / relative_T)**degree * \
-            self.activationEnergy(T, degree, multiply_by)
+        return activation_energy
 
-    def fragilitySchmelzer(self, T, melting_point):
-        '''TODO: docstring'''
-        return self.fragility(T, melting_point, 1, log(10))
+    def mod_fragility(self, T, melting_point):
+        '''
+        Computes the modified fragility index of the liquid.
 
-    def fragilityAngell(self):
-        '''TODO: docstring'''
-        return self.fragility(self.T12, self.T12, 1, 1)
+        Parameters
+        ----------
+        T : float or numpy array
+            Temperature. Unit: Kelvin.
+
+        melting_point : float
+            Temperature of the melting point. Unit: Kelvin.
+
+        Returns
+        -------
+        mod_fragility : float or numpy array
+            Modified fragility index. See eq. (21) in ref. [1].
+
+        References
+        ----------
+        [1] Schmelzer, J.W.P., Abyzov, A.S., Fokin, V.M., Schick, C., and
+            Zanotto, E.D. (2015). Crystallization in glass-forming liquids:
+            Effects of fragility and glass transition temperature. Journal of
+            Non-Crystalline Solids 428, 68–74.
+
+        '''
+        mod_fragility = self.activationEnergy(T) / (R * melting_point)
+
+        return mod_fragility
+
+    def fragility(self):
+        '''
+        Computes the fragility index of the liquid, as proposed by Angell.
+
+        Returns
+        -------
+        fragility : float or array_like
+            Angell's fragility index of the liquid.
+
+        References
+        ----------
+        [1] Angell, C.A. (1985). Strong and fragile liquids. In Relaxation in
+            Complex Systems, K.L. Ngai, and G.B. Wright, eds. (Springfield:
+            Naval Research Laboratory), pp. 3–12.
+
+        '''
+        T12 = self.T12
+        fragility = self.activationEnergy(T12) / (R * T12 * log(10))
+
+        return fragility
 
 
 class MYEGA(_BaseViscosityRegression):
