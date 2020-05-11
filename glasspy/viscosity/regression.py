@@ -18,6 +18,10 @@ class _BaseViscosityRegression(ABC):
 
     Parameters
     ----------
+    verbose : boolean, optional
+        If 'True' then the fitresults are printed when the regression is
+        performed. Default value is True.
+
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -39,8 +43,10 @@ class _BaseViscosityRegression(ABC):
         arguments. If 'table' is given then this argument is ignored.
 
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, verbose=True, **kwargs):
         super().__init__()
+
+        self.verbose = verbose
 
         if 'table' in kwargs:
 
@@ -163,6 +169,9 @@ class _BaseViscosityRegression(ABC):
 
         self.model = model
         self.fitresult = fitresult
+
+        if self.verbose:
+            print(fitresult.fit_report())
 
         if extra_computation:
             self.getT12()
