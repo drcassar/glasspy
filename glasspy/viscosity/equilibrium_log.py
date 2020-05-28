@@ -7,7 +7,8 @@ def MYEGA(T, log_eta_inf, K, C):
     """
     Computes the viscosity using the equation developed by Mauro and co-authors
 
-    Mathematicaly, this equation is the same as that proposed in ref. [2].
+    Mathematicaly, this equation is the same as that proposed in ref. [2] (see
+    page 250), however the physical considerations are different.
 
     Parameters
     ----------
@@ -32,8 +33,7 @@ def MYEGA(T, log_eta_inf, K, C):
     Notes
     -----
     In the original reference the equation is in base-10 logarithm, see Eq. (6)
-    in [1]. To maintain the same meaning for the parameter K a log(10) is
-    included in the double exponential expression here.
+    in [1]. 
 
     References
     ----------
@@ -189,6 +189,133 @@ def VFT_alt(T, log_eta_inf, T12, m):
     return log10_viscosity
 
 
+def AM(T, log_eta_inf, alpha, beta):
+    """
+    Computes the base-10 log of viscosity using the Avramov & Milchev eq.
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    alpha : float
+        Adjustable parameter, see original reference. Unitless.
+
+    beta : float
+        Adjustable parameter with unit of Kelvin.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    References
+    ----------
+    [1] Avramov, I., and Milchev, A. (1988). Effect of disorder on diffusion
+        and viscosity in condensed systems. Journal of Non-Crystalline Solids
+        104, 253–260.
+
+    [2] Cornelissen, J., and Waterman, H.I. (1955). The viscosity temperature
+        relationship of liquids. Chemical Engineering Science 4, 238–246.
+
+    """
+    log10_viscosity = log_eta_inf + (beta / T)**alpha / log(10)
+
+    return log10_viscosity
+
+
+def AM_alt(T, log_eta_inf, T12, m):
+    """
+    Computes the base-10 log of viscosity using the Avramov & Milchev eq.
+
+    This is the rewriten AM equation found in ref. [3].
+    
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    T12 : float
+        Temperature were the viscosity is 10**12 Pa.s. Unit: Kelvin.
+
+    m : float
+        Fragility index as defined by Angell, see refs. [4]. Unitless.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    References
+    ----------
+    [1] Avramov, I., and Milchev, A. (1988). Effect of disorder on diffusion
+        and viscosity in condensed systems. Journal of Non-Crystalline Solids
+        104, 253–260.
+
+    [2] Cornelissen, J., and Waterman, H.I. (1955). The viscosity temperature
+        relationship of liquids. Chemical Engineering Science 4, 238–246.
+
+    [3] Mauro, J.C., Yue, Y., Ellison, A.J., Gupta, P.K., and Allan, D.C.
+        (2009). Viscosity of glass-forming liquids. Proceedings of the National
+        Academy of Sciences of the United States of America 106, 19780–19784.
+
+    [4] Angell, C.A. (1985). Strong and fragile liquids. In Relaxation in
+        Complex Systems, K.L. Ngai, and G.B. Wright, eds. (Springfield: Naval
+        Research Laboratory), pp. 3–12.
+
+    """
+    log10_viscosity = log_eta_inf + (12 - log_eta_inf) * \
+        (T12 / T)**(m/(12 - log_eta_inf))
+
+    return log10_viscosity
+
+
+def AG(T, eta_inf, B, S_conf_fun):
+    """
+    Computes the base-10 log of viscosity using the Adam & Gibbs eq.
+
+    Parameters
+    ----------
+    T : float or array_like
+        Temperature. Unit: Kelvin.
+
+    log_eta_inf : float
+        Base-10 logarithm of the asymptotic viscosity at the limit of infinite
+        temperature.
+
+    B : float
+        Adjustable parameter related to the potential energy hindering the
+        cooperative rearrangement per monomer segment.
+
+    S_conf_fun : callable
+        Function that computes the configurational entropy. This function
+        accepts one argument, that is temperature.
+
+    Returns
+    -------
+    log10_viscosity : float or array_like
+        Returns the base-10 logarithm of viscosity.
+
+    References
+    ----------
+    [1] Adam, G., and Gibbs, J.H. (1965). On the temperature dependence of
+        cooperative relaxation properties in glass-forming liquids. The Journal
+        of Chemical Physics 43, 139–146.
+
+    """
+    log10_viscosity = log_eta_inf + B / (T * S_conf_fun(T) * log(10))
+
+    return log10_viscosity
+
+
 def CLU(T, log_pre_exp, A, T0):
     """
     Computes the base-10 log of viscosity using the Cukierman-Lane-Uhlmann eq.
@@ -305,7 +432,7 @@ def Dienes(T, log_eta_inf, A, B, T0):
 
 def DML(T, log_eta_inf, A, B, T0):
     """
-    Computes the base-10 log of viscosity using the DML Dienes eq.
+    Computes the base-10 log of viscosity using the DML eq.
 
     This is eq. (10) in ref. [1] and eq. (19) in ref. [2]
 
@@ -342,6 +469,6 @@ def DML(T, log_eta_inf, A, B, T0):
         Chemical Physics 42, 245–256.
 
     """
-    log10_viscosity = log_eta_inf + (B / T * log(10)) + A / ((T - T0) * log(10))
+    log10_viscosity = log_eta_inf + B / (T * log(10)) + A / ((T - T0) * log(10))
 
     return log10_viscosity

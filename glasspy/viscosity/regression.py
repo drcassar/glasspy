@@ -54,12 +54,12 @@ class _BaseViscosityRegression(ABC):
             columns = table.columns.values
 
             if 'temperature' not in columns:
-                name = self.__name__
+                name = self.__name__()
                 msg = f'The {name} class was initiated with a table with no temperature data'
                 raise RuntimeError(msg)
 
             if 'log_viscosity' not in columns:
-                name = self.__name__
+                name = self.__name__()
                 msg = f'The {name} class was initiated with a table with no log_viscosity data'
                 raise RuntimeError(msg)
 
@@ -71,7 +71,7 @@ class _BaseViscosityRegression(ABC):
             })
 
         else:
-            name = self.__name__
+            name = self.__name__()
             msg = f'The {name} class was initiated with insuficient arguments'
             raise RuntimeError(msg)
 
@@ -182,6 +182,48 @@ class _BaseViscosityRegression(ABC):
 
         return fitresult
 
+    def evallog(self, T):
+        '''
+        Computes the base-10 log of viscosity at a given temperature.
+
+        Parameters
+        ----------
+        T : float or array_like
+            Temperature. Unit: Kelvin.
+
+        Returns
+        -------
+        log10_viscosity : float or array_like
+            Returns the base-10 logarithm of viscosity.
+
+        '''
+        params = self.fitresult.params
+        model = self.model
+        log10_viscosity = model.eval(params, T=T)
+
+        return log10_viscosity
+
+    def eval(self, T):
+        '''
+        Computes the viscosity at a given temperature.
+
+        Parameters
+        ----------
+        T : float or array_like
+            Temperature. Unit: Kelvin.
+
+        Returns
+        -------
+        viscosity : float or array_like
+            Returns the viscosity.
+
+        '''
+        params = self.fitresult.params
+        model = self.model
+        viscosity = 10**model.eval(params, T=T)
+
+        return viscosity
+
     def plot(self):
         '''
         Plot the datapoints with the regression and residuals.
@@ -255,6 +297,27 @@ class _BaseViscosityRegression(ABC):
 
         return activation_energy
 
+    def fragility(self):
+        '''
+        Computes the fragility index of the liquid, as proposed by Angell.
+
+        Returns
+        -------
+        fragility : float or array_like
+            Angell's fragility index of the liquid.
+
+        References
+        ----------
+        [1] Angell, C.A. (1985). Strong and fragile liquids. In Relaxation in
+            Complex Systems, K.L. Ngai, and G.B. Wright, eds. (Springfield:
+            Naval Research Laboratory), pp. 3–12.
+
+        '''
+        T12 = self.T12
+        fragility = self.activationEnergy(T12) / (R * T12 * log(10))
+
+        return fragility
+
     def mod_fragility(self, T, melting_point):
         '''
         Computes the modified fragility index of the liquid.
@@ -283,27 +346,6 @@ class _BaseViscosityRegression(ABC):
         mod_fragility = self.activationEnergy(T) / (R * melting_point)
 
         return mod_fragility
-
-    def fragility(self):
-        '''
-        Computes the fragility index of the liquid, as proposed by Angell.
-
-        Returns
-        -------
-        fragility : float or array_like
-            Angell's fragility index of the liquid.
-
-        References
-        ----------
-        [1] Angell, C.A. (1985). Strong and fragile liquids. In Relaxation in
-            Complex Systems, K.L. Ngai, and G.B. Wright, eds. (Springfield:
-            Naval Research Laboratory), pp. 3–12.
-
-        '''
-        T12 = self.T12
-        fragility = self.activationEnergy(T12) / (R * T12 * log(10))
-
-        return fragility
 
 
 class MYEGA(_BaseViscosityRegression):
