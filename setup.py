@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/drcassar/glasspy",
     packages=setuptools.find_packages(),
     install_requires=[
-        'numpy>=1.1', 'scipy>=0.19', 'pandas>=0.24.0', 'lmfit>=0.9.13'
+        'numpy>=1.18', 'scipy>=1.3', 'pandas>=1.0.0', 'lmfit>=1.0.0'
     ],
     keywords='glass, non-crystalline materials',
     classifiers=[
