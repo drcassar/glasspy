@@ -50,7 +50,7 @@ Some examples are provided as notebooks in Google Colab (they run in the cloud, 
 ## License
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
 
-GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019 Daniel Roberto Cassar
+GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2020 Daniel Roberto Cassar
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
