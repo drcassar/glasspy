@@ -5,7 +5,7 @@ with open("README_PyPI.md", "r") as fh:
 
 setuptools.setup(
     name='glasspy',
-    version='0.1.1',
+    version='0.3.dev1',
     author='Daniel Roberto Cassar',
     author_email='daniel.r.cassar@gmail.com',
     description='Python module for scientists working with glass materials',
@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/drcassar/glasspy",
     packages=setuptools.find_packages(),
     install_requires=[
-        'numpy>=1.1', 'scipy>=0.19', 'pandas>=0.24.0', 'lmfit>=0.9.13'
+        'numpy>=1.18', 'scipy>=1.3', 'pandas>=1.0.0', 'lmfit>=1.0.0'
     ],
     keywords='glass, non-crystalline materials',
     classifiers=[
@@ -28,5 +28,4 @@ setuptools.setup(
     ],
     license='GPL',
     python_requires='>=3.6',
-    include_package_data=True,
 )
