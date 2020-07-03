@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 def removeColumnsWithOnlyZerosMultiIndex(data, first_index):
-    '''Remove columns with only zeros in MultiIndex DataFrames
+    '''Remove columns with only zeros in MultiIndex pandas DataFrames
 
     Parameters
     ----------
     data : DataFrame
         MultiIndex dataframe
+
     first_index : string
         Name of the first level index to search for columns with only zeroes.
 

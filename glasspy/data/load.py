@@ -7,44 +7,32 @@ import os
 from .manipulate import removeColumnsWithOnlyZerosMultiIndex
 
 __cur_path = os.path.dirname(__file__)
-SCIGLASS_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass.zip')
-SCIGLASS_COMP_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_comp.zip')
-
-CHEMICAL_ELEMENTS_SYMBOL = [
-    'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al',
-    'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe',
-    'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr',
-    'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn',
-    'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm',
-    'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W',
-    'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',
-    'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',
-    'Es', 'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
-    'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og',
-]
+SCIGLASS_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass.csv.xz')
+SCIGLASS_COMP_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_comp.csv.xz')
+SCIGLASS_ATFRAC_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_atfrac.csv.xz')
 
 
-def sciglass(load_compounds=False):
+def sciglass(load_compounds=False, load_atomic_fraction=True):
     """Load SciGlass data into a pandas DataFrame
-
-    TODO: update docstring
 
     SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
     and licensed under ODC Open Database License (ODbL). The database is hosted
-    on GitHub [1]. A portion of SciGlass database is shipped with GlassPy, so no
-    additional downloads are necessary.
+    on GitHub [1]. A portion of the SciGlass database is shipped with GlassPy,
+    so no additional downloads are necessary.
 
-    The pandas DataFrame returned from this function has some columns that are
-    related to the chemical composition of the glasses and some columns that are
-    related to attributes of the glasses. The index of this DataFrame is a
-    combination of the Glass Number and the Publication Code, separated by an
-    underline. These two numbers give an unique ID per glass and were defined by
-    the creators of SciGlass.
+    This function returns a MultiIndex pandas DataFrame. The first-level
+    indexdes are:
+        at_frac : relative to the atomic fraction of the chemical elements that
+            make the glass. Only available if "load_atomic_fraction" is True.
 
-    Chemical composition is in atomic fraction of the chemical elements that are
-    present in the glass.
+        comp : relative to the chemical compounds that make the glass. Only
+            available if "load_compounds" is True.
 
-    The attributes are:
+        meta : metadata.
+
+        prop : properties.
+
+    The property column names are:
 
         RefractiveIndex : refractive index measured at wavelenght of 589.3 nm.
             Dimensionless.
@@ -72,18 +60,18 @@ def sciglass(load_compounds=False):
         num_elements : number of different chemical elements that are present in
             the glass
 
+    Parameters
+    ----------
+    load_compounds : bool, False
+        If True then chemical compounds are loaded and added to the DataFrame
+
+    load_atomic_fraction : bool, True
+        If True then the atomic fractions are loaded and added to the DataFrame
+
     Returns
     -------
-    sg_data : pandas DataFrame
-        DataFrame containing a portion of the SciGlass database.
-
-    composition_column_names : list
-        List containing all the column names related to the composition of the
-        glasses. Composition is in atomic fraction.
-
-    attributes_column_names : list
-        List containing all the column names related to attributes of the
-        glasses.
+    data : pandas DataFrame
+        MultiIndex DataFrame containing a portion of the SciGlass database.
 
     References
     ----------
@@ -92,47 +80,24 @@ def sciglass(load_compounds=False):
 
     """
     data = pd.read_csv(SCIGLASS_DATABASE_PATH, index_col=0)
+    metadata_index = ['ChemicalAnalysis', 'Author', 'Year']
+    property_index = np.array(sorted(set(data.columns) - set(metadata_index)))
+    d = {}
 
-    feature_column_names = ['NumberChemicalElements', 'ChemicalAnalysis']
+    if load_atomic_fraction:
+        data_af = pd.read_csv(SCIGLASS_ATFRAC_DATABASE_PATH, index_col=0)
+        data['NumberChemicalElements'] = data_af.astype('bool').sum(axis=1)
+        metadata_index.append('NumberChemicalElements')
+        d['at_frac'] = data_af
 
-    # Composition
-    columns_set = set(data.columns)
-    composition_column_names = \
-        np.array(sorted(columns_set.intersection(CHEMICAL_ELEMENTS_SYMBOL)))
-
-    # Property
-    columns_set = set(data.columns)
-    property_column_names = \
-        np.array(sorted(columns_set - set(composition_column_names) -
-                        set(feature_column_names)))
-
-    # Features
-    data['NumberChemicalElements'] = \
-        data[composition_column_names].astype('bool').sum(axis=1)
-
-
-    # Compounds
     if load_compounds:
-        cdata = pd.read_csv(SCIGLASS_COMP_DATABASE_PATH, index_col=0)
-        compounds_column_names = cdata.columns.values.tolist()
-        data['NumberCompounds'] = \
-            cdata[compounds_column_names].astype('bool').sum(axis=1)
-        feature_column_names.append('NumberCompounds')
-        
-        d = {
-            'at_frac': data[composition_column_names],
-            'comp': cdata,
-            'feat': data[feature_column_names],
-            'prop': data[property_column_names],
-            }
+        data_c = pd.read_csv(SCIGLASS_COMP_DATABASE_PATH, index_col=0)
+        data['NumberCompounds'] = data_c.astype('bool').sum(axis=1)
+        metadata_index.append('NumberCompounds')
+        d['comp'] = data_c
 
-    else:
-        d = {
-            'at_frac': data[composition_column_names],
-            'feat': data[feature_column_names],
-            'prop': data[property_column_names],
-            }
-
+    d['meta'] = data[metadata_index]
+    d['prop'] = data[property_index]
     data = pd.concat(d, axis=1)
 
     return data
@@ -145,27 +110,32 @@ def sciglassOxides(
 ):
     '''Load only the oxides from SciGlass database into a pandas DataFrame
 
-    TODO: update docstring
-
     The default settings of this function follow the definion of an oxide glass
     used in [1]. These can be changed with the parameters of the function.
 
     SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
     and licensed under ODC Open Database License (ODbL). The database is hosted
-    on GitHub [2]. A portion of SciGlass database is shipped with GlassPy, so no
-    additional downloads are necessary.
+    on GitHub [1]. A portion of the SciGlass database is shipped with GlassPy,
+    so no additional downloads are necessary.
 
-    The pandas DataFrame returned from this function has some columns that are
-    related to the chemical composition of the glasses and some columns that are
-    related to attributes of the glasses. The index of this DataFrame is a
-    combination of the Glass Number and the Publication Code, separated by an
-    underline. These two numbers give an unique ID per glass and were defined by
-    the creators of SciGlass.
+    SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
+    and licensed under ODC Open Database License (ODbL). The database is hosted
+    on GitHub [1]. A portion of the SciGlass database is shipped with GlassPy,
+    so no additional downloads are necessary.
 
-    Chemical composition is in atomic fraction of the chemical elements that are
-    present in the glass.
+    This function returns a MultiIndex pandas DataFrame. The first-level
+    indexdes are:
+        at_frac : relative to the atomic fraction of the chemical elements that
+            make the glass. Only available if "load_atomic_fraction" is True.
 
-    The attributes are:
+        comp : relative to the chemical compounds that make the glass. Only
+            available if "load_compounds" is True.
+
+        meta : metadata.
+
+        prop : properties.
+
+    The property column names are:
 
         RefractiveIndex : refractive index measured at wavelenght of 589.3 nm.
             Dimensionless.
@@ -199,22 +169,17 @@ def sciglassOxides(
         Minimum atomic fraction of oxygen for the glass to be considered an
         oxide. A value between 0 and 1 is expected.
 
-    elements_to_remove : list or 1-d array
+    elements_to_remove : list or 1-d array or False
         Iterable with the chemical elements (strings) that must not be present
         in the glass in. If None then no chemical element is removed.
 
+    load_compounds : bool, False
+        If True then chemical compounds are loaded and added to the DataFrame
+
     Returns
     -------
-    sg_data : pandas DataFrame
-        DataFrame containing a portion of the oxide glasses in SciGlass database. 
-
-    composition_column_names : list
-        List containing all the column names related to the composition of the
-        glasses. Composition is in atomic fraction.
-
-    attributes_column_names : list
-        List containing all the column names related to attributes of the
-        glasses.
+    data : pandas DataFrame
+        MultiIndex DataFrame containing a portion of the SciGlass database.
 
     References
     ----------
@@ -227,15 +192,14 @@ def sciglassOxides(
         https://github.com/epam/SciGlass.
     
     '''
-    data = sciglass(load_compounds)
-
+    data = sciglass(load_compounds, load_atomic_fraction=True)
     logic = data['at_frac']['O'] >= minimum_fraction_oxygen
-    data = data[logic]
+    data = data.loc[data[logic].index]
 
     if elements_to_remove:
         for el in elements_to_remove:
             logic = data['at_frac'][el] == 0
-            data = data[logic]
+            data = data.loc[data[logic].index]
 
     data = removeColumnsWithOnlyZerosMultiIndex(data, 'at_frac')
 

@@ -2,20 +2,22 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 
-def relativeNeighborhoodDeviation(X,
-                                  Y,
-                                  distance_threshold,
-                                  metric='euclidean'):
+def relativeNeighborhoodDeviation(
+        X,
+        Y,
+        distance_threshold,
+        metric='euclidean',
+):
     '''Computes the Relative Neighbourhood Deviation (RND).
 
-    RND is used to check the intrinsic deviation in the data. An example of it
-    being used can be seen in Figure 3 from Ref. [1].
+    RND is used to check the intrinsic deviation in the data. See Ref. [1] for
+    an example.
 
     Parameters
     ----------
     X : n-d array
-        Values of the features (or independent variable). This function uses a
-        lot of RAM depending on the size of X.
+        Values of the features (or independent variable). Beware! This function
+        uses a lot of RAM depending on the size of X.
 
     Y : 1-d array
         Values of the target (or dependent variable).
