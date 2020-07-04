@@ -21,7 +21,7 @@ def sciglass(load_compounds=False, load_atomic_fraction=True):
     so no additional downloads are necessary.
 
     This function returns a MultiIndex pandas DataFrame. The first-level
-    indexdes are:
+    indexes are:
         at_frac : relative to the atomic fraction of the chemical elements that
             make the glass. Only available if "load_atomic_fraction" is True.
 
@@ -56,9 +56,6 @@ def sciglass(load_compounds=False, load_atomic_fraction=True):
             viscosity (in Pa.s) at a certain temperature. Example:
             ViscosityAt1073K is the log10(viscosity) at 1073 Kelvin.
             Dimensionless.
-
-        num_elements : number of different chemical elements that are present in
-            the glass
 
     Parameters
     ----------
@@ -118,13 +115,8 @@ def sciglassOxides(
     on GitHub [1]. A portion of the SciGlass database is shipped with GlassPy,
     so no additional downloads are necessary.
 
-    SciGlass is a database of glass properties Copyright (c) 2019 EPAM Systems
-    and licensed under ODC Open Database License (ODbL). The database is hosted
-    on GitHub [1]. A portion of the SciGlass database is shipped with GlassPy,
-    so no additional downloads are necessary.
-
     This function returns a MultiIndex pandas DataFrame. The first-level
-    indexdes are:
+    indexes are:
         at_frac : relative to the atomic fraction of the chemical elements that
             make the glass. Only available if "load_atomic_fraction" is True.
 
@@ -160,9 +152,6 @@ def sciglassOxides(
             ViscosityAt1073K is the log10(viscosity) at 1073 Kelvin.
             Dimensionless.
 
-        num_elements : number of different chemical elements that are present in
-            the glass
-
     Parameters
     ----------
     minimum_fraction_oxygen : float
@@ -171,10 +160,12 @@ def sciglassOxides(
 
     elements_to_remove : list or 1-d array or False
         Iterable with the chemical elements (strings) that must not be present
-        in the glass in. If None then no chemical element is removed.
+        in the glass in. If None then no chemical element is removed. Default
+        value is ['S', 'H', 'C', 'Pt', 'Au', 'F', 'Cl', 'N', 'Br', 'I'].
 
-    load_compounds : bool, False
-        If True then chemical compounds are loaded and added to the DataFrame
+    load_compounds : bool
+        If True then chemical compounds are loaded and added to the DataFrame.
+        Default value is False
 
     Returns
     -------
