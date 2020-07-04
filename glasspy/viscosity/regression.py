@@ -354,7 +354,6 @@ class MYEGA(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -466,7 +465,6 @@ class VFT(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -582,7 +580,6 @@ class AM(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -698,7 +695,6 @@ class CLU(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -813,7 +809,6 @@ class BS(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -930,7 +925,6 @@ class Dienes(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -1059,7 +1053,6 @@ class DML(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
