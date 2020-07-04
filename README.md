@@ -1,6 +1,3 @@
-# Caution, here be dragons!
-This is a test branch.
-
 # Welcome to GlassPy
 GlassPy is a Python module for scientists working with glass materials.
 
@@ -10,7 +7,7 @@ GlassPy is a Python module for scientists working with glass materials.
 The aim is to provide classes and functions written in Python for materials scientists working with glass and non-crystalline materials. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on this topic.
 
 ## How to install
-The source code is hosted on GitHub at: https://github.com/drcassar/glasspy.
+The source code is hosted on GitHub at https://github.com/drcassar/glasspy.
 
 Binary installers for the latest released version are available at the [Python Package Index](https://pypi.org/project/glasspy/). To install GlassPy using pip run
 
@@ -25,9 +22,9 @@ pip install --upgrade git+git://github.com/drcassar/glasspy.git@sciglass
 ```
 
 ## Development
-GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a colection of MATLAB code that I wrote for the Glass State graduate course of 2010 and for the numerical analysis during my PhD.
+GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a collection of MATLAB code that I wrote for the Glass State graduate course of 2010 and the numerical analysis during my PhD.
 
-Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase the reproducibility of my research and hopefully be useful for researchers working in the field of glass science.
+Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase my research's reproducibility and hopefully be useful for researchers working in the field of glass science.
 
 ## Documentation
 There is no documentation right now, but all the functions have detailed docstring.
