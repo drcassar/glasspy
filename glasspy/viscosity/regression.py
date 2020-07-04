@@ -354,7 +354,6 @@ class MYEGA(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -466,7 +465,6 @@ class VFT(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -576,13 +574,127 @@ class VFT(_BaseViscosityRegression):
         return fitresult, model
 
 
+class AM(_BaseViscosityRegression):
+    '''
+    Class for performing the AM regression.
+
+    Parameters
+    ----------
+    autofit : boolean, optional
+        'True' if the regression should be performed during the Class initiation.
+        'False' otherwise. Default value is True.
+
+    table : pandas DataFrame, optional, must be a named argument
+        DataFrame with a 'temperature' column and a 'log_viscosity' column. A
+        RuntimeError is raised if the class is initiated without a table *or*
+        without both temperature and log_viscosity arguments.
+
+    temperature : array_like, optional, must be a named argument
+        Temperature in Kelvin. A RuntimeError is raised if the class is initiated
+        without a table *or* without both time and density arguments. If
+        'table' is given then this argument is ignored.
+
+    log_viscosity : array_like, optional, must be a named argument
+        Base-10 logarithm of viscosity. It is highly recommended to use
+        viscosity in units of Pascal second. A RuntimeError is raised if the
+        class is initiated without a table *or* without both time and density
+        arguments. If 'table' is given then this argument is ignored.
+
+    '''
+    def __init__(self, autofit=True, **kwargs):
+        _BaseViscosityRegression.__init__(self, **kwargs)
+
+    def __str__(self):
+        return 'AM'
+
+    def getModel(self, guess_T12, guess_fragility, guess_log_eta_inf):
+        '''
+        Creates a model for regression.
+
+        Parameters
+        ----------
+        guess_T12 : float
+            Guess for the temperature were the viscosity is 10^12 Pa.s.
+
+        guess_fragility : float
+            Guess for the fragility index.
+
+        guess_log_eta_inf : array_like, optional
+            Guess for the base-10 logarithm of the infinite viscosity.
+
+        Notes
+        -----
+        The parameters 'T0' and 'A' are also added in the model paremeters.
+
+        Returns
+        -------
+        model : instance of lmfit's Model class.
+
+        '''
+        model = Model(eq.AM_alt, name=self.__str__())
+
+        model.set_param_hint('T12', vary=True, min=0, value=guess_T12)
+        model.set_param_hint('m', vary=True, min=0, value=guess_fragility)
+        model.set_param_hint(
+            'log_eta_inf',
+            vary=True,
+            max=11.99,
+            value=guess_log_eta_inf
+        )
+        model.set_param_hint(
+            'alpha',
+            vary=False,
+            expr=r'm / (12 - log_eta_inf)',
+        )
+        model.set_param_hint(
+            'beta',
+            vary=False,
+            expr=r'T12 * (log(10) * (12 - log_eta_inf))**((12 - log_eta_inf)/m)',
+        )
+
+        return model
+
+    def fit(self, weights=None, params=None, fitmethod='leastsq'):
+        '''
+        Regression of the viscosity data.
+
+        Parameters
+        ----------
+        weights : array_like or None, optional
+            The weights of log_viscosity to use during the regression. If None
+            then no weights are applied. Default value is None.
+
+        params : instance of lmfit's Parameters class or None, optional
+            Optional Parameters instance to pass to the fit function. If None
+            then the model will generate the Parameters class during fitting.
+            Default value is None.
+
+        fitmethod : str, optional
+            Method to use for the regression. See lmfit's documentation for
+            more information. Default value is 'leastsq'.
+
+        Returns
+        -------
+        fitresult : instance of lmfit's ModelResult class
+            Result of the regression. See lmfit for documentation on the
+            ModelResult class.
+
+        model : instance of lmfit's Model class.
+
+        '''
+        guess_T12, guess_fragility, guess_log_eta_inf = self.guess()
+        model = self.getModel(guess_T12, guess_fragility, guess_log_eta_inf)
+        fitresult = super().fit(model, weights, params, fitmethod)
+
+        return fitresult, model
+
+
 class CLU(_BaseViscosityRegression):
     '''
     Class for performing the CLU regression.
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -697,7 +809,6 @@ class BS(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -814,7 +925,6 @@ class Dienes(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
@@ -943,7 +1053,6 @@ class DML(_BaseViscosityRegression):
 
     Parameters
     ----------
-
     autofit : boolean, optional
         'True' if the regression should be performed during the Class initiation.
         'False' otherwise. Default value is True.
