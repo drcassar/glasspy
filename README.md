@@ -15,12 +15,11 @@ Binary installers for the latest released version are available at the [Python P
 pip install glasspy
 ```
 
-To install this branch version of GlassPy run
+To install the latest development version of GlassPy run
 
 ```sh
-pip install --upgrade git+git://github.com/drcassar/glasspy.git@sciglass
+pip install --upgrade git+git://github.com/drcassar/glasspy
 ```
-
 ## Development
 GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a collection of MATLAB code that I wrote for the Glass State graduate course of 2010 and the numerical analysis during my PhD.
 
@@ -42,6 +41,7 @@ Some examples are provided as notebooks in Google Colab (they run in the cloud, 
 - [SciPy](https://www.scipy.org/)
 - [Pandas](https://pandas.pydata.org/)
 - [lmfit](https://lmfit.github.io/lmfit-py/)
+- [chemparse](https://pypi.org/project/chemparse/)
 
 ## Other python repositories for glass science
 - [RelaxPy](https://github.com/Mauro-Glass-Group/RelaxPy) - Module to compute glass relaxation kinetics.
