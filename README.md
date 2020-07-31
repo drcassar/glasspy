@@ -1,4 +1,6 @@
 # Welcome to GlassPy
+[![DOI](https://zenodo.org/badge/197668520.svg)](https://zenodo.org/badge/latestdoi/197668520)
+
 GlassPy is a Python module for scientists working with glass materials.
 
 ![Screenshot](doc/logo/logo_text_small.png)
@@ -9,7 +11,7 @@ The aim is to provide classes and functions written in Python for materials scie
 ## How to install
 The source code is hosted on GitHub at https://github.com/drcassar/glasspy.
 
-Binary installers for the latest released version are available at the [Python Package Index](https://pypi.org/project/glasspy/). To install GlassPy using pip run
+Binary installers for the latest released version (v0.3) are available at the [Python Package Index](https://pypi.org/project/glasspy/). To install GlassPy using pip run
 
 ```sh
 pip install glasspy
@@ -18,8 +20,9 @@ pip install glasspy
 To install the latest development version of GlassPy run
 
 ```sh
-pip install --upgrade git+git://github.com/drcassar/glasspy
+pip install --upgrade git+git://github.com/drcassar/glasspy@dev
 ```
+
 ## Development
 GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a collection of MATLAB code that I wrote for the Glass State graduate course of 2010 and the numerical analysis during my PhD.
 
@@ -43,9 +46,17 @@ Some examples are provided as notebooks in Google Colab (they run in the cloud, 
 - [lmfit](https://lmfit.github.io/lmfit-py/)
 - [chemparse](https://pypi.org/project/chemparse/)
 
-## Other python repositories for glass science
-- [RelaxPy](https://github.com/Mauro-Glass-Group/RelaxPy) - Module to compute glass relaxation kinetics.
-- [PyGlass](https://github.com/jrafolsr/PyGlass) - Module to simulate the specific heat signature of glasses with a specified thermal treatment following the Tool-Narayanaswamy-Moynihan model.
+## How to cite
+Daniel R. Cassar. (2020, July 4). drcassar/glasspy: GlassPy 0.3 (Version v0.3). Zenodo. http://doi.org/10.5281/zenodo.3930351
+
+## List of open source tools for glass scientists
+- [RelaxPy](https://github.com/Mauro-Glass-Group/RelaxPy) - For computing glass relaxation kinetics.
+- [KineticPy](https://github.com/Mauro-Glass-Group/KineticPy) - For calculating the kinetics of an energy landscape on an arbitrary long timescale. 
+- [ExplorerPy](https://github.com/Mauro-Glass-Group/ExplorerPy) - For mapping energy landscape with a variety of methods. 
+- [SpectraFit](https://github.com/itscoe/SpectraFit.jl) - For fitting Boron-10 NMR data. 
+- [PyGlass](https://github.com/jrafolsr/PyGlass) - For simulating the specific heat signature of glasses with a specified thermal treatment following the Tool-Narayanaswamy-Moynihan model.
+
+Let me know if you want to add your open source software to this list.
 
 ## SciGlass database licence
 [ODbL](https://github.com/drcassar/glasspy/blob/master/glasspy/data/datafiles/LICENCE_sciglass)
