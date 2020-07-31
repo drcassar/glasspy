@@ -19,9 +19,7 @@ class _BaseDensityRegression:
 
     table : pandas DataFrame, optional, must be a named argument
         DataFrame with a 'time' and a 'density' column. If an 'ID' column is
-        also present, then each unique ID is considered a separate dataset. A
-        RuntimeError is raised if the class is initiated without a table *or*
-        without both time and density arguments.
+        also present, then each unique ID is considered a separate dataset.
 
     time : array_like, optional, must be a named argument
         Elapsed time. A RuntimeError is raised if the class is initiated
@@ -74,9 +72,7 @@ class _BaseDensityRegression:
                 table['temperature'] = kwargs['temperature']
 
         else:
-            name = self.__name__
-            msg = f'The {name} class was initiated with insuficient arguments'
-            raise RuntimeError(msg)
+            table = None
 
         self.table = table
 
@@ -98,14 +94,19 @@ class _BaseDensityRegression:
         table_slice : pandas DataFrame
             An instance of the table DataFrame of the yielded dataset
         '''
-        for ID in self.table['ID'].unique():
+        if self.table is not None:
+            for ID in self.table['ID'].unique():
 
-            logic = self.table['ID'] == ID
-            table_slice = self.table[logic]
-            time = table_slice['time'].values
-            density = table_slice['density'].values
+                logic = self.table['ID'] == ID
+                table_slice = self.table[logic]
+                time = table_slice['time'].values
+                density = table_slice['density'].values
 
-            yield ID, time, density, table_slice
+                yield ID, time, density, table_slice
+        else:
+            name = self.__str__()
+            msg = f'The {name} class was initiated with insuficient arguments'
+            raise RuntimeError(msg)
 
     def guess(self, time, density):
         '''
@@ -159,16 +160,22 @@ class _BaseDensityRegression:
         guess_induction_time : float
             Guess for the induction time for the yielded dataset
         '''
-        for ID in self.table['ID'].unique():
+        if self.table is not None:
+            for ID in self.table['ID'].unique():
 
-            logic = self.table['ID'] == ID
-            table_slice = self.table[logic]
-            time = table_slice['time'].values
-            density = table_slice['density'].values
+                logic = self.table['ID'] == ID
+                table_slice = self.table[logic]
+                time = table_slice['time'].values
+                density = table_slice['density'].values
 
-            guess_rate, guess_induction_time = self.guess(time, density)
+                guess_rate, guess_induction_time = self.guess(time, density)
 
-            yield ID, time, density, guess_rate, guess_induction_time
+                yield ID, time, density, guess_rate, guess_induction_time
+
+        else:
+            name = self.__str__()
+            msg = f'The {name} class was initiated with insuficient arguments'
+            raise RuntimeError(msg)
 
     def _fit(self,
              model,
@@ -301,9 +308,7 @@ class Wakeshima(_BaseDensityRegression):
 
     table : pandas DataFrame, optional, must be a named argument
         DataFrame with a 'time' and a 'density' column. If an 'ID' column is
-        also present, then each unique ID is considered a separate dataset. A
-        RuntimeError is raised if the class is initiated without a table *or*
-        without both time and density arguments.
+        also present, then each unique ID is considered a separate dataset.
 
     time : array_like, optional, must be a named argument
         Elapsed time. A RuntimeError is raised if the class is initiated
@@ -325,6 +330,9 @@ class Wakeshima(_BaseDensityRegression):
     [1] Wakeshima, H. (1954). Time Lag in the Self‐Nucleation. The Journal of
         Chemical Physics 22, 1614–1615.
     '''
+    def __str__(self):
+        return f'Wakeshima'
+
     def getModel(self, guess_rate, guess_induction_time):
         '''
         Creates a model for regression of the Wakeshima equation.
@@ -419,9 +427,7 @@ class Kashchiev(_BaseDensityRegression):
 
     table : pandas DataFrame, optional, must be a named argument
         DataFrame with a 'time' and a 'density' column. If an 'ID' column is
-        also present, then each unique ID is considered a separate dataset. A
-        RuntimeError is raised if the class is initiated without a table *or*
-        without both time and density arguments.
+        also present, then each unique ID is considered a separate dataset.
 
     time : array_like, optional, must be a named argument
         Elapsed time. A RuntimeError is raised if the class is initiated
@@ -461,12 +467,20 @@ class Kashchiev(_BaseDensityRegression):
         self.summation_ub = kwargs.get('summation_ub', 1000)
         self.use_time_shift = kwargs.get('use_time_shift', False)
 
-    def __str__(self):
-        if self.use_time_shift:
-            time_shift_info = ' considering the time-shift'
+    def __str__(self, full_name=False):
+        if full_name:
+            if self.use_time_shift:
+                time_shift_info = ' considering the time-shift'
+            else:
+                time_shift_info = ''
+            return f'Kaschiev{time_shift_info} with {self.summation_ub} summation terms'
+
         else:
-            time_shift_info = ''
-        return f'Kaschiev{time_shift_info} with {self.summation_ub} summation terms'
+            if self.use_time_shift:
+                time_shift_info = ' with time-shift'
+            else:
+                time_shift_info = ''
+            return f'Kaschiev{time_shift_info}'
 
     def getModel(self, guess_rate, guess_induction_time, time=None):
         '''
@@ -625,9 +639,7 @@ class __Shneidman(_BaseDensityRegression):
 
     table : pandas DataFrame, optional, must be a named argument
         DataFrame with a 'time' and a 'density' column. If an 'ID' column is
-        also present, then each unique ID is considered a separate dataset. A
-        RuntimeError is raised if the class is initiated without a table *or*
-        without both time and density arguments.
+        also present, then each unique ID is considered a separate dataset.
 
     time : array_like, optional, must be a named argument
         Elapsed time. A RuntimeError is raised if the class is initiated

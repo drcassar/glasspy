@@ -1,10 +1,10 @@
 import numpy as np
 import warnings
+import math
 from numpy import exp, log10
-from copy import deepcopy as copy
 from operator import gt, lt
+import scipy.integrate
 from scipy.constants import N_A, pi, k
-from scipy.integrate import odeint, solve_ivp
 from scipy.misc import derivative
 from scipy.optimize import brentq
 
@@ -77,16 +77,28 @@ class KineticModelIsotropicSphere:
                  init_cluster_pop_function=clusterPopGenOnlyMonomers,
                  accuracy='cluster density'):
 
+        self.accuracy = accuracy
         self.max_cluster_size = max_cluster_size
         self.min_cluster_size = min_cluster_size
-        self.accuracy = accuracy
+        self.cluster_size = np.arange(self.min_cluster_size,
+                                      self.max_cluster_size + 1)
+
         initial_cluster_distribution = init_cluster_pop_function(
             self.max_cluster_size, **init_cluster_dictionary)
         self.cluster_distribution = [initial_cluster_distribution]
+
         self.time = [0]
         self.temperature = [np.nan]
-        self.cluster_size = np.arange(self.min_cluster_size,
-                                      self.max_cluster_size + 1)
+        self.critical_cluster_size = [np.nan]
+        self.supercritical_cluster_density = [np.nan]
+
+    def reset(self):
+        '''Reset internal attributes keeping last cluster distribution
+
+        '''
+        self.cluster_distribution = [self.cluster_distribution[-1]]
+        self.time = [0]
+        self.temperature = [np.nan]
         self.critical_cluster_size = [np.nan]
         self.supercritical_cluster_density = [np.nan]
 
@@ -233,7 +245,7 @@ class KineticModelIsotropicSphere:
         try:
             critical_cluster_size = brentq(dW_dn, self.min_cluster_size,
                                            self.max_cluster_size)
-            critical_cluster_size = int(np.ceil(critical_cluster_size))
+            critical_cluster_size = math.ceil(critical_cluster_size)
 
         except ValueError:
             msg = 'Critical cluster size is above the maximum cluster size'
@@ -328,10 +340,8 @@ class KineticModelIsotropicSphere:
         K = self._generate_matrix_K(temperature, diffusion_coeff,
                                     driving_force, surface_energy,
                                     monomer_volume, jump_distance)
-        current_cluster_distribution = copy(self.cluster_distribution[-1])
 
-        def dN_dt(N, t, K):
-            return K @ N  # dot product of K and N
+        current_cluster_distribution = np.copy(self.cluster_distribution[-1])
 
         if time_resolution is 'default':
             time_resolution_ = max(10, int(np.ceil(log10(time) * 5)))
@@ -339,10 +349,12 @@ class KineticModelIsotropicSphere:
             time_resolution_ = time_resolution
 
         times = np.logspace(0, log10(time), time_resolution_)
-        cluster_distribution_array = odeint(dN_dt,
-                                            current_cluster_distribution,
-                                            times,
-                                            args=(K, ))
+
+        def dN_dt(N, t, K):
+            return K @ N
+
+        cluster_distribution_array = scipy.integrate.odeint(
+            dN_dt, current_cluster_distribution, times, args=(K, ))
 
         critical_cluster_size = self.computeCriticalClusterSize(
             driving_force, surface_energy, monomer_volume)
