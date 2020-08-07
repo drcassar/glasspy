@@ -1,7 +1,9 @@
 import setuptools
 
-with open("README_PyPI.md", "r") as fh:
-    long_description = fh.read()
+with open("README.md", "r") as fh:
+    long_description = fh.read().replace(
+        '![Screenshot](doc/logo/logo_text_small.png)\n\n',
+        '')
 
 setuptools.setup(
     name='glasspy',
