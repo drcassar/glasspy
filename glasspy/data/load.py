@@ -44,6 +44,9 @@ def sciglass(load_compounds=False, load_atomic_fraction=True):
 
         ElasticModulus : Elastic of Young's Modulus. Unit: GPa.
 
+        Microhardness : hardness measured using Vickers or Knoop indenters.
+            Unit: GPa.
+
         Tg : glass transition temperature. Unit: K.
 
         Tliquidus: liquidus temperature. Unit: K.
@@ -138,6 +141,9 @@ def sciglassOxides(
             temperature. Unit: K^{-1}.
 
         ElasticModulus : Elastic of Young's Modulus. Unit: GPa.
+
+        Microhardness : hardness measured using Vickers or Knoop indenters.
+            Unit: GPa.
 
         Tg : glass transition temperature. Unit: K.
 
