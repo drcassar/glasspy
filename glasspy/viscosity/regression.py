@@ -203,6 +203,12 @@ class _BaseViscosityRegression(ABC):
 
         return log10_viscosity
 
+    def evallog_uncertainty(self, T, sigma=1):
+        log10_viscosity = self.evallog(T)
+        uncertainty = self.fitresult.eval_uncertainty(sigma=sigma, T=T)
+        return log10_viscosity, uncertainty
+        
+
     def eval(self, T):
         '''
         Computes the viscosity at a given temperature.
