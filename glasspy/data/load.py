@@ -51,6 +51,8 @@ def sciglass(load_compounds=False, load_atomic_fraction=True):
 
         Tliquidus: liquidus temperature. Unit: K.
 
+        MeltingTemperature : melting temperature. Unit: K.
+
         T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
             viscosity (in Pa.s) is "n". Example: T4 is the temperature where
             log10(viscosity) = 4. Unit: K.
@@ -148,6 +150,8 @@ def sciglassOxides(
         Tg : glass transition temperature. Unit: K.
 
         Tliquidus: liquidus temperature. Unit: K.
+
+        MeltingTemperature : melting temperature. Unit: K.
 
         T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
             viscosity (in Pa.s) is "n". Example: T4 is the temperature where

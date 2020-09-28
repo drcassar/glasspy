@@ -20,7 +20,7 @@ pip install glasspy
 To install the latest development version of GlassPy run
 
 ```sh
-pip install --upgrade git+git://github.com/drcassar/glasspy@dev
+pip install --upgrade git+git://github.com/drcassar/glasspy@collin-build
 ```
 
 ## Development
