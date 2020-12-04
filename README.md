@@ -33,6 +33,7 @@ There is no documentation right now, but all the functions have detailed docstri
 
 Some examples are provided as notebooks in Google Colab (they run in the cloud, so you can test GlassPy without the need of installing anything on your machine):
 
+- [Loading data from the SciGlass database](https://colab.research.google.com/drive/1MmghrTPGdt45u25XB5MsYU1-9UtwWAdP)
 - [Finding the Kauzmann Temperature](https://colab.research.google.com/drive/1WAVddrOSDG7_pydV9g-WBfBisKQrMVeF)
 - [Regression of nucleation density data](https://colab.research.google.com/drive/139ke_S3eNq6MvJ3A_GnTWtlI8rn2QwKf)
 - [Regression of viscosity data](https://colab.research.google.com/drive/1U_xSg4H-de9QDlXChCN9Tsda8VlBlbAI)
