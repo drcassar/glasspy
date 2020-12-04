@@ -44,12 +44,12 @@ class _BaseDensityRegression:
             columns = table.columns.values
 
             if 'time' not in columns:
-                name = self.__name__
+                name = self.__str__()
                 msg = f'The {name} class was initiated with a table with no "time" column'
                 raise RuntimeError(msg)
 
             if 'density' not in columns:
-                name = self.__name__
+                name = self.__str__()
                 msg = f'The {name} class was initiated with a table with no "density" column'
                 raise RuntimeError(msg)
 
@@ -461,6 +461,7 @@ class Kashchiev(_BaseDensityRegression):
         nucleation kinetics. Surface Science 14, 209–220.
 
     [2] Kashchiev, D. (2000). Nucleation basic theory with applications.
+
     '''
     def __init__(self, **kwargs):
         _BaseDensityRegression.__init__(self, **kwargs)
@@ -612,6 +613,8 @@ class Kashchiev(_BaseDensityRegression):
             fitparams = fitresult.params
             time_shift = fitparams['time_shift'].value
             time_shift_std = fitparams['time_shift'].stderr
+            if time_shift_std is None:
+                time_shift_std = np.inf
             if time_shift < time_shift_threshold or time_shift_std > time_shift:
                 fitparams.add('time_shift', vary=False, value=0)
                 fitparams.add('log_time_shift', vary=False, value=-np.inf)
