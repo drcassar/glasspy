@@ -81,6 +81,30 @@ def mol_to_wt(
     x = rescale_array(x, rescale_to_sum)
     return x
 
+def to_array(x: Union[str, dict, pd.DataFrame]):
+    '''Convert x to an array.
+
+    '''
+    if isinstance(x, str):
+        x = parse_formula(x)
+        cols = list(x.keys())
+        x = np.array(list(x.values())).T
+
+    elif isinstance(x, dict):
+        cols = list(x.keys())
+        x = np.array(list(x.values())).T
+
+    elif isinstance(x, pd.DataFrame):
+        cols = x.columns.tolist()
+        x = x.values
+
+    if len(x.shape) == 1:
+        x = x.reshape(1,-1)
+    elif len(x.shape) != 2:
+        raise ValueError('x must be a 1D or a 2D array')
+
+    return x, cols
+
 
 def any_to_element_array(
         x: composition_like,
@@ -96,34 +120,22 @@ def any_to_element_array(
         when x is a list or array. Ignored otherwise.
 
     '''
-    if output_element_cols == 'default':
-        output_element_cols = _allelements
-
     if isinstance(x, list):
         x = np.array(x)
 
-    elif isinstance(x, str):
-        x = parse_formula(x)
-        input_cols = list(x.keys())
-        x = np.array(list(x.values())).T
-
-    elif isinstance(x, dict):
-        input_cols = list(x.keys())
-        x = np.array(list(x.values())).T
-
-    elif isinstance(x, pd.DataFrame):
-        input_cols = x.columns.tolist()
-        x = x.values
+    if not isinstance(x, np.ndarray):
+        x, input_cols = to_array(x)
+    else:
+        if len(x.shape) == 1:
+            x = x.reshape(1,-1)
+        elif len(x.shape) != 2:
+            raise ValueError('x must be a 1D or a 2D array')
 
     assert len(input_cols) > 0, 'You forgot to pass the list of input_cols.'
-
-    if len(x.shape) == 1:
-        x = x.reshape(1,-1)
-
-    elif len(x.shape) != 2:
-        raise ValueError('x must be a 1D or a 2D array')
-
     assert len(input_cols) == x.shape[1], 'Invalid lenght of input_cols.'
+
+    if output_element_cols == 'default':
+        output_element_cols = _allelements
 
     x_element = np.zeros((len(x), len(output_element_cols)))
     for i, c in enumerate(input_cols):
