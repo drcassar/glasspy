@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='glasspy',
-    version='0.3',
+    version='0.4.0.dev1',
     author='Daniel Roberto Cassar',
     author_email='contact@danielcassar.com.br',
     description='Python module for scientists working with glass materials',
@@ -21,6 +21,7 @@ setuptools.setup(
         'pandas>=1.0.0',
         'lmfit>=1.0.0',
         'chemparse>=0.1.0',
+        'mendeleev>=0.6.0'
     ],
     keywords='glass, non-crystalline materials',
     classifiers=[
