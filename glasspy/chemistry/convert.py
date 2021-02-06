@@ -310,7 +310,7 @@ def any_to_element_array(
         x: CompositionLike,
         input_cols: List[str] = [],
         output_element_cols: Union[str,List[str]] = 'default',
-        rescale_to_sum=False,
+        rescale_to_sum: Union[float,int,bool] = False,
 ) -> Tuple[np.ndarray, List[str]]:
     '''Convert x to an element array.
 
@@ -333,8 +333,8 @@ def any_to_element_array(
       x_element:
         A 2D array. Each row is a chemical substance.
       cols;
-        A list of strings containing the the symbol of chemical elements related
-        to each column of the array.
+        A list of strings containing the symbol of chemical elements related to
+        each column of the array.
 
     Raises:
       AssertionError:
