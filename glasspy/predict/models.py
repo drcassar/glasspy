@@ -1,33 +1,37 @@
-import os
-import pickle
-from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import namedtuple
+from pathlib import Path
+from typing import Dict, List, Tuple, NamedTuple
+import os
+import pickle
+import typing
 
 import numpy as np
-import glasspy.chemistry.convert as cvt
-
 try:
     import tensorflow as tf
-
 except ModuleNotFoundError:
     print('WARNING: Some models require that tensorflow is installed.\n'
           '  It is not a hard dependency of GlassPy to reduce the '
           'risk of interfering\n  with your local copies')
 
+from glasspy.chemistry import convert
+from glasspy.typing import CompositionLike
+
 
 _basemodelpath = Path(os.path.dirname(__file__)) / 'models'
 _basesupportpath = Path(os.path.dirname(__file__)) / 'support'
 
-_Domain = namedtuple('Domain', ['element', 'compound'])
-
+class Domain(NamedTuple):
+    element: Dict[str, float] = None
+    compound: Dict[str, float] = None
 
 class Predict(ABC):
+    '''Base class for GlassPy predictors.'''
     def __init__(self, **kwargs):
         super().__init__()
 
     @abstractmethod
-    def predict():
+    def predict(self):
         pass
 
     @property
@@ -57,6 +61,7 @@ class Predict(ABC):
 
 
 class PredictElementalInputNN(Predict):
+    '''Base Predictor for models that use chemical composition as features.'''
     def __init__(self):
         super().__init__()
 
@@ -70,25 +75,61 @@ class PredictElementalInputNN(Predict):
         pass
 
     @property
-    def domain(self):
-        Domain = _Domain(
-            self.info.get('domain_el', None),
-            self.info.get('domain_comp', None),
+    def domain(self) -> Domain:
+        '''Get information about the training domain of the model.
+
+        Returns:
+          Instance of Domain.
+
+        '''
+        domain = Domain(
+            element = self.info.get('domain_el', None),
+            compound = self.info.get('domain_comp', None),
             )
-        return Domain
+        return domain
 
     def is_within_domain(
             self,
-            x,
-            input_cols=[],
-            convert_wt_to_mol=False,
-            check_only_hard_domain=False,
-    ):
+            x: CompositionLike,
+            input_cols: List[str] = [],
+            convert_wt_to_mol: bool = False,
+            check_only_hard_domain: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+        '''Checks if composition is inside the training domain.
+
+        Args:
+          x:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of x. Necessary only when x is a list or array, ignored
+            otherwise.
+          convert_wt_to_mol:
+            Set to True if x is is weight%, False otherwise.
+          check_only_hard_domain:
+            If True, the function checks only if the chemical elements in x are
+            present in the domain of training, but don't check if they are
+            within the training domain range. If False, then the function also
+            checks if the quantity of each chemical element is within the
+            training chemical domain range.
+
+        Returns:
+          is_within_domain:
+            A boolean numpy array. Substances within the domain are True and
+            outside the domain are False.
+          x:
+            A 2D array containing the representation of x in terms of chemical
+            elements.
+          elements:
+            List of strings representing the chemical entities related to each
+            column of x.
+
+        '''
         if convert_wt_to_mol:
-            x, elements = cvt.any_to_element_array(x, input_cols)
-            x = cvt.wt_to_mol(x, elements, 1)
+            x, elements = convert.any_to_element_array(x, input_cols)
+            x = convert.wt_to_mol(x, elements, 1)
         else:
-            x, elements = cvt.any_to_element_array(x, input_cols,
+            x, elements = convert.any_to_element_array(x, input_cols,
                                                    rescale_to_sum=1)
 
         elements_not_in_hard_domain = [
@@ -111,7 +152,9 @@ class PredictElementalInputNN(Predict):
                 col = x[:,n]
                 greater_than_min = np.greater(col, self.domain.element[el][0])
                 less_than_max = np.less(col, self.domain.element[el][1])
-                el_is_within_domain = np.logical_and(greater_than_min, less_than_max)
+                el_is_within_domain = np.logical_and(
+                    greater_than_min, less_than_max
+                )
                 is_within_soft_domain = np.logical_and(
                     is_within_domain, el_is_within_domain
                 )
@@ -122,12 +165,36 @@ class PredictElementalInputNN(Predict):
 
     def predict(
             self,
-            x,
-            input_cols=None,
-            convert_wt_to_mol=False,
-            check_only_hard_domain=True,
-    ):
+            x: CompositionLike,
+            input_cols: List[str] = [],
+            convert_wt_to_mol: bool = False,
+            check_only_hard_domain: bool = False,
+    ) -> Union[np.ndarray, float]:
+        '''Predicts the relevant property of substance(s) using the model. 
 
+        Args:
+          x:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of x. Necessary only when x is a list or array, ignored
+            otherwise.
+          convert_wt_to_mol:
+            Set to True if x is is weight%, False otherwise.
+          check_only_hard_domain:
+            If True, the function checks only if the chemical elements in x are
+            present in the domain of training, but don't check if they are
+            within the training domain range. If False, then the function also
+            checks if the quantity of each chemical element is within the
+            training chemical domain range.
+
+        Returns:
+          Predicted values of the relenant property. If the input data was only
+          one substance, then returns a float. Otherwise returns a 1D numpy
+          array. Predictions of substances outside of the domain are represented
+          by nan (not a number).
+
+        '''
         is_within_domain, x, elements = \
             self.is_within_domain(x, input_cols, convert_wt_to_mol,
                                   check_only_hard_domain)
