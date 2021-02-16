@@ -1,12 +1,16 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, List, Tuple, NamedTuple
+from typing import Dict, List, Tuple, NamedTuple, Union
 import os
 import pickle
-import typing
 
+from torch.nn import functional as F
+from torch.optim import SGD, Adam, AdamW
 import numpy as np
+import pytorch_lightning as pl
+import torch
+import torch.nn as nn
 try:
     import tensorflow as tf
 except ModuleNotFoundError:
@@ -14,7 +18,7 @@ except ModuleNotFoundError:
           '  It is not a hard dependency of GlassPy to reduce the '
           'risk of interfering\n  with your local copies')
 
-from glasspy.chemistry import convert
+from glasspy.chemistry import convert, featurizer, CompositionLike
 from glasspy.typing import CompositionLike
 
 
@@ -24,6 +28,7 @@ _basesupportpath = Path(os.path.dirname(__file__)) / 'support'
 class Domain(NamedTuple):
     element: Dict[str, float] = None
     compound: Dict[str, float] = None
+
 
 class Predict(ABC):
     '''Base class for GlassPy predictors.'''
@@ -332,3 +337,309 @@ class GlassTransitionOxide2010(PredictElementalInputNN):
     def convert_input(self, x):
         return tf.convert_to_tensor(x, dtype=tf.float32)
 
+
+class ViscNet(pl.LightningModule, ABC):
+
+    parameters_range = {
+        'log_eta_inf': [-18, 5],
+        'Tg': [400, 1400],
+        'm': [10, 130],
+    }
+
+    hparams = {
+        'batch_size': 64,
+        'layer_1_activation': 'ReLU',
+        'layer_1_batchnorm': False,
+        'layer_1_dropout': 0.07942161101271952,
+        'layer_1_size': 192,
+        'layer_2_activation': 'Tanh',
+        'layer_2_batchnorm': False,
+        'layer_2_dropout': 0.05371454289414608,
+        'layer_2_size': 48,
+        'loss': 'mse',
+        'lr': 0.0011695226458761677,
+        'max_epochs': 500,
+        'n_features': 35,
+        'num_layers': 2,
+        'optimizer': 'AdamW',
+        'patience': 9,
+    }
+
+    absolute_features = [
+        ('ElectronAffinity', 'std'),
+        ('FusionEnthalpy', 'std'),
+        ('GSenergy_pa', 'std'),
+        ('GSmagmom', 'std'),
+        ('NdUnfilled', 'std'),
+        ('NfValence', 'std'),
+        ('NpUnfilled', 'std'),
+        ('atomic_radius_rahm', 'std'),
+        ('c6_gb', 'std'),
+        ('lattice_constant', 'std'),
+        ('mendeleev_number', 'std'),
+        ('num_oxistates', 'std'),
+        ('nvalence', 'std'),
+        ('vdw_radius_alvarez', 'std'),
+        ('vdw_radius_uff', 'std'),
+        ('zeff', 'std'),
+    ]
+
+    weighted_features = [
+        ('FusionEnthalpy', 'min'),
+        ('GSbandgap', 'max'),
+        ('GSmagmom', 'mean'),
+        ('GSvolume_pa', 'max'),
+        ('MiracleRadius', 'std'),
+        ('NValence', 'max'),
+        ('NValence', 'min'),
+        ('NdUnfilled', 'max'),
+        ('NdValence', 'max'),
+        ('NsUnfilled', 'max'),
+        ('SpaceGroupNumber', 'max'),
+        ('SpaceGroupNumber', 'min'),
+        ('atomic_radius', 'max'),
+        ('atomic_volume', 'max'),
+        ('c6_gb', 'max'),
+        ('c6_gb', 'min'),
+        ('max_ionenergy', 'min'),
+        ('num_oxistates', 'max'),
+        ('nvalence', 'min'),
+    ]
+
+    x_mean = [5.7542e+01, 2.2090e+01, 2.0236e+00, 3.6861e-02, 3.2621e-01,
+              1.4419e+00, 2.0165e+00, 3.4408e+01, 1.2353e+03, 1.4793e+00,
+              4.2045e+01, 8.4131e-01, 2.3045e+00, 4.7985e+01, 5.6984e+01,
+              1.1146e+00, 9.2186e-02, 2.1363e-01, 2.2581e-04, 5.8150e+00,
+              1.2964e+01, 3.7008e+00, 1.3743e-01, 1.8370e-02, 3.2303e-01,
+              7.1325e-02, 5.0019e+01, 4.3720e+00, 3.6446e+01, 8.4037e+00,
+              2.0281e+02, 7.5614e+00, 1.2259e+02, 6.7183e-01, 1.0508e-01]
+
+    x_std = [7.6421e+00, 4.7181e+00, 4.5828e-01, 1.6873e-01, 9.7033e-01,
+             2.7695e+00, 3.3153e-01, 6.4521e+00, 6.3392e+02, 4.0606e-01,
+             1.1777e+01, 2.8130e-01, 7.9214e-01, 7.5883e+00, 1.1335e+01,
+             2.8823e-01, 4.4787e-02, 1.1219e-01, 1.2392e-03, 1.1634e+00,
+             2.9514e+00, 4.7246e-01, 3.1958e-01, 8.8973e-02, 6.7548e-01,
+             6.2869e-02, 1.0004e+01, 2.7434e+00, 1.9245e+00, 3.4735e-01,
+             1.2475e+02, 3.2668e+00, 1.5287e+02, 7.3511e-02, 1.6188e-01]
+
+    state_dict_path = _basemodelpath / 'ViscNet_SD.p' 
+
+    def __init__(self):
+        super().__init__()
+
+        layers = []
+        hparams = self.hparams
+        input_dim = hparams['n_features']
+
+        self.x_mean = torch.tensor(self.x_mean).float()
+        self.x_std = torch.tensor(self.x_std).float()
+
+        for n in range(1, hparams['num_layers'] + 1):
+
+            l = [
+                nn.Linear(
+                    input_dim, int(hparams[f'layer_{n}_size']),
+                    bias=False if hparams[f'layer_{n}_batchnorm'] else True)
+            ]
+
+            if hparams[f'layer_{n}_batchnorm']:
+                l.append(nn.BatchNorm1d(int(hparams[f'layer_{n}_size'])))
+
+            if hparams[f'layer_{n}_dropout']:
+                l.append(nn.Dropout(hparams[f'layer_{n}_dropout']))
+
+            if hparams[f'layer_{n}_activation'] == 'Tanh':
+                l.append(nn.Tanh())
+            elif hparams[f'layer_{n}_activation'] == 'ReLU':
+                l.append(nn.ReLU())
+            else:
+                raise NotImplementedError(
+                    'Please add this activation to the model class.'
+                )
+
+            layers.append(nn.Sequential(*l))
+            input_dim = int(hparams[f'layer_{n}_size'])
+
+        self.hidden_layers = nn.Sequential(*layers)
+
+        self.output_layer = nn.Sequential(
+            nn.Linear(input_dim, len(self.parameters_range)),
+            nn.Sigmoid(),
+        )
+
+        if hparams['loss'] == 'mse':
+            self.loss_fun = F.mse_loss
+        elif hparams['loss'] == 'huber':
+            self.loss_fun = F.smooth_l1_loss
+        else:
+            raise NotImplementedError(
+                'Please add this loss function to the model class.'
+            )
+
+        state_dict = pickle.load(open(self.state_dict_path, 'rb'))
+        self.load_state_dict(state_dict)
+
+    def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
+        log_viscosity = log_eta_inf + (12 - log_eta_inf)*(Tg / T) * \
+            ((m / (12 - log_eta_inf) - 1) * (Tg / T - 1)).exp()
+        return log_viscosity
+
+    def viscosity_parameters(
+            self,
+            feature_tensor,
+            return_tensor=False,
+    ):
+
+        xf = self.hidden_layers((feature_tensor - self.x_mean) / self.x_std)
+        xf = self.output_layer(xf)
+
+        parameters = {}
+
+        for i, (p_name, p_range) in enumerate(self.parameters_range.items()):
+            # Scaling the viscosity parameters to be within the parameter range
+            parameters[p_name] = torch.add(
+                torch.ones(xf.shape[0]).mul(p_range[0]),
+                xf[:,i],
+                alpha=p_range[1] - p_range[0],
+            )
+
+        if not return_tensor:
+            parameters = {k: v.detach().numpy() for k,v in parameters.items()}
+
+        return parameters
+
+    def forward(self, x):
+        T = x[:, -1].detach().clone()
+        parameters = self.viscosity_parameters(x[:, :-1], True)
+        log_viscosity = self.log_viscosity_fun(T, **parameters)
+        return log_viscosity
+
+    def featurizer(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        (feat_array,
+         feat_names) = featurizer.extract_chem_feats(composition, input_cols,
+                                                     self.weighted_features,
+                                                     self.absolute_features, 1)
+        feat_idx = (
+            list(range(
+                len(self.weighted_features),
+                len(self.weighted_features) + len(self.absolute_features)
+            )) + list(range(len(self.weighted_features)))
+        )
+        feat_array = feat_array[:,feat_idx]
+        return feat_array
+
+    def predict(
+            self,
+            T,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        features = self.featurizer(composition, input_cols)
+        x = np.concatenate((features, T), axis=1)
+        x = torch.from_numpy(x).float()
+        log_viscosity = self(x).detach().numpy()
+        return log_viscosity
+
+    def predict_fragility(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        features = self.featurizer(composition, input_cols)
+        features = torch.from_numpy(features).float()
+        parameters = self.viscosity_parameters(features, False)
+        fragility = parameters['m']
+        return fragility
+
+    def predict_Tg(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        features = self.featurizer(composition, input_cols)
+        features = torch.from_numpy(features).float()
+        parameters = self.viscosity_parameters(features, False)
+        Tg = parameters['Tg']
+        return Tg
+
+    def predict_log10_eta_infinity(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        features = self.featurizer(composition, input_cols)
+        features = torch.from_numpy(features).float()
+        parameters = self.viscosity_parameters(features, False)
+        log_eta_inf = parameters['log_eta_inf']
+        return log_eta_inf
+
+    def predict_eta_infinity(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        return 10**self.predict_log10_eta_infinity(composition, input_cols)
+
+    def predict_bands(
+            self,
+            T,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+            confidence: float = 0.95, 
+            num_samples: int = 100,
+    ):
+
+        q = [(100 - 100 * confidence) / 2, 100 - (100 - 100 * confidence) / 2]
+
+        features = self.featurizer(composition, input_cols)
+        features = torch.from_numpy(features).float()
+
+        is_training = self.training
+
+        if not is_training:
+            self.train()
+
+        all_curves = []
+
+        with torch.no_grad():
+            for _ in range(num_samples):
+                parameters = self.viscosity_parameters(features, True)
+                all_curves.append(
+                    self.log_viscosity_fun(T, **parameters).numpy()
+                )
+
+        if not is_training:
+            self.eval()
+
+        bands = np.percentile(all_curves, q, axis=0)
+
+        return bands
+
+    def configure_optimizers(self):
+        if 'optimizer' not in self.hparams:
+            optimizer = SGD(self.parameters())
+
+        elif self.hparams['optimizer'] == 'SGD':
+            optimizer = SGD( 
+                self.parameters(),
+                lr=self.hparams['lr'],
+                momentum=self.hparams['momentum'],
+            )
+
+        elif self.hparams['optimizer'] == 'Adam':
+            optimizer = Adam( 
+                self.parameters(),
+                lr=self.hparams['lr'],
+            )
+
+        elif self.hparams['optimizer'] == 'AdamW':
+            optimizer = AdamW( 
+                self.parameters(),
+                lr=self.hparams['lr'],
+            )
+
+        return optimizer
