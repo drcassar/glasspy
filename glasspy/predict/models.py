@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from collections import namedtuple, defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Dict, List, Tuple, NamedTuple, Union
 import os
@@ -65,7 +66,7 @@ class Predict(ABC):
         pass
 
 
-class PredictElementalInputNN(Predict):
+class PredictElementalInputTF(Predict):
     '''Base Predictor for models that use chemical composition as features.'''
     def __init__(self):
         super().__init__()
@@ -131,10 +132,10 @@ class PredictElementalInputNN(Predict):
 
         '''
         if convert_wt_to_mol:
-            x, elements = convert.any_to_element_array(x, input_cols)
+            x, elements = convert.to_element_array(x, input_cols, 'all')
             x = convert.wt_to_mol(x, elements, 1)
         else:
-            x, elements = convert.any_to_element_array(x, input_cols,
+            x, elements = convert.to_element_array(x, input_cols, 'all',
                                                    rescale_to_sum=1)
 
         elements_not_in_hard_domain = [
@@ -239,7 +240,126 @@ class PredictElementalInputNN(Predict):
         raise NotImplementedError('GlassPy error: not implemented.')
 
 
-class RefractiveIndexOxide2010(PredictElementalInputNN):
+class MLP(pl.LightningModule, Predict):
+    '''Base Predictor for models that use chemical composition as features.'''
+    def __init__(self):
+        super().__init__()
+
+        layers = []
+        hparams = self.hparams
+        input_dim = hparams['n_features']
+
+        for n in range(1, hparams['num_layers'] + 1):
+
+            l = [
+                nn.Linear(
+                    input_dim, int(hparams[f'layer_{n}_size']),
+                    bias=False if hparams[f'layer_{n}_batchnorm'] else True)
+            ]
+
+            if hparams[f'layer_{n}_batchnorm']:
+                l.append(nn.BatchNorm1d(int(hparams[f'layer_{n}_size'])))
+
+            if hparams[f'layer_{n}_dropout']:
+                l.append(nn.Dropout(hparams[f'layer_{n}_dropout']))
+
+            if hparams[f'layer_{n}_activation'] == 'Tanh':
+                l.append(nn.Tanh())
+            elif hparams[f'layer_{n}_activation'] == 'ReLU':
+                l.append(nn.ReLU())
+            else:
+                raise NotImplementedError(
+                    'Please add this activation to the model class.'
+                )
+
+            layers.append(nn.Sequential(*l))
+            input_dim = int(hparams[f'layer_{n}_size'])
+
+        self.hidden_layers = nn.Sequential(*layers)
+
+        if hparams['loss'] == 'mse':
+            self.loss_fun = F.mse_loss
+        elif hparams['loss'] == 'huber':
+            self.loss_fun = F.smooth_l1_loss
+        else:
+            raise NotImplementedError(
+                'Please add this loss function to the model class.'
+            )
+
+    @property
+    @abstractmethod
+    def hparams(self):
+        pass
+
+    @property
+    def domain(self) -> Domain:
+        # TODO
+        raise NotImplementedError('GlassPy error: not implemented.')
+
+    def is_within_domain():
+        # TODO
+        raise NotImplementedError('GlassPy error: not implemented.')
+
+    def get_training_dataset(self):
+        # TODO
+        raise NotImplementedError('GlassPy error: not implemented.')
+
+    def get_validation_dataset(self):
+        # TODO
+        raise NotImplementedError('GlassPy error: not implemented.')
+
+    def get_test_dataset(self):
+        # TODO
+        raise NotImplementedError('GlassPy error: not implemented.')
+
+    def distance_from_training(self):
+        # TODO
+        raise NotImplementedError('GlassPy error: not implemented.')
+
+    def configure_optimizers(self):
+        if 'optimizer' not in self.hparams:
+            optimizer = SGD(self.parameters())
+
+        elif self.hparams['optimizer'] == 'SGD':
+            optimizer = SGD( 
+                self.parameters(),
+                lr=self.hparams['lr'],
+                momentum=self.hparams['momentum'],
+            )
+
+        elif self.hparams['optimizer'] == 'Adam':
+            optimizer = Adam( 
+                self.parameters(),
+                lr=self.hparams['lr'],
+            )
+
+        elif self.hparams['optimizer'] == 'AdamW':
+            optimizer = AdamW( 
+                self.parameters(),
+                lr=self.hparams['lr'],
+            )
+
+        return optimizer
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self.loss_fun(self(x), y)
+        return {'loss': loss,}
+
+    def training_epoch_end(self, outputs):
+        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self.loss_fun(self(x), y)
+        return {'val_loss_step': loss,}
+
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x["val_loss_step"] for x in outputs]).mean()
+        self.log("val_loss", avg_loss)
+
+
+class RefractiveIndexOxide2010(PredictElementalInputTF):
     model_id = 'nn_nd_oxide_20-10'
 
     def __init__(self):
@@ -272,7 +392,7 @@ class RefractiveIndexOxide2010(PredictElementalInputNN):
         return tf.convert_to_tensor(x, dtype=tf.float32)
 
 
-class AbbeNumberOxide2010(PredictElementalInputNN):
+class AbbeNumberOxide2010(PredictElementalInputTF):
     model_id = 'nn_abbe_oxide_20-10'
 
     def __init__(self):
@@ -305,7 +425,7 @@ class AbbeNumberOxide2010(PredictElementalInputNN):
         return tf.convert_to_tensor(x, dtype=tf.float32)
 
 
-class GlassTransitionOxide2010(PredictElementalInputNN):
+class GlassTransitionOxide2010(PredictElementalInputTF):
     model_id = 'nn_Tg_oxide_20-10'
 
     def __init__(self):
@@ -338,7 +458,7 @@ class GlassTransitionOxide2010(PredictElementalInputNN):
         return tf.convert_to_tensor(x, dtype=tf.float32)
 
 
-class ViscNet(pl.LightningModule, ABC):
+class ViscNet(MLP):
 
     parameters_range = {
         'log_eta_inf': [-18, 5],
@@ -427,64 +547,25 @@ class ViscNet(pl.LightningModule, ABC):
     def __init__(self):
         super().__init__()
 
-        layers = []
-        hparams = self.hparams
-        input_dim = hparams['n_features']
-
-        self.x_mean = torch.tensor(self.x_mean).float()
-        self.x_std = torch.tensor(self.x_std).float()
-
-        for n in range(1, hparams['num_layers'] + 1):
-
-            l = [
-                nn.Linear(
-                    input_dim, int(hparams[f'layer_{n}_size']),
-                    bias=False if hparams[f'layer_{n}_batchnorm'] else True)
-            ]
-
-            if hparams[f'layer_{n}_batchnorm']:
-                l.append(nn.BatchNorm1d(int(hparams[f'layer_{n}_size'])))
-
-            if hparams[f'layer_{n}_dropout']:
-                l.append(nn.Dropout(hparams[f'layer_{n}_dropout']))
-
-            if hparams[f'layer_{n}_activation'] == 'Tanh':
-                l.append(nn.Tanh())
-            elif hparams[f'layer_{n}_activation'] == 'ReLU':
-                l.append(nn.ReLU())
-            else:
-                raise NotImplementedError(
-                    'Please add this activation to the model class.'
-                )
-
-            layers.append(nn.Sequential(*l))
-            input_dim = int(hparams[f'layer_{n}_size'])
-
-        self.hidden_layers = nn.Sequential(*layers)
+        input_dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 
         self.output_layer = nn.Sequential(
             nn.Linear(input_dim, len(self.parameters_range)),
             nn.Sigmoid(),
         )
 
-        if hparams['loss'] == 'mse':
-            self.loss_fun = F.mse_loss
-        elif hparams['loss'] == 'huber':
-            self.loss_fun = F.smooth_l1_loss
-        else:
-            raise NotImplementedError(
-                'Please add this loss function to the model class.'
-            )
-
         state_dict = pickle.load(open(self.state_dict_path, 'rb'))
         self.load_state_dict(state_dict)
+
+        self.x_mean = torch.tensor(self.x_mean).float()
+        self.x_std = torch.tensor(self.x_std).float()
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
         log_viscosity = log_eta_inf + (12 - log_eta_inf)*(Tg / T) * \
             ((m / (12 - log_eta_inf) - 1) * (Tg / T - 1)).exp()
         return log_viscosity
 
-    def viscosity_parameters(
+    def viscosity_parameters_from_tensor(
             self,
             feature_tensor,
             return_tensor=False,
@@ -508,9 +589,59 @@ class ViscNet(pl.LightningModule, ABC):
 
         return parameters
 
+    def viscosity_parameters(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        features = self.featurizer(composition, input_cols)
+        features = torch.from_numpy(features).float()
+        parameters = self.viscosity_parameters_from_tensor(features, False)
+        return parameters
+
+    def viscosity_parameters_dist(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+            num_samples: int = 100,
+    ):
+        features = self.featurizer(composition, input_cols)
+        features = torch.from_numpy(features).float()
+
+        is_training = self.training
+        if not is_training:
+            self.train()
+
+        dist = defaultdict(list)
+        with torch.no_grad():
+            for _ in range(num_samples):
+                pdict = self.viscosity_parameters_from_tensor(features, False)
+                for k,v in pdict.items():
+                    dist[k].append(v)
+
+        if not is_training:
+            self.eval()
+
+        dist = {k: np.array(v).T for k,v in dist.items()}
+
+        return dist
+
+    def viscosity_parameters_unc(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+            confidence: float = 0.95, 
+            num_samples: int = 100,
+    ):
+        q = [(100 - 100 * confidence) / 2, 100 - (100 - 100 * confidence) / 2]
+        dist = self.viscosity_parameters_dist(composition, input_cols,
+                                              num_samples)
+        bands = {k: np.percentile(v, q, axis=1).T for k,v in dist.items()}
+        return bands
+
     def forward(self, x):
         T = x[:, -1].detach().clone()
-        parameters = self.viscosity_parameters(x[:, :-1], True)
+        parameters = self.viscosity_parameters_from_tensor(x[:, :-1], True)
         log_viscosity = self.log_viscosity_fun(T, **parameters)
         return log_viscosity
 
@@ -544,14 +675,28 @@ class ViscNet(pl.LightningModule, ABC):
         log_viscosity = self(x).detach().numpy()
         return log_viscosity
 
+    def predict_log10_viscosity(
+            self,
+            T,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        return self.predict(T, composition, input_cols)
+
+    def predict_viscosity(
+            self,
+            T,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ):
+        return 10**self.predict(T, composition, input_cols)
+
     def predict_fragility(
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
-        features = self.featurizer(composition, input_cols)
-        features = torch.from_numpy(features).float()
-        parameters = self.viscosity_parameters(features, False)
+        parameters = self.viscosity_parameters(composition, input_cols)
         fragility = parameters['m']
         return fragility
 
@@ -560,9 +705,7 @@ class ViscNet(pl.LightningModule, ABC):
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
-        features = self.featurizer(composition, input_cols)
-        features = torch.from_numpy(features).float()
-        parameters = self.viscosity_parameters(features, False)
+        parameters = self.viscosity_parameters(composition, input_cols)
         Tg = parameters['Tg']
         return Tg
 
@@ -571,9 +714,7 @@ class ViscNet(pl.LightningModule, ABC):
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
-        features = self.featurizer(composition, input_cols)
-        features = torch.from_numpy(features).float()
-        parameters = self.viscosity_parameters(features, False)
+        parameters = self.viscosity_parameters(composition, input_cols)
         log_eta_inf = parameters['log_eta_inf']
         return log_eta_inf
 
@@ -584,62 +725,120 @@ class ViscNet(pl.LightningModule, ABC):
     ):
         return 10**self.predict_log10_eta_infinity(composition, input_cols)
 
-    def predict_bands(
+    def predict_Tg_unc(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+            confidence: float = 0.95, 
+            num_samples: int = 100,
+    ):
+        parameters_unc = self.viscosity_parameters_unc(composition, input_cols,
+                                                       confidence, num_samples)
+        Tg = parameters_unc['Tg']
+        return Tg
+
+    def predict_fragility_unc(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+            confidence: float = 0.95, 
+            num_samples: int = 100,
+    ):
+        parameters_unc = self.viscosity_parameters_unc(composition, input_cols,
+                                                       confidence, num_samples)
+        m = parameters['m']
+        return m
+
+    def predict_log10_eta_infinity_unc(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+            confidence: float = 0.95, 
+            num_samples: int = 100,
+    ):
+        parameters_unc = self.viscosity_parameters_unc(composition, input_cols,
+                                                       confidence, num_samples)
+        log_eta_inf = parameters_unc['log_eta_inf']
+        return log_eta_inf
+
+    def predict_viscosity_unc(
             self,
             T,
             composition: CompositionLike,
             input_cols: List[str] = [],
             confidence: float = 0.95, 
             num_samples: int = 100,
-    ):
+    ) -> np.ndarray:
+        '''Compute the confidence bands of viscosity.
+
+        TODO
+        
+        Returns
+          bands
+            The first dimension is composition.
+            The second dimension is confidence band.
+            The third dimension is the temperature.
+
+'''
+        dist = self.viscosity_parameters_dist(composition, input_cols,
+                                              num_samples)
+        parameters = []
+        for param in self.parameters_range.keys():
+            parameters.append(dist[param])
+        parameters = np.array(parameters)
+
+        num_compositions = parameters.shape[1]
+
+        if isinstance(T, Iterable):
+            all_curves = np.zeros((len(T), num_compositions, num_samples))
+            T = torch.tensor(T).float()
+            for i in range(num_samples):
+                params = [
+                    torch.from_numpy(
+                        np.broadcast_to(p, (len(T), len(p))).T
+                    ).float()
+                    for p in parameters[:,:,i]
+                ]
+                viscosity = self.log_viscosity_fun(T, *params).numpy()
+                all_curves[:,:,i] = viscosity.T
+
+        else:
+            all_curves = np.zeros((1, num_compositions, num_samples))
+            T = torch.tensor(T).float()
+            for i in range(num_samples):
+                params = [torch.from_numpy(p).float() for p in parameters[:,:,i]]
+                viscosity = self.log_viscosity_fun(T, *params).numpy()
+                all_curves[:,:,i] = viscosity
 
         q = [(100 - 100 * confidence) / 2, 100 - (100 - 100 * confidence) / 2]
 
-        features = self.featurizer(composition, input_cols)
-        features = torch.from_numpy(features).float()
-
-        is_training = self.training
-
-        if not is_training:
-            self.train()
-
-        all_curves = []
-
-        with torch.no_grad():
-            for _ in range(num_samples):
-                parameters = self.viscosity_parameters(features, True)
-                all_curves.append(
-                    self.log_viscosity_fun(T, **parameters).numpy()
-                )
-
-        if not is_training:
-            self.eval()
-
-        bands = np.percentile(all_curves, q, axis=0)
+        bands = np.percentile(all_curves, q, axis=2)
+        bands = np.transpose(bands, (2, 0, 1))
 
         return bands
 
-    def configure_optimizers(self):
-        if 'optimizer' not in self.hparams:
-            optimizer = SGD(self.parameters())
 
-        elif self.hparams['optimizer'] == 'SGD':
-            optimizer = SGD( 
-                self.parameters(),
-                lr=self.hparams['lr'],
-                momentum=self.hparams['momentum'],
-            )
+class ViscNetHuber(ViscNet):
+    def __init__(self):
+        super().__init__()
 
-        elif self.hparams['optimizer'] == 'Adam':
-            optimizer = Adam( 
-                self.parameters(),
-                lr=self.hparams['lr'],
-            )
+        self.hparams['loss'] = 'huber'
+        self.loss_fun = F.smooth_l1_loss
 
-        elif self.hparams['optimizer'] == 'AdamW':
-            optimizer = AdamW( 
-                self.parameters(),
-                lr=self.hparams['lr'],
-            )
+        state_dict_path = _basemodelpath / 'ViscNetHuber_SD.p' 
+        state_dict = pickle.load(open(state_dict_path, 'rb'))
+        self.load_state_dict(state_dict)
 
-        return optimizer
+
+class ViscNetVFT(ViscNet):
+    def __init__(self):
+        super().__init__()
+
+        state_dict_path = _basemodelpath / 'ViscNetVFT_SD.p' 
+        state_dict = pickle.load(open(state_dict_path, 'rb'))
+        self.load_state_dict(state_dict)
+
+    def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
+        log_viscosity = log_eta_inf + (12 - log_eta_inf)**2 / \
+            (m * (T / Tg - 1) + (12 - log_eta_inf))
+        return log_viscosity
