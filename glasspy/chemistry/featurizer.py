@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-from .convert import any_to_element_array
+from .convert import to_element_array
 from .types import CompositionLike
 
 
@@ -35,10 +35,12 @@ _data = np.genfromtxt(
     skip_header=1,
     delimiter=',',
     usecols=list(range(1, __num_chem_features + 1)),
-    dtype=[(p, 'float') for p in _prop],
+    # dtype=[(p, 'float64') for p in _prop],
 )
 
 _all_aggregate_functions = ['sum', 'mean', 'min', 'max', 'std']
+
+prop_idx = {p:i for i,p in enumerate(_prop)}
 
 all_chem_features = [(p,a) for p,a in product(_prop, _all_aggregate_functions)]
 
@@ -79,10 +81,11 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
 def extract_chem_feats(
         x: CompositionLike,
         input_cols: List[str] = [],
-        absolute_features: List[Tuple[str,str]] = [],
         weighted_features: List[Tuple[str,str]] = [],
+        absolute_features: List[Tuple[str,str]] = [],
         rescale_to_sum: Union[float,int,bool] = 1,
         sep: str = '|',
+        check_invalid: bool = True,
 ) -> Tuple[np.ndarray, List[str]]:
     '''Extract chemical features from a chemical object.
 
@@ -107,6 +110,12 @@ def extract_chem_feats(
       sep:
         String used to separate the information of the name of each extracted
         feature.
+      check_invalid:
+        Checks if there are invalid features that cannot be computed. Invalid
+        features are those with missing values in the desired chemical domain.
+        The function still works even with invalid features. However, it is not
+        recommended to use it in this case. Only disable this check if you are
+        sure that no invalid features exist in your chemical domain.
 
     Returns:
       features:
@@ -122,19 +131,36 @@ def extract_chem_feats(
       ValueError:
         Raised when the input composition has chemical elements that cannot be
         used to extract features.
+      ValueError:
+        Raised when invalid features are present and check_invalid is True.
 
     '''
     msg = '"rescale_to_sum" must be a positive number, try 1 or 100'
     assert rescale_to_sum > 0, msg
 
-    if len(input_cols) > 0 and not set(input_cols).issubset(set(_elements)):
-        outofdomain = set(input_cols) - set(_elements)
+    _, o_elements = to_element_array(x, input_cols,
+                                     output_element_cols='default')
+
+    if not set(o_elements).issubset(set(_elements)):
+        outofdomain = set(o_elements) - set(_elements)
         raise ValueError(
             f'Cannot featurize compositions with these elements: {outofdomain}'
         )
 
-    array, _ = any_to_element_array(x, input_cols, list(_elements),
-                                    rescale_to_sum)
+    if check_invalid:
+        unavailable_features = []
+        el_idx = tuple([i for i,v in enumerate(_elements) if v in o_elements])
+        for feat, _ in weighted_features:
+            if any(np.isnan(_data[el_idx, prop_idx[feat]])):
+                unavailable_features.append(feat)
+        for feat, _ in absolute_features:
+            if any(np.isnan(_data[el_idx, prop_idx[feat]])):
+                unavailable_features.append(feat)
+        if len(unavailable_features) > 0:
+            raise ValueError(f'Invalid features: {set(unavailable_features)}')
+        
+    array, elements = to_element_array(x, input_cols, list(_elements),
+                                       rescale_to_sum)
 
     pos = 0
     feature_columns = []
@@ -145,13 +171,13 @@ def extract_chem_feats(
 
     array[~(array > 0)] = np.nan
     for feat, stat in weighted_features:
-        features[:,pos] = _aggregate(array * _data[feat], stat)
+        features[:,pos] = _aggregate(array * _data[:,prop_idx[feat]], stat)
         feature_columns.append(f'W{sep}{feat}{sep}{stat}')
         pos += 1
 
     array[array > 0] = 1
     for feat, stat in absolute_features:
-        features[:,pos] = _aggregate(array * _data[feat], stat)
+        features[:,pos] = _aggregate(array * _data[:,prop_idx[feat]], stat)
         feature_columns.append(f'A{sep}{feat}{sep}{stat}')
         pos += 1
 
