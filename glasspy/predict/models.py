@@ -763,23 +763,57 @@ class ViscNet(MLP):
 
     def predict_viscosity_unc(
             self,
-            T,
+            T: Union[float, List[float], np.ndarray],
             composition: CompositionLike,
             input_cols: List[str] = [],
             confidence: float = 0.95, 
             num_samples: int = 100,
-    ) -> np.ndarray:
-        '''Compute the confidence bands of viscosity.
+            table_mode: bool = True,
+    ) -> Tuple[np.ndarray, Dict[str, np.ndarray], Dict[str, np.array]]:
+        '''Compute the confidence bands of the viscosity prediction.
 
-        TODO
-        
+        Args:
+          T:
+            Temperature to compute the viscosity. If this is a numpy array, it
+            must have only one dimension.
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of 'composition'. Necessary only when 'composition' is a list
+            or array, ignored otherwise.
+          confidence:
+            Confidence level. Accepts values between 0 and 1 (inclusive).
+          num_samples:
+            Number of samples to draw for the Monte Carlo dropout computation.
+            The higher the better, but also more computational expensive.
+          table_mode:
+            This argument is only relevant when the number of compositions is
+            the same as the number of items in the temperature list. If True,
+            then the code assumes that each composition is associated with its
+            own temperature, which would be the case of tabular data. If False,
+            then no such assumption is made and all temperatures will be
+            considered for all compositions.
+
         Returns
-          bands
-            The first dimension is composition.
-            The second dimension is confidence band.
-            The third dimension is the temperature.
+          bands:
+            Confidence bands of the base-10 logarithm of viscosity. If more than
+            one composition was given, then this is a 3-dimension numpy array.
+            In this case, the first dimension is the composition, the second is
+            the confidence band (lower and higher value, respectively), and the
+            third is the temperature. Differently, if only one composition was
+            given, then this is a 2-dimension array, with the first dimension
+            being the confidence band and the second being the temperature. If
+            the number of compositions is the same as the lenght of variable T
+            and table_mode is True, then this variable is also a 2-dimension
+            array.
+          param_bands:
+            Dictionary with the uncertainty of the viscosity parameters for each
+            composition.
+          dist:
+            Dictionary with the distribution of the viscosity parameters.
 
-'''
+        '''
         dist = self.viscosity_parameters_dist(composition, input_cols,
                                               num_samples)
         parameters = []
@@ -790,17 +824,29 @@ class ViscNet(MLP):
         num_compositions = parameters.shape[1]
 
         if isinstance(T, Iterable):
-            all_curves = np.zeros((len(T), num_compositions, num_samples))
-            T = torch.tensor(T).float()
-            for i in range(num_samples):
-                params = [
-                    torch.from_numpy(
-                        np.broadcast_to(p, (len(T), len(p))).T
-                    ).float()
-                    for p in parameters[:,:,i]
-                ]
-                viscosity = self.log_viscosity_fun(T, *params).numpy()
-                all_curves[:,:,i] = viscosity.T
+            if len(T) == num_compositions and table_mode:
+                all_curves = np.zeros((1, num_compositions, num_samples))
+                T = torch.tensor(T).float()
+                for i in range(num_samples):
+                    params = [
+                        torch.from_numpy(p).float()
+                        for p in parameters[:,:,i]
+                    ]
+                    viscosity = self.log_viscosity_fun(T, *params).numpy()
+                    all_curves[:,:,i] = viscosity
+
+            else:
+                all_curves = np.zeros((len(T), num_compositions, num_samples))
+                T = torch.tensor(T).float()
+                for i in range(num_samples):
+                    params = [
+                        torch.from_numpy(
+                            np.broadcast_to(p, (len(T), len(p))).T
+                        ).float()
+                        for p in parameters[:,:,i]
+                    ]
+                    viscosity = self.log_viscosity_fun(T, *params).numpy()
+                    all_curves[:,:,i] = viscosity.T
 
         else:
             all_curves = np.zeros((1, num_compositions, num_samples))
@@ -815,7 +861,12 @@ class ViscNet(MLP):
         bands = np.percentile(all_curves, q, axis=2)
         bands = np.transpose(bands, (2, 0, 1))
 
-        return bands
+        if num_compositions == 1:
+            bands = bands[0,:,:]
+
+        param_bands = {k: np.percentile(v, q, axis=1).T for k,v in dist.items()}
+
+        return bands, param_bands, dist
 
 
 class ViscNetHuber(ViscNet):
