@@ -60,6 +60,10 @@ class Predict(ABC):
 
 class MLP(pl.LightningModule, Predict):
     '''Base Predictor for models that use chemical composition as features.'''
+
+    learning_curve_train = []
+    learning_curve_val = []
+
     def __init__(self):
         super().__init__()
 
@@ -67,35 +71,54 @@ class MLP(pl.LightningModule, Predict):
         hparams = self.hparams
         input_dim = hparams['n_features']
 
-        for n in range(1, hparams['num_layers'] + 1):
+        for n in range(1, hparams.get('num_layers', 1) + 1):
 
-            l = [
-                nn.Linear(
-                    input_dim, int(hparams[f'layer_{n}_size']),
-                    bias=False if hparams[f'layer_{n}_batchnorm'] else True)
-            ]
+            batchnorm = hparams.get(f'layer_{n}_batchnorm', False)
+            bias = False if batchnorm else True
+            activation_name = hparams.get(f'layer_{n}_activation', 'Tanh')
+            layer_size = int(hparams.get(f'layer_{n}_size', 10))
+            dropout = hparams.get(f'layer_{n}_dropout', False)
 
-            if hparams[f'layer_{n}_batchnorm']:
-                l.append(nn.BatchNorm1d(int(hparams[f'layer_{n}_size'])))
+            l = [nn.Linear(input_dim, layer_size, bias=bias)]
 
-            if hparams[f'layer_{n}_dropout']:
-                l.append(nn.Dropout(hparams[f'layer_{n}_dropout']))
+            if batchnorm and activation_name != 'SELU':
+                l.append(nn.BatchNorm1d(layer_size))
 
-            if hparams[f'layer_{n}_activation'] == 'Tanh':
+            if dropout:
+                if activation_name == 'SELU':
+                    l.append(nn.AlphaDropout(dropout))
+                else:
+                    l.append(nn.Dropout(dropout))
+
+            if activation_name == 'Tanh':
                 l.append(nn.Tanh())
-            elif hparams[f'layer_{n}_activation'] == 'ReLU':
+                nn.init.xavier_uniform_(l[0].weight)
+            elif activation_name == 'Sigmoid':
+                l.append(nn.Sigmoid())
+                nn.init.xavier_uniform_(l[0].weight)
+            elif activation_name == 'ReLU':
                 l.append(nn.ReLU())
+                nn.init.kaiming_uniform_(l[0].weight, nonlinearity='relu')
+            elif activation_name == 'LeakyReLU':
+                l.append(nn.LeakyRelu())
+                nn.init.kaiming_uniform_(l[0].weight, nonlinearity='leaky_relu')
+            elif activation_name == 'GELU':
+                l.append(nn.GELU())
+            elif activation_name == 'SELU':
+                l.append(nn.SELU())
+            elif activation_name == 'ELU':
+                l.append(nn.ELU())
             else:
                 raise NotImplementedError(
                     'Please add this activation to the model class.'
                 )
 
             layers.append(nn.Sequential(*l))
-            input_dim = int(hparams[f'layer_{n}_size'])
+            input_dim = layer_size
 
         self.hidden_layers = nn.Sequential(*layers)
 
-        if hparams['loss'] == 'mse':
+        if hparams.get('loss', 'mse') == 'mse':
             self.loss_fun = F.mse_loss
         elif hparams['loss'] == 'huber':
             self.loss_fun = F.smooth_l1_loss
@@ -136,25 +159,27 @@ class MLP(pl.LightningModule, Predict):
 
     def configure_optimizers(self):
         if 'optimizer' not in self.hparams:
-            optimizer = SGD(self.parameters())
+            optimizer = SGD(self.parameters(), lr=1e-4)
 
         elif self.hparams['optimizer'] == 'SGD':
             optimizer = SGD( 
                 self.parameters(),
-                lr=self.hparams['lr'],
-                momentum=self.hparams['momentum'],
+                lr=self.hparams.get('lr', 0.0001),
+                momentum=self.hparams.get('momentum', 0),
             )
 
         elif self.hparams['optimizer'] == 'Adam':
             optimizer = Adam( 
                 self.parameters(),
-                lr=self.hparams['lr'],
+                lr=self.hparams.get('lr', 0.001),
+                eps=self.hparams.get('optimizer_Adam_eps', 1e-08),
             )
 
         elif self.hparams['optimizer'] == 'AdamW':
             optimizer = AdamW( 
                 self.parameters(),
-                lr=self.hparams['lr'],
+                lr=self.hparams.get('lr', 0.001),
+                eps=self.hparams.get('optimizer_Adam_eps', 1e-08),
             )
 
         return optimizer
@@ -166,6 +191,7 @@ class MLP(pl.LightningModule, Predict):
 
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+        self.learning_curve_train.append(float(avg_loss))
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
@@ -175,6 +201,7 @@ class MLP(pl.LightningModule, Predict):
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x["val_loss_step"] for x in outputs]).mean()
         self.log("val_loss", avg_loss)
+        self.learning_curve_val.append(float(avg_loss))
 
 
 class ViscNet(MLP):
