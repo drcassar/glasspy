@@ -339,10 +339,11 @@ class ViscNet(MLP):
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
+            return_tensor: bool = False,
     ):
         features = self.featurizer(composition, input_cols)
         features = torch.from_numpy(features).float()
-        parameters = self.viscosity_parameters_from_tensor(features, False)
+        parameters = self.viscosity_parameters_from_tensor(features, return_tensor)
         return parameters
 
     def viscosity_parameters_dist(
@@ -411,31 +412,53 @@ class ViscNet(MLP):
 
     def predict(
             self,
-            T,
+            T: Union[float, List[float], np.ndarray],
             composition: CompositionLike,
             input_cols: List[str] = [],
+            table_mode: bool = False,
     ):
-        features = self.featurizer(composition, input_cols)
-        x = np.concatenate((features, T), axis=1)
-        x = torch.from_numpy(x).float()
-        log_viscosity = self(x).detach().numpy()
+        parameters = self.viscosity_parameters(composition, input_cols, True)
+        num_compositions = len(list(parameters.values())[0])
+
+        with torch.no_grad():
+            if isinstance(T, Iterable):
+                if len(T) == num_compositions and table_mode:
+                    T = torch.tensor(T).float()
+                    params = [p for p in parameters.values()]
+                    log_viscosity = self.log_viscosity_fun(T, *params).numpy()
+
+                else:
+                    T = torch.tensor(T).float()
+                    params = [
+                        p.expand(len(T), len(p)).T
+                        for p in parameters.values()
+                    ]
+                    log_viscosity = self.log_viscosity_fun(T, *params).numpy()
+
+            else:
+                T = torch.tensor(T).float()
+                params = [p for p in parameters.values()]
+                log_viscosity = self.log_viscosity_fun(T, *params).numpy()
+
         return log_viscosity
 
     def predict_log10_viscosity(
             self,
-            T,
+            T: Union[float, List[float], np.ndarray],
             composition: CompositionLike,
             input_cols: List[str] = [],
+            table_mode: bool = False,
     ):
-        return self.predict(T, composition, input_cols)
+        return self.predict(T, composition, input_cols, table_mode)
 
     def predict_viscosity(
             self,
-            T,
+            T: Union[float, List[float], np.ndarray],
             composition: CompositionLike,
             input_cols: List[str] = [],
+            table_mode: bool = False,
     ):
-        return 10**self.predict(T, composition, input_cols)
+        return 10**self.predict(T, composition, input_cols, table_mode)
 
     def predict_fragility(
             self,
@@ -514,7 +537,7 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             confidence: float = 0.95, 
             num_samples: int = 100,
-            table_mode: bool = True,
+            table_mode: bool = False,
     ) -> Tuple[np.ndarray, Dict[str, np.ndarray], Dict[str, np.array]]:
         '''Compute the confidence bands of the viscosity prediction.
 
@@ -556,15 +579,15 @@ class ViscNet(MLP):
           param_bands:
             Dictionary with the uncertainty of the viscosity parameters for each
             composition.
-          dist:
+          pdistribution:
             Dictionary with the distribution of the viscosity parameters.
 
         '''
-        dist = self.viscosity_parameters_dist(composition, input_cols,
+        pdistribution = self.viscosity_parameters_dist(composition, input_cols,
                                               num_samples)
         parameters = []
         for param in self.parameters_range.keys():
-            parameters.append(dist[param])
+            parameters.append(pdistribution[param])
         parameters = np.array(parameters)
 
         num_compositions = parameters.shape[1]
@@ -610,9 +633,10 @@ class ViscNet(MLP):
         if num_compositions == 1:
             bands = bands[0,:,:]
 
-        param_bands = {k: np.percentile(v, q, axis=1).T for k,v in dist.items()}
+        param_bands = {k: np.percentile(v, q, axis=1).T
+                       for k,v in pdistribution.items()}
 
-        return bands, param_bands, dist
+        return bands, param_bands, pdistribution
 
 
 class ViscNetHuber(ViscNet):
