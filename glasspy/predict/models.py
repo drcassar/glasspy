@@ -100,7 +100,7 @@ class MLP(pl.LightningModule, Predict):
                 l.append(nn.ReLU())
                 nn.init.kaiming_uniform_(l[0].weight, nonlinearity='relu')
             elif activation_name == 'LeakyReLU':
-                l.append(nn.LeakyRelu())
+                l.append(nn.LeakyReLU())
                 nn.init.kaiming_uniform_(l[0].weight, nonlinearity='leaky_relu')
             elif activation_name == 'GELU':
                 l.append(nn.GELU())
