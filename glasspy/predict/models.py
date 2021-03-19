@@ -3,6 +3,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Dict, List, Tuple, NamedTuple, Union
+from math import sqrt
 import os
 import pickle
 
@@ -19,6 +20,9 @@ from glasspy.chemistry import featurizer, CompositionLike
 _basemodelpath = Path(os.path.dirname(__file__)) / 'models'
 
 class Domain(NamedTuple):
+    '''Simple class to store chemical domain information.
+
+    '''
     element: Dict[str, float] = None
     compound: Dict[str, float] = None
 
@@ -53,9 +57,71 @@ class Predict(ABC):
     def get_test_dataset(self):
         pass
 
-    def compute_metrics(self):
-        # TODO
-        pass
+    @staticmethod
+    def MSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        '''Computes the mean squared error.
+
+        Args:
+          y_true:
+            1D array with the true values of y.
+          y_pred:
+            1D array with the predicted values of y.
+
+        Returns:
+          The mean squared error.
+
+        '''
+        MSE = sum((y_true - y_pred)**2) / len(y_true)
+        return MSE
+
+    @staticmethod
+    def RMSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        '''Computes the root mean squared error.
+
+        Args:
+          y_true:
+            1D array with the true values of y.
+          y_pred:
+            1D array with the predicted values of y.
+
+        Returns:
+          The root mean squared error.
+
+        '''
+        RMSE = sqrt(sum((y_true - y_pred)**2) / len(y_true))
+        return RMSE
+
+    @staticmethod
+    def R2(
+            y_true: np.ndarray,
+            y_pred : np.ndarray,
+            one_param: bool = True
+    ) -> float:
+        '''Computes the coefficient of determination.
+
+        Args:
+          y_true:
+            1D array with the true values of y.
+          y_pred:
+            1D array with the predicted values of y.
+          one_param:
+            Determines the relationship between y_true and y_pred. If ´True´
+            then it is a relationship with one parameter (y_true = y_pred * c_0
+            + error). If ´False´ then it is a relationship with two parameters
+            (y_true = y_pred * c_0 + c_1 + error). In most of regression
+            problems, the first case is desired.
+
+        Returns:
+          The coefficient of determination.
+
+        '''
+        nominator = sum((y_true - y_pred)**2)
+        if one_param:
+            denominator = sum(y_true**2)
+        else:
+            denominator = sum((y_true - np.mean(y_true))**2)
+        R2 = 1 - nominator / denominator
+        return R2
 
 
 class MLP(pl.LightningModule, Predict):
