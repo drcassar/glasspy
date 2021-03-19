@@ -28,7 +28,9 @@ class Domain(NamedTuple):
 
 
 class Predict(ABC):
-    '''Base class for GlassPy predictors.'''
+    '''Base class for GlassPy predictors.
+
+    '''
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -125,8 +127,9 @@ class Predict(ABC):
 
 
 class MLP(pl.LightningModule, Predict):
-    '''Base Predictor for models that use chemical composition as features.'''
+    '''Base class for creating Multilayer Perceptrons.
 
+    '''
     learning_curve_train = []
     learning_curve_val = []
 
@@ -271,7 +274,23 @@ class MLP(pl.LightningModule, Predict):
 
 
 class ViscNet(MLP):
+    '''ViscNet predictor of viscosity and viscosity parameters.
 
+    ViscNet is a physics-informed neural network that has the MYEGA [1]
+    viscosity equation embedded in it. See Ref. [2] for the original
+    publication.
+
+    References:
+      [1] J.C. Mauro, Y. Yue, A.J. Ellison, P.K. Gupta, D.C. Allan, Viscosity of
+        glass-forming liquids., Proceedings of the National Academy of Sciences of
+        the United States of America. 106 (2009) 19780–19784.
+        https://doi.org/10.1073/pnas.0911705106.
+      [2] D.R. Cassar, ViscNet: Neural network for predicting the fragility
+        index and the temperature-dependency of viscosity, Acta Materialia. 206
+        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+        https://arxiv.org/abs/2007.03719
+
+    '''
     parameters_range = {
         'log_eta_inf': [-18, 5],
         'Tg': [400, 1400],
@@ -373,6 +392,9 @@ class ViscNet(MLP):
         self.x_std = torch.tensor(self.x_std).float()
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
+        '''Computes the base-10 logarithm of viscosity using the MYEGA equation.
+
+        '''
         log_viscosity = log_eta_inf + (12 - log_eta_inf)*(Tg / T) * \
             ((m / (12 - log_eta_inf) - 1) * (Tg / T - 1)).exp()
         return log_viscosity
@@ -382,7 +404,11 @@ class ViscNet(MLP):
             feature_tensor,
             return_tensor=False,
     ):
+        '''Predicts the viscosity parameters from a feature tensor.
 
+        Consider using other methods for predicting the viscosity parameters.
+
+        '''
         xf = self.hidden_layers((feature_tensor - self.x_mean) / self.x_std)
         xf = self.output_layer(xf)
 
@@ -407,6 +433,24 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             return_tensor: bool = False,
     ):
+        '''Compute the viscosity parameters.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          return_tensor:
+            If `True`, the dictionary values will be torch tensors. If `False`,
+            the dictionary values will be numpy arrays.
+
+        Returns:
+          Dictionary with the viscosity parameters as keys and the viscosity
+          parameters as values.
+
+        '''
         features = self.featurizer(composition, input_cols)
         features = torch.from_numpy(features).float()
         parameters = self.viscosity_parameters_from_tensor(features, return_tensor)
@@ -418,6 +462,24 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             num_samples: int = 100,
     ):
+        '''Compute the distribution of the viscosity parameters.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          num_samples:
+            Number of samples to draw for the Monte Carlo dropout computation.
+            The higher the better, but also more computational expensive.
+
+        Returns:
+          Dictionary with the viscosity parameters as keys and an array with the
+          the parameters distribution as values.
+
+        '''
         features = self.featurizer(composition, input_cols)
         features = torch.from_numpy(features).float()
 
@@ -445,7 +507,27 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             confidence: float = 0.95, 
             num_samples: int = 100,
-    ):
+    ) -> Dict[str, np.ndarray]:
+        '''Compute the confidence bands of the viscosity parameters.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          confidence:
+            Confidence level. Accepts values between 0 and 1 (inclusive).
+          num_samples:
+            Number of samples to draw for the Monte Carlo dropout computation.
+            The higher the better, but also more computational expensive.
+
+        Returns:
+          Dictionary with the viscosity parameters as keys and an array with the
+          the confidence band as values.
+
+        '''
         q = [(100 - 100 * confidence) / 2, 100 - (100 - 100 * confidence) / 2]
         dist = self.viscosity_parameters_dist(composition, input_cols,
                                               num_samples)
@@ -453,6 +535,18 @@ class ViscNet(MLP):
         return bands
 
     def forward(self, x):
+        '''Method used for training the neural network.
+
+        Consider using the other methods for prediction.
+
+        Args:
+          x:
+            Feature tensor with the last column being the temperature in Kelvin.
+
+        Returns
+          Tensor with the viscosity prediction.
+
+        '''
         T = x[:, -1].detach().clone()
         parameters = self.viscosity_parameters_from_tensor(x[:, :-1], True)
         log_viscosity = self.log_viscosity_fun(T, **parameters)
@@ -462,7 +556,21 @@ class ViscNet(MLP):
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
-    ):
+    ) -> np.ndarray:
+        '''Compute the chemical features used for viscosity prediction.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Array with the computed chemical features
+
+        '''
         (feat_array,
          feat_names) = featurizer.extract_chem_feats(composition, input_cols,
                                                      self.weighted_features,
@@ -483,6 +591,30 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             table_mode: bool = False,
     ):
+        '''Prediction of the base-10 logarithm of viscosity.
+
+        Args:
+          T:
+            Temperature to compute the viscosity. If this is a numpy array, it
+            must have only one dimension.
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          table_mode:
+            This argument is only relevant when the number of compositions is
+            the same as the number of items in the temperature list. If True,
+            then the code assumes that each composition is associated with its
+            own temperature, which would be the case of tabular data. If False,
+            then no such assumption is made and all temperatures will be
+            considered for all compositions.
+
+        Returns:
+          Predicted values of the base-10 logarithm of viscosity.
+
+        '''
         parameters = self.viscosity_parameters(composition, input_cols, True)
         num_compositions = len(list(parameters.values())[0])
 
@@ -515,6 +647,30 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             table_mode: bool = False,
     ):
+        '''Prediction of the base-10 logarithm of viscosity.
+
+        Args:
+          T:
+            Temperature to compute the viscosity. If this is a numpy array, it
+            must have only one dimension.
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          table_mode:
+            This argument is only relevant when the number of compositions is
+            the same as the number of items in the temperature list. If True,
+            then the code assumes that each composition is associated with its
+            own temperature, which would be the case of tabular data. If False,
+            then no such assumption is made and all temperatures will be
+            considered for all compositions.
+
+        Returns:
+          Predicted values of the base-10 logarithm of viscosity.
+
+        '''
         return self.predict(T, composition, input_cols, table_mode)
 
     def predict_viscosity(
@@ -524,6 +680,30 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             table_mode: bool = False,
     ):
+        '''Prediction of the viscosity.
+
+        Args:
+          T:
+            Temperature to compute the viscosity. If this is a numpy array, it
+            must have only one dimension.
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          table_mode:
+            This argument is only relevant when the number of compositions is
+            the same as the number of items in the temperature list. If True,
+            then the code assumes that each composition is associated with its
+            own temperature, which would be the case of tabular data. If False,
+            then no such assumption is made and all temperatures will be
+            considered for all compositions.
+
+        Returns:
+          Predicted values of the viscosity.
+
+        '''
         return 10**self.predict(T, composition, input_cols, table_mode)
 
     def predict_fragility(
@@ -531,6 +711,20 @@ class ViscNet(MLP):
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
+        '''Prediction of the liquid fragility.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Predicted values of the liquid fragility.
+
+        '''
         parameters = self.viscosity_parameters(composition, input_cols)
         fragility = parameters['m']
         return fragility
@@ -540,6 +734,20 @@ class ViscNet(MLP):
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
+        '''Prediction of the glass transition temperature.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Predicted values of the glass transition temperature.
+
+        '''
         parameters = self.viscosity_parameters(composition, input_cols)
         Tg = parameters['Tg']
         return Tg
@@ -549,6 +757,20 @@ class ViscNet(MLP):
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
+        '''Prediction of the base-10 logarithm of the asymptotic viscosity.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Predicted values of the base-10 logarithm of the asymptotic viscosity.
+
+        '''
         parameters = self.viscosity_parameters(composition, input_cols)
         log_eta_inf = parameters['log_eta_inf']
         return log_eta_inf
@@ -558,6 +780,20 @@ class ViscNet(MLP):
             composition: CompositionLike,
             input_cols: List[str] = [],
     ):
+        '''Prediction of the asymptotic viscosity.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Predicted values of the asymptotic viscosity.
+
+        '''
         return 10**self.predict_log10_eta_infinity(composition, input_cols)
 
     def predict_Tg_unc(
@@ -567,6 +803,25 @@ class ViscNet(MLP):
             confidence: float = 0.95, 
             num_samples: int = 100,
     ):
+        '''Confidence bands of the glass transition temperature.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          confidence:
+            Confidence level. Accepts values between 0 and 1 (inclusive).
+          num_samples:
+            Number of samples to draw for the Monte Carlo dropout computation.
+            The higher the better, but also more computational expensive.
+
+        Returns:
+          Confidence bands of the glass transition temperature.
+
+        '''
         parameters_unc = self.viscosity_parameters_unc(composition, input_cols,
                                                        confidence, num_samples)
         Tg = parameters_unc['Tg']
@@ -579,6 +834,25 @@ class ViscNet(MLP):
             confidence: float = 0.95, 
             num_samples: int = 100,
     ):
+        '''Confidence bands of the liquid fragility.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          confidence:
+            Confidence level. Accepts values between 0 and 1 (inclusive).
+          num_samples:
+            Number of samples to draw for the Monte Carlo dropout computation.
+            The higher the better, but also more computational expensive.
+
+        Returns:
+          Confidence bands of the liquid fragility.
+
+        '''
         parameters_unc = self.viscosity_parameters_unc(composition, input_cols,
                                                        confidence, num_samples)
         m = parameters['m']
@@ -590,7 +864,26 @@ class ViscNet(MLP):
             input_cols: List[str] = [],
             confidence: float = 0.95, 
             num_samples: int = 100,
-    ):
+    ) -> np.ndarray:
+        '''Confidence bands of the base-10 logarithm of the asymptotic viscosity.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          confidence:
+            Confidence level. Accepts values between 0 and 1 (inclusive).
+          num_samples:
+            Number of samples to draw for the Monte Carlo dropout computation.
+            The higher the better, but also more computational expensive.
+
+        Returns:
+          Confidence bands of the base-10 logarithm of the asymptotic viscosity.
+
+        '''
         parameters_unc = self.viscosity_parameters_unc(composition, input_cols,
                                                        confidence, num_samples)
         log_eta_inf = parameters_unc['log_eta_inf']
@@ -615,7 +908,7 @@ class ViscNet(MLP):
             Any composition like object.
           input_cols:
             List of strings representing the chemical entities related to each
-            column of 'composition'. Necessary only when 'composition' is a list
+            column of `composition`. Necessary only when `composition` is a list
             or array, ignored otherwise.
           confidence:
             Confidence level. Accepts values between 0 and 1 (inclusive).
@@ -630,7 +923,7 @@ class ViscNet(MLP):
             then no such assumption is made and all temperatures will be
             considered for all compositions.
 
-        Returns
+        Returns:
           bands:
             Confidence bands of the base-10 logarithm of viscosity. If more than
             one composition was given, then this is a 3-dimension numpy array.
@@ -704,8 +997,41 @@ class ViscNet(MLP):
 
         return bands, param_bands, pdistribution
 
+@staticmethod
+def citation(bibtex : bool = False) -> str:
+    if bibtex:
+        c = "@article{Cassar_2021, title={ViscNet: Neural network for "
+        "predicting the fragility index and the temperature-dependency of "
+        "viscosity}, volume={206}, ISSN={1359-6454}, "
+        "DOI={10.1016/j.actamat.2020.116602}, journal={Acta Materialia}, "
+        "author={Cassar, Daniel R.}, year={2021}, month={Mar}, pages={116602}}"
+    else:
+        c = "D.R. Cassar, ViscNet: Neural network for predicting the fragility "
+        "index and the temperature-dependency of viscosity, Acta Materialia. "
+        "206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602."
+    return c
+
 
 class ViscNetHuber(ViscNet):
+    '''ViscNet-Huber predictor of viscosity and viscosity parameters.
+
+    ViscNet-Huber is a physics-informed neural network that has the MYEGA [1]
+    viscosity equation embedded in it. The difference between this model and
+    ViscNet is the loss function: this model has a robust smooth-L1 loss
+    function, while ViscNet has a MSE (L2) loss function. See Ref. [2] for the
+    original publication.
+
+    References:
+      [1] J.C. Mauro, Y. Yue, A.J. Ellison, P.K. Gupta, D.C. Allan, Viscosity of
+        glass-forming liquids., Proceedings of the National Academy of Sciences of
+        the United States of America. 106 (2009) 19780–19784.
+        https://doi.org/10.1073/pnas.0911705106.
+      [2] D.R. Cassar, ViscNet: Neural network for predicting the fragility
+        index and the temperature-dependency of viscosity, Acta Materialia. 206
+        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+        https://arxiv.org/abs/2007.03719
+
+    '''
     def __init__(self):
         super().__init__()
 
@@ -718,6 +1044,27 @@ class ViscNetHuber(ViscNet):
 
 
 class ViscNetVFT(ViscNet):
+    '''ViscNet-VFT predictor of viscosity and viscosity parameters.
+
+    ViscNet-VFT is a physics-informed neural network that has the VFT [1-3]
+    viscosity equation embedded in it. See Ref. [4] for the original
+    publication.
+
+    References:
+      [1] H. Vogel, Das Temperatureabhängigketsgesetz der Viskosität von
+        Flüssigkeiten, Physikalische Zeitschrift. 22 (1921) 645–646.
+      [2] G.S. Fulcher, Analysis of recent measurements of the viscosity of
+        glasses, Journal of the American Ceramic Society. 8 (1925) 339–355.
+        https://doi.org/10.1111/j.1151-2916.1925.tb16731.x.
+      [3] G. Tammann, W. Hesse, Die Abhängigkeit der Viscosität von der
+        Temperatur bie unterkühlten Flüssigkeiten, Z. Anorg. Allg. Chem. 156
+        (1926) 245–257. https://doi.org/10.1002/zaac.19261560121.
+      [4] D.R. Cassar, ViscNet: Neural network for predicting the fragility
+        index and the temperature-dependency of viscosity, Acta Materialia. 206
+        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+        https://arxiv.org/abs/2007.03719
+
+    '''
     def __init__(self):
         super().__init__()
 
@@ -726,6 +1073,19 @@ class ViscNetVFT(ViscNet):
         self.load_state_dict(state_dict)
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
+        '''Computes the base-10 logarithm of viscosity using the VFT equation.
+
+        Reference:
+          [1] H. Vogel, Das Temperatureabhängigketsgesetz der Viskosität von
+            Flüssigkeiten, Physikalische Zeitschrift. 22 (1921) 645–646.
+          [2] G.S. Fulcher, Analysis of recent measurements of the viscosity of
+            glasses, Journal of the American Ceramic Society. 8 (1925) 339–355.
+            https://doi.org/10.1111/j.1151-2916.1925.tb16731.x.
+          [3] G. Tammann, W. Hesse, Die Abhängigkeit der Viscosität von der
+            Temperatur bie unterkühlten Flüssigkeiten, Z. Anorg. Allg. Chem. 156
+            (1926) 245–257. https://doi.org/10.1002/zaac.19261560121.
+
+        '''
         log_viscosity = log_eta_inf + (12 - log_eta_inf)**2 / \
             (m * (T / Tg - 1) + (12 - log_eta_inf))
         return log_viscosity
