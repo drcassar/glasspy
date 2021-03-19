@@ -997,19 +997,21 @@ class ViscNet(MLP):
 
         return bands, param_bands, pdistribution
 
-@staticmethod
-def citation(bibtex : bool = False) -> str:
-    if bibtex:
-        c = "@article{Cassar_2021, title={ViscNet: Neural network for "
-        "predicting the fragility index and the temperature-dependency of "
-        "viscosity}, volume={206}, ISSN={1359-6454}, "
-        "DOI={10.1016/j.actamat.2020.116602}, journal={Acta Materialia}, "
-        "author={Cassar, Daniel R.}, year={2021}, month={Mar}, pages={116602}}"
-    else:
-        c = "D.R. Cassar, ViscNet: Neural network for predicting the fragility "
-        "index and the temperature-dependency of viscosity, Acta Materialia. "
-        "206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602."
-    return c
+    @staticmethod
+    def citation(bibtex : bool = False) -> str:
+        if bibtex:
+            c = "@article{Cassar_2021, title={ViscNet: Neural network for "
+            "predicting the fragility index and the temperature-dependency of "
+            "viscosity}, volume={206}, ISSN={1359-6454}, "
+            "DOI={10.1016/j.actamat.2020.116602}, journal={Acta Materialia}, "
+            "author={Cassar, Daniel R.}, year={2021}, month={Mar}, "
+            "pages={116602}}"
+        else:
+            c = "D.R. Cassar, ViscNet: Neural network for predicting the "
+            "fragility index and the temperature-dependency of viscosity, "
+            "Acta Materialia. 206 (2021) 116602. "
+            "https://doi.org/10.1016/j.actamat.2020.116602."
+        return c
 
 
 class ViscNetHuber(ViscNet):
