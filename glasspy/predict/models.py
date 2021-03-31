@@ -74,7 +74,10 @@ class Predict(ABC):
 
         '''
         MSE = sum((y_true - y_pred)**2) / len(y_true)
-        return MSE
+        try:
+            return MSE[0]
+        except TypeError:
+            return MSE
 
     @staticmethod
     def RMSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -91,7 +94,51 @@ class Predict(ABC):
 
         '''
         RMSE = sqrt(sum((y_true - y_pred)**2) / len(y_true))
-        return RMSE
+        try:
+            return RMSE[0]
+        except TypeError:
+            return RMSE
+
+    @staticmethod
+    def RD(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        '''Computes the relative deviation.
+
+        Args:
+          y_true:
+            1D array with the true values of y.
+          y_pred:
+            1D array with the predicted values of y.
+
+        Returns:
+          The relative deviation.
+
+        '''
+        RD = (100 / len(y_true)) * sum(abs(y_true - y_pred) / y_true)
+        try:
+            return RD[0]
+        except TypeError:
+            return RD
+
+    @staticmethod
+    def RRMSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        '''Computes the relative root mean squared error.
+
+        Args:
+          y_true:
+            1D array with the true values of y.
+          y_pred:
+            1D array with the predicted values of y.
+
+        Returns:
+          The relative root mean squared error.
+
+        '''
+        y_mean = sum(y_true) / len(y_true)
+        RRMSE = sqrt(sum((y_true - y_pred)**2) / sum((y_true - y_mean)**2))
+        try:
+            return RRMSE[0]
+        except TypeError:
+            return RRMSE
 
     @staticmethod
     def R2(
@@ -123,7 +170,10 @@ class Predict(ABC):
         else:
             denominator = sum((y_true - np.mean(y_true))**2)
         R2 = 1 - nominator / denominator
-        return R2
+        try:
+            return R2[0]
+        except TypeError:
+            return R2
 
 
 class MLP(pl.LightningModule, Predict):
