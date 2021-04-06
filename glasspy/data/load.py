@@ -40,14 +40,22 @@ def sciglass(load_compounds=False, load_atomic_fraction=True):
         CTE : linear coefficient of thermal expansion below the glass transition
             temperature. Unit: K^{-1}.
 
-        ElasticModulus : Elastic of Young's Modulus. Unit: GPa.
+        Density_293K : density at 293 K. Unit: g cm^{-3}.
+
+        ElasticModulus : Elastic or Young's modulus. Unit: GPa.
+
+        ShearModulusGPA : Shear modulus. Unit: GPa.
 
         Microhardness : hardness measured using Vickers or Knoop indenters.
             Unit: GPa.
 
+        PoissonRatio : Poisson's ratio. Dimmensionless.
+
         Tg : glass transition temperature. Unit: K.
 
         Tliquidus: liquidus temperature. Unit: K.
+
+        Tmelt: melting temperature. Unit: K.
 
         T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
             viscosity (in Pa.s) is "n". Example: T4 is the temperature where
@@ -138,14 +146,22 @@ def sciglassOxides(
         CTE : linear coefficient of thermal expansion below the glass transition
             temperature. Unit: K^{-1}.
 
-        ElasticModulus : Elastic of Young's Modulus. Unit: GPa.
+        Density_293K : density at 293 K. Unit: g cm^{-3}.
+
+        ElasticModulus : Elastic or Young's modulus. Unit: GPa.
+
+        ShearModulusGPA : Shear modulus. Unit: GPa.
 
         Microhardness : hardness measured using Vickers or Knoop indenters.
             Unit: GPa.
 
+        PoissonRatio : Poisson's ratio. Dimmensionless.
+
         Tg : glass transition temperature. Unit: K.
 
         Tliquidus: liquidus temperature. Unit: K.
+
+        Tmelt: melting temperature. Unit: K.
 
         T0 to T12 : "Tn" is the temperature where the base-10 logarithm of
             viscosity (in Pa.s) is "n". Example: T4 is the temperature where
