@@ -38,7 +38,7 @@ _data = np.genfromtxt(
     # dtype=[(p, 'float64') for p in _prop],
 )
 
-_all_aggregate_functions = ["sum", "mean", "min", "max", "std"]
+_all_aggregate_functions = ["sum", "mean", "min", "max", "std", "std1"]
 
 prop_idx = {p: i for i, p in enumerate(_prop)}
 
@@ -74,6 +74,8 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
     elif function_name == "min":
         return np.nanmin(array, axis=1)
     elif function_name == "std":
+        return np.nanstd(array, axis=1, ddof=0)
+    elif function_name == "std1":
         return np.nanstd(array, axis=1, ddof=1)
     else:
         raise ValueError("Invalid function name")
