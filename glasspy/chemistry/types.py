@@ -1,4 +1,4 @@
-'''Provides CompositionLike to check if an object is a valid chemical object.
+"""Provides CompositionLike to check if an object is a valid chemical object.
 
 You can represent a chemical substance in many ways using Python objects.
 GlassPy accepts 8 different:
@@ -50,7 +50,7 @@ GlassPy accepts 8 different:
   information related to the chemical composition of the substances can be
   present in the DataFrame.
 
-'''
+"""
 from typing import Union, List, Dict
 
 import numpy as np
@@ -58,12 +58,12 @@ import pandas as pd
 
 
 CompositionLike = Union[
-    str,                     
-    List[float],             
-    List[List[float]],       
-    np.ndarray,              
-    Dict[str, float],        
-    Dict[str, List[float]],  
-    Dict[str, np.ndarray],   
-    pd.DataFrame,            
+    str,
+    List[float],
+    List[List[float]],
+    np.ndarray,
+    Dict[str, float],
+    Dict[str, List[float]],
+    Dict[str, np.ndarray],
+    pd.DataFrame,
 ]

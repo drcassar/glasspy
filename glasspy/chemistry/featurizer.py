@@ -9,14 +9,14 @@ from .types import CompositionLike
 
 
 __cur_path = os.path.dirname(__file__)
-__chem_prop_path = os.path.join(__cur_path, 'data/chemical_properties.csv')
+__chem_prop_path = os.path.join(__cur_path, "data/chemical_properties.csv")
 
 __num_chem_features = 56
 
 _elements = np.genfromtxt(
     __chem_prop_path,
     skip_header=1,
-    delimiter=',',
+    delimiter=",",
     usecols=0,
     dtype=str,
 )
@@ -24,7 +24,7 @@ _elements = np.genfromtxt(
 
 _prop = np.genfromtxt(
     __chem_prop_path,
-    delimiter=',',
+    delimiter=",",
     usecols=list(range(1, __num_chem_features + 1)),
     dtype=str,
     max_rows=1,
@@ -33,19 +33,20 @@ _prop = np.genfromtxt(
 _data = np.genfromtxt(
     __chem_prop_path,
     skip_header=1,
-    delimiter=',',
+    delimiter=",",
     usecols=list(range(1, __num_chem_features + 1)),
     # dtype=[(p, 'float64') for p in _prop],
 )
 
-_all_aggregate_functions = ['sum', 'mean', 'min', 'max', 'std']
+_all_aggregate_functions = ["sum", "mean", "min", "max", "std"]
 
-prop_idx = {p:i for i,p in enumerate(_prop)}
+prop_idx = {p: i for i, p in enumerate(_prop)}
 
-all_chem_features = [(p,a) for p,a in product(_prop, _all_aggregate_functions)]
+all_chem_features = [(p, a) for p, a in product(_prop, _all_aggregate_functions)]
+
 
 def _aggregate(array: np.array, function_name: str) -> np.ndarray:
-    '''Apply an aggregator function to an array.
+    """Apply an aggregator function to an array.
 
     Args:
       array:
@@ -63,31 +64,31 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
       ValueError:
         Raises this error if the function_name is not valid.
 
-    '''
-    if function_name == 'sum':
+    """
+    if function_name == "sum":
         return np.nansum(array, axis=1)
-    elif function_name == 'mean':
+    elif function_name == "mean":
         return np.nanmean(array, axis=1)
-    elif function_name == 'max':
+    elif function_name == "max":
         return np.nanmax(array, axis=1)
-    elif function_name == 'min':
+    elif function_name == "min":
         return np.nanmin(array, axis=1)
-    elif function_name == 'std':
+    elif function_name == "std":
         return np.nanstd(array, axis=1)
     else:
-        raise ValueError('Invalid function name')
+        raise ValueError("Invalid function name")
 
 
 def extract_chem_feats(
-        x: CompositionLike,
-        input_cols: List[str] = [],
-        weighted_features: List[Tuple[str,str]] = [],
-        absolute_features: List[Tuple[str,str]] = [],
-        rescale_to_sum: Union[float,int,bool] = 1,
-        sep: str = '|',
-        check_invalid: bool = True,
+    x: CompositionLike,
+    input_cols: List[str] = [],
+    weighted_features: List[Tuple[str, str]] = [],
+    absolute_features: List[Tuple[str, str]] = [],
+    rescale_to_sum: Union[float, int, bool] = 1,
+    sep: str = "|",
+    check_invalid: bool = True,
 ) -> Tuple[np.ndarray, List[str]]:
-    '''Extract chemical features from a chemical object.
+    """Extract chemical features from a chemical object.
 
     For a list of all possible features that can be extracted, check the
     variable all_chem_features.
@@ -134,22 +135,21 @@ def extract_chem_feats(
       ValueError:
         Raised when invalid features are present and check_invalid is True.
 
-    '''
+    """
     msg = '"rescale_to_sum" must be a positive number, try 1 or 100'
     assert rescale_to_sum > 0, msg
 
-    _, o_elements = to_element_array(x, input_cols,
-                                     output_element_cols='default')
+    _, o_elements = to_element_array(x, input_cols, output_element_cols="default")
 
     if not set(o_elements).issubset(set(_elements)):
         outofdomain = set(o_elements) - set(_elements)
         raise ValueError(
-            f'Cannot featurize compositions with these elements: {outofdomain}'
+            f"Cannot featurize compositions with these elements: {outofdomain}"
         )
 
     if check_invalid:
         unavailable_features = []
-        el_idx = tuple([i for i,v in enumerate(_elements) if v in o_elements])
+        el_idx = tuple([i for i, v in enumerate(_elements) if v in o_elements])
         for feat, _ in weighted_features:
             if any(np.isnan(_data[el_idx, prop_idx[feat]])):
                 unavailable_features.append(feat)
@@ -157,10 +157,9 @@ def extract_chem_feats(
             if any(np.isnan(_data[el_idx, prop_idx[feat]])):
                 unavailable_features.append(feat)
         if len(unavailable_features) > 0:
-            raise ValueError(f'Invalid features: {set(unavailable_features)}')
-        
-    array, elements = to_element_array(x, input_cols, list(_elements),
-                                       rescale_to_sum)
+            raise ValueError(f"Invalid features: {set(unavailable_features)}")
+
+    array, elements = to_element_array(x, input_cols, list(_elements), rescale_to_sum)
 
     pos = 0
     feature_columns = []
@@ -171,14 +170,14 @@ def extract_chem_feats(
 
     array[~(array > 0)] = np.nan
     for feat, stat in weighted_features:
-        features[:,pos] = _aggregate(array * _data[:,prop_idx[feat]], stat)
-        feature_columns.append(f'W{sep}{feat}{sep}{stat}')
+        features[:, pos] = _aggregate(array * _data[:, prop_idx[feat]], stat)
+        feature_columns.append(f"W{sep}{feat}{sep}{stat}")
         pos += 1
 
     array[array > 0] = 1
     for feat, stat in absolute_features:
-        features[:,pos] = _aggregate(array * _data[:,prop_idx[feat]], stat)
-        feature_columns.append(f'A{sep}{feat}{sep}{stat}')
+        features[:, pos] = _aggregate(array * _data[:, prop_idx[feat]], stat)
+        feature_columns.append(f"A{sep}{feat}{sep}{stat}")
         pos += 1
 
     return features, feature_columns
