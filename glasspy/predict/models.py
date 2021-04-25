@@ -76,7 +76,7 @@ class Predict(ABC):
         MSE = sum((y_true - y_pred)**2) / len(y_true)
         try:
             return MSE[0]
-        except TypeError:
+        except (TypeError, IndexError):
             return MSE
 
     @staticmethod
@@ -96,7 +96,7 @@ class Predict(ABC):
         RMSE = sqrt(sum((y_true - y_pred)**2) / len(y_true))
         try:
             return RMSE[0]
-        except TypeError:
+        except (TypeError, IndexError):
             return RMSE
 
     @staticmethod
@@ -116,7 +116,7 @@ class Predict(ABC):
         RD = (100 / len(y_true)) * sum(abs(y_true - y_pred) / y_true)
         try:
             return RD[0]
-        except TypeError:
+        except (TypeError, IndexError):
             return RD
 
     @staticmethod
@@ -137,7 +137,7 @@ class Predict(ABC):
         RRMSE = sqrt(sum((y_true - y_pred)**2) / sum((y_true - y_mean)**2))
         try:
             return RRMSE[0]
-        except TypeError:
+        except (TypeError, IndexError):
             return RRMSE
 
     @staticmethod
@@ -172,7 +172,7 @@ class Predict(ABC):
         R2 = 1 - nominator / denominator
         try:
             return R2[0]
-        except TypeError:
+        except (TypeError, IndexError):
             return R2
 
 
