@@ -74,7 +74,7 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
     elif function_name == "min":
         return np.nanmin(array, axis=1)
     elif function_name == "std":
-        return np.nanstd(array, axis=1)
+        return np.nanstd(array, axis=1, ddof=1)
     else:
         raise ValueError("Invalid function name")
 
