@@ -200,7 +200,7 @@ class MLP(pl.LightningModule, Predict):
 
             l = [nn.Linear(input_dim, layer_size, bias=bias)]
 
-            if batchnorm and activation_name != 'SELU':
+            if batchnorm and (activation_name != 'SELU'):
                 l.append(nn.BatchNorm1d(layer_size))
 
             if dropout:
@@ -283,21 +283,21 @@ class MLP(pl.LightningModule, Predict):
         elif self.hparams['optimizer'] == 'SGD':
             optimizer = SGD( 
                 self.parameters(),
-                lr=self.hparams.get('lr', 0.0001),
+                lr=self.hparams.get('lr', 1e-4),
                 momentum=self.hparams.get('momentum', 0),
             )
 
         elif self.hparams['optimizer'] == 'Adam':
             optimizer = Adam( 
                 self.parameters(),
-                lr=self.hparams.get('lr', 0.001),
+                lr=self.hparams.get('lr', 1e-3),
                 eps=self.hparams.get('optimizer_Adam_eps', 1e-08),
             )
 
         elif self.hparams['optimizer'] == 'AdamW':
             optimizer = AdamW( 
                 self.parameters(),
-                lr=self.hparams.get('lr', 0.001),
+                lr=self.hparams.get('lr', 1e-3),
                 eps=self.hparams.get('optimizer_Adam_eps', 1e-08),
             )
 
