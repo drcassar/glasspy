@@ -1091,6 +1091,7 @@ class ViscNetHuber(ViscNet):
     def __init__(self):
         super().__init__()
 
+        self.hparams = self.hparams.copy()
         self.hparams['loss'] = 'huber'
         self.loss_fun = F.smooth_l1_loss
 
