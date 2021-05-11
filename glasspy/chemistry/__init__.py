@@ -1,3 +1,3 @@
-from .types import CompositionLike
+from .types import CompositionLike, ChemArray
 
-__all__ = [CompositionLike]
+__all__ = [CompositionLike, ChemArray]

@@ -141,7 +141,7 @@ def extract_chem_feats(
     msg = '"rescale_to_sum" must be a positive number, try 1 or 100'
     assert rescale_to_sum > 0, msg
 
-    _, o_elements = to_element_array(x, input_cols, output_element_cols="default")
+    o_elements = to_element_array(x, input_cols, output_element_cols="default").cols
 
     if not set(o_elements).issubset(set(_elements)):
         outofdomain = set(o_elements) - set(_elements)
@@ -161,24 +161,24 @@ def extract_chem_feats(
         if len(unavailable_features) > 0:
             raise ValueError(f"Invalid features: {set(unavailable_features)}")
 
-    array, elements = to_element_array(x, input_cols, list(_elements), rescale_to_sum)
+    chemarray = to_element_array(x, input_cols, list(_elements), rescale_to_sum)
 
     pos = 0
     feature_columns = []
     features = np.zeros(
-        (len(array), len(absolute_features) + len(weighted_features)),
+        (len(chemarray), len(absolute_features) + len(weighted_features)),
         dtype=float,
     )
 
-    array[~(array > 0)] = np.nan
+    chemarray[~(chemarray > 0)] = np.nan
     for feat, stat in weighted_features:
-        features[:, pos] = _aggregate(array * _data[:, prop_idx[feat]], stat)
+        features[:, pos] = _aggregate(chemarray * _data[:, prop_idx[feat]], stat)
         feature_columns.append(f"W{sep}{feat}{sep}{stat}")
         pos += 1
 
-    array[array > 0] = 1
+    chemarray[chemarray > 0] = 1
     for feat, stat in absolute_features:
-        features[:, pos] = _aggregate(array * _data[:, prop_idx[feat]], stat)
+        features[:, pos] = _aggregate(chemarray * _data[:, prop_idx[feat]], stat)
         feature_columns.append(f"A{sep}{feat}{sep}{stat}")
         pos += 1
 
