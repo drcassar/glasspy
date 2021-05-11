@@ -183,11 +183,10 @@ class MLP(pl.LightningModule, Predict):
     learning_curve_train = []
     learning_curve_val = []
 
-    def __init__(self):
+    def __init__(self, hparams):
         super().__init__()
 
         layers = []
-        hparams = self.hparams
         input_dim = hparams['n_features']
 
         for n in range(1, hparams.get('num_layers', 1) + 1):
@@ -245,11 +244,6 @@ class MLP(pl.LightningModule, Predict):
             raise NotImplementedError(
                 'Please add this loss function to the model class.'
             )
-
-    @property
-    @abstractmethod
-    def hparams(self):
-        pass
 
     @property
     def domain(self) -> Domain:
@@ -323,135 +317,44 @@ class MLP(pl.LightningModule, Predict):
         self.learning_curve_val.append(float(avg_loss))
 
 
-class ViscNet(MLP):
-    '''ViscNet predictor of viscosity and viscosity parameters.
-
-    ViscNet is a physics-informed neural network that has the MYEGA [1]
-    viscosity equation embedded in it. See Ref. [2] for the original
-    publication.
+class BaseViscNet(MLP):
+    """Base class for creating ViscNet-like models.
 
     References:
-      [1] J.C. Mauro, Y. Yue, A.J. Ellison, P.K. Gupta, D.C. Allan, Viscosity of
-        glass-forming liquids., Proceedings of the National Academy of Sciences of
-        the United States of America. 106 (2009) 19780–19784.
-        https://doi.org/10.1073/pnas.0911705106.
-      [2] D.R. Cassar, ViscNet: Neural network for predicting the fragility
+      [1] D.R. Cassar, ViscNet: Neural network for predicting the fragility
         index and the temperature-dependency of viscosity, Acta Materialia. 206
         (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
         https://arxiv.org/abs/2007.03719
 
-    '''
-    parameters_range = {
-        'log_eta_inf': [-18, 5],
-        'Tg': [400, 1400],
-        'm': [10, 130],
-    }
+    """
 
-    hparams = {
-        'batch_size': 64,
-        'layer_1_activation': 'ReLU',
-        'layer_1_batchnorm': False,
-        'layer_1_dropout': 0.07942161101271952,
-        'layer_1_size': 192,
-        'layer_2_activation': 'Tanh',
-        'layer_2_batchnorm': False,
-        'layer_2_dropout': 0.05371454289414608,
-        'layer_2_size': 48,
-        'loss': 'mse',
-        'lr': 0.0011695226458761677,
-        'max_epochs': 500,
-        'n_features': 35,
-        'num_layers': 2,
-        'optimizer': 'AdamW',
-        'patience': 9,
-    }
+    def __init__(self, parameters_range, hparams={}, x_mean=0, x_std=1):
+        super().__init__(hparams)
 
-    absolute_features = [
-        ('ElectronAffinity', 'std1'),
-        ('FusionEnthalpy', 'std1'),
-        ('GSenergy_pa', 'std1'),
-        ('GSmagmom', 'std1'),
-        ('NdUnfilled', 'std1'),
-        ('NfValence', 'std1'),
-        ('NpUnfilled', 'std1'),
-        ('atomic_radius_rahm', 'std1'),
-        ('c6_gb', 'std1'),
-        ('lattice_constant', 'std1'),
-        ('mendeleev_number', 'std1'),
-        ('num_oxistates', 'std1'),
-        ('nvalence', 'std1'),
-        ('vdw_radius_alvarez', 'std1'),
-        ('vdw_radius_uff', 'std1'),
-        ('zeff', 'std1'),
-    ]
+        self.hparams = hparams
+        self.x_mean = x_mean
+        self.x_std = x_mean
+        self.parameters_range = parameters_range
 
-    weighted_features = [
-        ('FusionEnthalpy', 'min'),
-        ('GSbandgap', 'max'),
-        ('GSmagmom', 'mean'),
-        ('GSvolume_pa', 'max'),
-        ('MiracleRadius', 'std1'),
-        ('NValence', 'max'),
-        ('NValence', 'min'),
-        ('NdUnfilled', 'max'),
-        ('NdValence', 'max'),
-        ('NsUnfilled', 'max'),
-        ('SpaceGroupNumber', 'max'),
-        ('SpaceGroupNumber', 'min'),
-        ('atomic_radius', 'max'),
-        ('atomic_volume', 'max'),
-        ('c6_gb', 'max'),
-        ('c6_gb', 'min'),
-        ('max_ionenergy', 'min'),
-        ('num_oxistates', 'max'),
-        ('nvalence', 'min'),
-    ]
-
-    x_mean = [5.7542068e+01, 2.2090124e+01, 2.0236173e+00, 3.6860932e-02,
-              3.2620981e-01, 1.4419103e+00, 2.0164611e+00, 3.4407539e+01,
-              1.2352635e+03, 1.4792695e+00, 4.2045139e+01, 8.4130961e-01,
-              2.3045063e+00, 4.7984661e+01, 5.6983612e+01, 1.1145602e+00,
-              9.2185795e-02, 2.1363457e-01, 2.2581025e-04, 5.8149724e+00,
-              1.2964197e+01, 3.7008467e+00, 1.3742505e-01, 1.8369867e-02,
-              3.2303229e-01, 7.1324579e-02, 5.0019447e+01, 4.3720217e+00,
-              3.6445999e+01, 8.4036522e+00, 2.0281389e+02, 7.5613613e+00,
-              1.2259276e+02, 6.7182720e-01, 1.0508456e-01]
-
-    x_std = [7.6420674e+00, 4.7180834e+00, 4.5827568e-01, 1.6872969e-01,
-             9.7033477e-01, 2.7695282e+00, 3.3152765e-01, 6.4520807e+00,
-             6.3392188e+02, 4.0605769e-01, 1.1776709e+01, 2.8129578e-01,
-             7.9213607e-01, 7.5883222e+00, 1.1334700e+01, 2.8822860e-01,
-             4.4787191e-02, 1.1219133e-01, 1.2392291e-03, 1.1634388e+00,
-             2.9513965e+00, 4.7246245e-01, 3.1958127e-01, 8.8973150e-02,
-             6.7548370e-01, 6.2869355e-02, 1.0003569e+01, 2.7434089e+00,
-             1.9245349e+00, 3.4734800e-01, 1.2475176e+02, 3.2667663e+00,
-             1.5287421e+02, 7.3510885e-02, 1.6187511e-01]
-
-    state_dict_path = _basemodelpath / 'ViscNet_SD.p' 
-
-    def __init__(self):
-        super().__init__()
-
-        input_dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
+        input_dim = int(
+            self.hparams.get(f'layer_{self.hparams.get("num_layers",1)}_size', 10)
+        )
 
         self.output_layer = nn.Sequential(
             nn.Linear(input_dim, len(self.parameters_range)),
             nn.Sigmoid(),
         )
+    @abstractmethod
+    def log_viscosity_fun(self) -> torch.tensor:
+        pass
 
-        state_dict = pickle.load(open(self.state_dict_path, 'rb'))
-        self.load_state_dict(state_dict)
-
-        self.x_mean = torch.tensor(self.x_mean).float()
-        self.x_std = torch.tensor(self.x_std).float()
-
-    def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
-        '''Computes the base-10 logarithm of viscosity using the MYEGA equation.
-
-        '''
-        log_viscosity = log_eta_inf + (12 - log_eta_inf)*(Tg / T) * \
-            ((m / (12 - log_eta_inf) - 1) * (Tg / T - 1)).exp()
-        return log_viscosity
+    @abstractmethod
+    def featurizer(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ) -> np.ndarray:
+        pass
 
     def viscosity_parameters_from_tensor(
             self,
@@ -559,7 +462,7 @@ class ViscNet(MLP):
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
-            confidence: float = 0.95, 
+            confidence: float = 0.95,
             num_samples: int = 100,
     ) -> Dict[str, np.ndarray]:
         '''Compute the confidence bands of the viscosity parameters.
@@ -605,38 +508,6 @@ class ViscNet(MLP):
         parameters = self.viscosity_parameters_from_tensor(x[:, :-1], True)
         log_viscosity = self.log_viscosity_fun(T, **parameters)
         return log_viscosity
-
-    def featurizer(
-            self,
-            composition: CompositionLike,
-            input_cols: List[str] = [],
-    ) -> np.ndarray:
-        '''Compute the chemical features used for viscosity prediction.
-
-        Args:
-          composition:
-            Any composition like object.
-          input_cols:
-            List of strings representing the chemical entities related to each
-            column of `composition`. Necessary only when `composition` is a list
-            or array, ignored otherwise.
-
-        Returns:
-          Array with the computed chemical features
-
-        '''
-        (feat_array,
-         feat_names) = featurizer.extract_chem_feats(composition, input_cols,
-                                                     self.weighted_features,
-                                                     self.absolute_features, 1)
-        feat_idx = (
-            list(range(
-                len(self.weighted_features),
-                len(self.weighted_features) + len(self.absolute_features)
-            )) + list(range(len(self.weighted_features)))
-        )
-        feat_array = feat_array[:,feat_idx]
-        return feat_array
 
     def predict(
             self,
@@ -854,7 +725,7 @@ class ViscNet(MLP):
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
-            confidence: float = 0.95, 
+            confidence: float = 0.95,
             num_samples: int = 100,
     ):
         '''Confidence bands of the glass transition temperature.
@@ -885,7 +756,7 @@ class ViscNet(MLP):
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
-            confidence: float = 0.95, 
+            confidence: float = 0.95,
             num_samples: int = 100,
     ):
         '''Confidence bands of the liquid fragility.
@@ -916,7 +787,7 @@ class ViscNet(MLP):
             self,
             composition: CompositionLike,
             input_cols: List[str] = [],
-            confidence: float = 0.95, 
+            confidence: float = 0.95,
             num_samples: int = 100,
     ) -> np.ndarray:
         '''Confidence bands of the base-10 logarithm of the asymptotic viscosity.
@@ -948,7 +819,7 @@ class ViscNet(MLP):
             T: Union[float, List[float], np.ndarray],
             composition: CompositionLike,
             input_cols: List[str] = [],
-            confidence: float = 0.95, 
+            confidence: float = 0.95,
             num_samples: int = 100,
             table_mode: bool = False,
     ) -> Tuple[np.ndarray, Dict[str, np.ndarray], Dict[str, np.array]]:
@@ -1066,6 +937,166 @@ class ViscNet(MLP):
             "Acta Materialia. 206 (2021) 116602. "
             "https://doi.org/10.1016/j.actamat.2020.116602."
         return c
+
+
+class ViscNet(BaseViscNet):
+    '''ViscNet predictor of viscosity and viscosity parameters.
+
+    ViscNet is a physics-informed neural network that has the MYEGA [1]
+    viscosity equation embedded in it. See Ref. [2] for the original
+    publication.
+
+    References:
+      [1] J.C. Mauro, Y. Yue, A.J. Ellison, P.K. Gupta, D.C. Allan, Viscosity of
+        glass-forming liquids., Proceedings of the National Academy of Sciences of
+        the United States of America. 106 (2009) 19780–19784.
+        https://doi.org/10.1073/pnas.0911705106.
+      [2] D.R. Cassar, ViscNet: Neural network for predicting the fragility
+        index and the temperature-dependency of viscosity, Acta Materialia. 206
+        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+        https://arxiv.org/abs/2007.03719
+
+    '''
+    parameters_range = {
+        'log_eta_inf': [-18, 5],
+        'Tg': [400, 1400],
+        'm': [10, 130],
+    }
+
+    hparams = {
+        'batch_size': 64,
+        'layer_1_activation': 'ReLU',
+        'layer_1_batchnorm': False,
+        'layer_1_dropout': 0.07942161101271952,
+        'layer_1_size': 192,
+        'layer_2_activation': 'Tanh',
+        'layer_2_batchnorm': False,
+        'layer_2_dropout': 0.05371454289414608,
+        'layer_2_size': 48,
+        'loss': 'mse',
+        'lr': 0.0011695226458761677,
+        'max_epochs': 500,
+        'n_features': 35,
+        'num_layers': 2,
+        'optimizer': 'AdamW',
+        'patience': 9,
+    }
+
+    absolute_features = [
+        ('ElectronAffinity', 'std1'),
+        ('FusionEnthalpy', 'std1'),
+        ('GSenergy_pa', 'std1'),
+        ('GSmagmom', 'std1'),
+        ('NdUnfilled', 'std1'),
+        ('NfValence', 'std1'),
+        ('NpUnfilled', 'std1'),
+        ('atomic_radius_rahm', 'std1'),
+        ('c6_gb', 'std1'),
+        ('lattice_constant', 'std1'),
+        ('mendeleev_number', 'std1'),
+        ('num_oxistates', 'std1'),
+        ('nvalence', 'std1'),
+        ('vdw_radius_alvarez', 'std1'),
+        ('vdw_radius_uff', 'std1'),
+        ('zeff', 'std1'),
+    ]
+
+    weighted_features = [
+        ('FusionEnthalpy', 'min'),
+        ('GSbandgap', 'max'),
+        ('GSmagmom', 'mean'),
+        ('GSvolume_pa', 'max'),
+        ('MiracleRadius', 'std1'),
+        ('NValence', 'max'),
+        ('NValence', 'min'),
+        ('NdUnfilled', 'max'),
+        ('NdValence', 'max'),
+        ('NsUnfilled', 'max'),
+        ('SpaceGroupNumber', 'max'),
+        ('SpaceGroupNumber', 'min'),
+        ('atomic_radius', 'max'),
+        ('atomic_volume', 'max'),
+        ('c6_gb', 'max'),
+        ('c6_gb', 'min'),
+        ('max_ionenergy', 'min'),
+        ('num_oxistates', 'max'),
+        ('nvalence', 'min'),
+    ]
+
+    x_mean = torch.tensor([5.7542068e+01, 2.2090124e+01, 2.0236173e+00,
+                           3.6860932e-02, 3.2620981e-01, 1.4419103e+00,
+                           2.0164611e+00, 3.4407539e+01, 1.2352635e+03,
+                           1.4792695e+00, 4.2045139e+01, 8.4130961e-01,
+                           2.3045063e+00, 4.7984661e+01, 5.6983612e+01,
+                           1.1145602e+00, 9.2185795e-02, 2.1363457e-01,
+                           2.2581025e-04, 5.8149724e+00, 1.2964197e+01,
+                           3.7008467e+00, 1.3742505e-01, 1.8369867e-02,
+                           3.2303229e-01, 7.1324579e-02, 5.0019447e+01,
+                           4.3720217e+00, 3.6445999e+01, 8.4036522e+00,
+                           2.0281389e+02, 7.5613613e+00, 1.2259276e+02,
+                           6.7182720e-01, 1.0508456e-01]).float()
+
+    x_std = torch.tensor([7.6420674e+00, 4.7180834e+00, 4.5827568e-01,
+                          1.6872969e-01, 9.7033477e-01, 2.7695282e+00,
+                          3.3152765e-01, 6.4520807e+00, 6.3392188e+02,
+                          4.0605769e-01, 1.1776709e+01, 2.8129578e-01,
+                          7.9213607e-01, 7.5883222e+00, 1.1334700e+01,
+                          2.8822860e-01, 4.4787191e-02, 1.1219133e-01,
+                          1.2392291e-03, 1.1634388e+00, 2.9513965e+00,
+                          4.7246245e-01, 3.1958127e-01, 8.8973150e-02,
+                          6.7548370e-01, 6.2869355e-02, 1.0003569e+01,
+                          2.7434089e+00, 1.9245349e+00, 3.4734800e-01,
+                          1.2475176e+02, 3.2667663e+00, 1.5287421e+02,
+                          7.3510885e-02, 1.6187511e-01]).float()
+
+    state_dict_path = _basemodelpath / 'ViscNet_SD.p' 
+
+    def __init__(self):
+        super().__init__(self.hparams, self.x_mean, self.x_std, self.parameters_range)
+
+        state_dict = pickle.load(open(self.state_dict_path, 'rb'))
+        self.load_state_dict(state_dict)
+
+
+    def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
+        '''Computes the base-10 logarithm of viscosity using the MYEGA equation.
+
+        '''
+        log_viscosity = log_eta_inf + (12 - log_eta_inf)*(Tg / T) * \
+            ((m / (12 - log_eta_inf) - 1) * (Tg / T - 1)).exp()
+        return log_viscosity
+
+    def featurizer(
+            self,
+            composition: CompositionLike,
+            input_cols: List[str] = [],
+    ) -> np.ndarray:
+        '''Compute the chemical features used for viscosity prediction.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Array with the computed chemical features
+
+        '''
+        (feat_array,
+         feat_names) = featurizer.extract_chem_feats(composition, input_cols,
+                                                     self.weighted_features,
+                                                     self.absolute_features, 1)
+        feat_idx = (
+            list(range(
+                len(self.weighted_features),
+                len(self.weighted_features) + len(self.absolute_features)
+            )) + list(range(len(self.weighted_features)))
+        )
+        feat_array = feat_array[:,feat_idx]
+        return feat_array
 
 
 class ViscNetHuber(ViscNet):
