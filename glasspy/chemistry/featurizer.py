@@ -11,7 +11,7 @@ from .types import CompositionLike
 __cur_path = os.path.dirname(__file__)
 __chem_prop_path = os.path.join(__cur_path, "data/chemical_properties.csv")
 
-__num_chem_features = 56
+__num_chem_features = 81
 
 _elements = np.genfromtxt(
     __chem_prop_path,
@@ -35,7 +35,6 @@ _data = np.genfromtxt(
     skip_header=1,
     delimiter=",",
     usecols=list(range(1, __num_chem_features + 1)),
-    # dtype=[(p, 'float64') for p in _prop],
 )
 
 _all_aggregate_functions = ["sum", "mean", "min", "max", "std", "std1"]
@@ -66,17 +65,17 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
 
     """
     if function_name == "sum":
-        return np.nansum(array, axis=1)
+        return np.sum(array, axis=1)
     elif function_name == "mean":
-        return np.nanmean(array, axis=1)
+        return np.mean(array, axis=1)
     elif function_name == "max":
-        return np.nanmax(array, axis=1)
+        return np.max(array, axis=1)
     elif function_name == "min":
-        return np.nanmin(array, axis=1)
+        return np.min(array, axis=1)
     elif function_name == "std":
-        return np.nanstd(array, axis=1, ddof=0)
+        return np.std(array, axis=1, ddof=0)
     elif function_name == "std1":
-        return np.nanstd(array, axis=1, ddof=1)
+        return np.std(array, axis=1, ddof=1)
     else:
         raise ValueError("Invalid function name")
 
@@ -164,22 +163,33 @@ def extract_chem_feats(
     chemarray = to_element_array(x, input_cols, list(_elements), rescale_to_sum)
 
     pos = 0
-    feature_columns = []
-    features = np.zeros(
+    features = np.empty(
         (len(chemarray), len(absolute_features) + len(weighted_features)),
         dtype=float,
     )
+    features.fill(np.nan)
 
-    chemarray[~(chemarray > 0)] = np.nan
+    # Weighted features
+    chemarray = np.ma.masked_equal(chemarray, 0)
+    feats = {feat for feat, _ in weighted_features}
+    cache = {feat: chemarray * _data[:, prop_idx[feat]] for feat in feats}
     for feat, stat in weighted_features:
-        features[:, pos] = _aggregate(chemarray * _data[:, prop_idx[feat]], stat)
-        feature_columns.append(f"W{sep}{feat}{sep}{stat}")
+        donthavenan = np.logical_not(np.isnan(cache[feat]).sum(axis=1))
+        features[donthavenan, pos] = _aggregate(cache[feat][donthavenan], stat)
         pos += 1
 
-    chemarray[chemarray > 0] = 1
+    # Absolute features
+    chemarray = chemarray.astype(bool)
+    feats = {feat for feat, _ in absolute_features}
+    cache = {feat: chemarray * _data[:, prop_idx[feat]] for feat in feats}
     for feat, stat in absolute_features:
-        features[:, pos] = _aggregate(chemarray * _data[:, prop_idx[feat]], stat)
-        feature_columns.append(f"A{sep}{feat}{sep}{stat}")
+        donthavenan = np.logical_not(np.isnan(cache[feat]).sum(axis=1))
+        features[donthavenan, pos] = _aggregate(cache[feat][donthavenan], stat)
         pos += 1
+
+    feature_columns = [f"W{sep}{feat}{sep}{stat}" for feat, stat in weighted_features]
+    feature_columns.extend(
+        [f"A{sep}{feat}{sep}{stat}" for feat, stat in absolute_features]
+    )
 
     return features, feature_columns
