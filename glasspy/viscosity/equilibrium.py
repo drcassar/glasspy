@@ -1,6 +1,9 @@
 '''Equations for equilibrium viscosity.'''
 
 from numpy import exp, log, log10
+import numpy as np
+
+from glasspy.viscosity.equilibrium_log import _belowT0correction
 
 
 def MYEGA(T, eta_inf, K, C):
@@ -134,7 +137,7 @@ def VFT(T, eta_inf, A, T0):
 
     """
     viscosity = eta_inf * exp(log(10) * A / (T - T0))
-
+    viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
@@ -188,7 +191,8 @@ def VFT_alt(T, eta_inf, T12, m):
     log_eta_inf = log10(eta_inf)
     viscosity = log_eta_inf * 10**((12 - log_eta_inf)**2 / \
         (m * (T / T12 - 1) + (12 - log_eta_inf)))
-
+    T0 = T12 * (1 - (12 - log_eta_inf) / m)
+    viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
@@ -352,7 +356,7 @@ def CLU(T, pre_exp, A, T0):
 
     """
     viscosity = pre_exp*T**(1/2)*(A / (T - T0))
-
+    viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
@@ -390,7 +394,7 @@ def BS(T, eta_inf, A, T0, gamma=1):
 
     """
     viscosity = eta_inf * exp(A / (T - T0)**(3 * gamma / 2))
-
+    viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
@@ -428,7 +432,7 @@ def Dienes(T, eta_inf, A, B, T0):
 
     """
     viscosity = eta_inf / 2 * exp(B / T) * (exp(A / (T - T0)) + 1)
-
+    viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
@@ -470,5 +474,5 @@ def DML(T, eta_inf, A, B, T0):
 
     """
     viscosity = eta_inf * exp(A / (T - T0) + B / T)
-
+    viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity

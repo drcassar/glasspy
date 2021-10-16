@@ -535,7 +535,8 @@ class VFT(_BaseViscosityRegression):
         model.set_param_hint(
             'T0',
             vary=False,
-            expr=r'T12 * (1 - (12 - log_eta_inf) / m)'
+            expr=r'T12 * (1 - (12 - log_eta_inf) / m)',
+            min=0,
         )
         model.set_param_hint(
             'A',
@@ -576,6 +577,38 @@ class VFT(_BaseViscosityRegression):
         guess_T12, guess_fragility, guess_log_eta_inf = self.guess()
         model = self.getModel(guess_T12, guess_fragility, guess_log_eta_inf)
         fitresult = super().fit(model, weights, params, fitmethod)
+
+        if fitresult.params['T0'].value == 0:
+            model = Model(eq.VFT, name=self.__str__())
+            model.set_param_hint(
+                'log_eta_inf',
+                vary=True,
+                max=11.99,
+                value=fitresult.params['log_eta_inf']
+            )
+            model.set_param_hint(
+                'A',
+                vary=True,
+                value=fitresult.params['A']
+            )
+            model.set_param_hint(
+                'T0',
+                vary=False,
+                value=0,
+            )
+            model.set_param_hint(
+                'm',
+                vary=False,
+                expr='12 - log_eta_inf',
+                min=0,
+            )
+            model.set_param_hint(
+                'T12',
+                vary=False,
+                expr='A / (12 - log_eta_inf)',
+                min=0,
+            )
+            fitresult = super().fit(model, weights, params, fitmethod)
 
         return fitresult, model
 

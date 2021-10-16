@@ -1,6 +1,12 @@
 '''Equations for the base-10 logarithm of equilibrium viscosity.'''
 
 from numpy import exp, log, log10
+import numpy as np
+
+
+def _belowT0correction(T, T0, viscosity):
+    '''Returns infinity viscosity below the divergence temperature (T0).'''
+    return np.where(np.less_equal(T, T0), np.inf, viscosity)
 
 
 def MYEGA(T, log_eta_inf, K, C):
@@ -132,7 +138,7 @@ def VFT(T, log_eta_inf, A, T0):
 
     """
     log10_viscosity = log_eta_inf + A / (T - T0)
-
+    log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
@@ -185,7 +191,8 @@ def VFT_alt(T, log_eta_inf, T12, m):
     """
     log10_viscosity = log_eta_inf + (12 - log_eta_inf)**2 / \
         (m * (T / T12 - 1) + (12 - log_eta_inf))
-
+    T0 = T12 * (1 - (12 - log_eta_inf) / m)
+    log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
@@ -347,7 +354,7 @@ def CLU(T, log_pre_exp, A, T0):
 
     """
     log10_viscosity = log_pre_exp + log10(T) / 2 + A / (T - T0)
-
+    log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
@@ -385,7 +392,7 @@ def BS(T, log_eta_inf, A, T0, gamma=1):
 
     """
     log10_viscosity = log_eta_inf + A / (T - T0)**(3 * gamma / 2) / log(10)
-
+    log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
@@ -426,7 +433,7 @@ def Dienes(T, log_eta_inf, A, B, T0):
     """
     log10_viscosity = log_eta_inf - log10(2) + (B / T * log(10)) + \
         log10(exp(A / (T - T0)) + 1)
-
+    log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
@@ -470,5 +477,5 @@ def DML(T, log_eta_inf, A, B, T0):
 
     """
     log10_viscosity = log_eta_inf + B / (T * log(10)) + A / ((T - T0) * log(10))
-
+    log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
