@@ -11,13 +11,11 @@ _PROPERTIES_PATH = os.path.join(__cur_path, 'datafiles/select_SciGK.csv.zip')
 _COMPOUNDS_PATH = os.path.join(__cur_path, 'datafiles/select_Gcomp.csv.zip')
 
 
-
 # deprecated
 from .manipulate import removeColumnsWithOnlyZerosMultiIndex
 SCIGLASS_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass.csv.xz')
 SCIGLASS_COMP_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_comp.csv.xz')
 SCIGLASS_ATFRAC_DATABASE_PATH = os.path.join(__cur_path, 'datafiles/sciglass_atfrac.csv.xz')
-
 
 
 class SciGlass:
@@ -56,17 +54,7 @@ class SciGlass:
 
         if properties_cfg:
             df = self.get_properties(**properties_cfg)
-            translate = properties_cfg.get('translate', SciGK_translation)
-            dfs['property'] = df.drop(metadata, axis=1).dropna(axis=0, how='all')
-
-            if metadata:
-                metadata_cols = [
-                    translate[k].get('rename', k)
-                    for k in translate.keys()
-                    if (translate[k].get('metadata', False) and
-                        (translate[k].get('rename', k) in df.columns))
-                ]
-                dfs['metadata'] = df.reindex(metadata, axis=1)
+            dfs['property'] = df
 
         if elements_cfg:
             if 'property' in dfs:
@@ -74,10 +62,6 @@ class SciGlass:
             else:
                 df = self.get_elements(**elements_cfg)
             dfs['elements'] = df
-            numelements = dfs['elements'].astype(bool).sum(axis=1)
-            if 'metadata' not in dfs:
-                dfs['metadata'] = dfs['elements'].reindex([], axis=1)
-            dfs['metadata'] = dfs['metadata'].assign(NumberElements=numelements)
 
         if compounds_cfg:
             self.data = pd.concat(dfs, axis=1, join="inner")
@@ -86,12 +70,25 @@ class SciGlass:
             else:
                 df = self.get_compounds(**compounds_cfg)
             dfs['compounds'] = df
-            numcompounds = dfs['compounds'].astype(bool).sum(axis=1)
-            if 'metadata' not in dfs:
-                dfs['metadata'] = dfs['compounds'].reindex([], axis=1)
-            dfs['metadata'] = dfs['metadata'].assign(NumberCompounds=numcompounds)
 
-        if 'metadata' in dfs:
+        if metadata:
+            metadata_cfg = {
+                'path': _PROPERTIES_PATH,
+                'translate': SciGK_translation,
+                'keep': self.available_properties_metadata(),
+            }
+
+            df = self.get_properties(**metadata_cfg)
+            dfs['metadata'] = df
+
+            if 'elements' in dfs:
+                numelements = dfs['elements'].astype(bool).sum(axis=1)
+                dfs['metadata'] = dfs['metadata'].assign(NumberElements=numelements)
+
+            if 'compounds' in dfs:
+                numcompounds = dfs['compounds'].astype(bool).sum(axis=1)
+                dfs['metadata'] = dfs['metadata'].assign(NumberCompounds=numcompounds)
+
             dfs['metadata'] = dfs['metadata'].convert_dtypes()
 
         # reordering
@@ -210,6 +207,15 @@ class SciGlass:
             df = df.query(query)
         if "drop" in kwargs:
             df = df.drop(kwargs["drop"], axis=1, errors='ignore')
+        if 'drop_compound_with_element' in kwargs:
+            drop_cols = []
+            for col in df.columns:
+                for el in kwargs['drop_compound_with_element']:
+                    if el in col:
+                        df = df.loc[df[col] == 0]
+                        drop_cols.append(col)
+                        break
+            df = df.drop(drop_cols, axis=1, errors='ignore')
         if 'dropline' in kwargs:
             for col in kwargs['dropline']:
                 if col in df.columns:
@@ -267,7 +273,8 @@ class SciGlass:
         if compounds_in_weight:
             chemarray = wt_to_mol(chemarray, chemarray.cols, final_sum)
 
-        el_df = pd.DataFrame(chemarray, columns=chemarray.cols)
+        el_df = pd.DataFrame(chemarray, columns=chemarray.cols,
+                             index=self.data['compounds'].index)
         dfs = {k: self.data[k] for k in self.data.columns.levels[0]}
         dfs['elements'] = el_df
 
@@ -280,8 +287,19 @@ class SciGlass:
 
     @staticmethod
     def available_properties():
+        metadata =  [SciGK_translation[k].get('rename', k)
+                for k in SciGK_translation
+                if SciGK_translation[k].get('metadata', False)]
+
         return [SciGK_translation[k].get('rename', k) for k in
-                SciGK_translation]
+                SciGK_translation
+                if SciGK_translation[k].get('rename', k) not in metadata]
+
+    @staticmethod
+    def available_properties_metadata():
+        return [SciGK_translation[k].get('rename', k)
+                for k in SciGK_translation
+                if SciGK_translation[k].get('metadata', False)]
 
     def remove_extreme_percentile():
         # # remove extreme values
