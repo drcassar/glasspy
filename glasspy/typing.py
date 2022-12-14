@@ -3,4 +3,4 @@
 Please check the individual files for more information on each type.
 
 '''
-from .chemistry.types import CompositionLike, ChemArray
+from .chemistry import CompositionLike, ChemArray
