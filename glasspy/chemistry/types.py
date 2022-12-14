@@ -92,6 +92,7 @@ class ChemArray(np.ndarray):
       Code based on https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
 
     """
+
     def __new__(
         cls,
         chem_composition: np.ndarray,
