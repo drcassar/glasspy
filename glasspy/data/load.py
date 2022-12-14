@@ -8,7 +8,6 @@ Typical usage example:
   sg = SciGlass()
   df = sg.data
 
-
 """
 
 import pandas as pd
