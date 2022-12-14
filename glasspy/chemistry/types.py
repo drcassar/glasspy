@@ -6,7 +6,7 @@ GlassPy accepts 8 different types:
 
 * String: any string that can be parsed by the parse_formula of chemparse
   (https://pypi.org/project/chemparse/) is allowed. Examples: 'SiO2',
-  'CaMgSi2O5', '(Li2O)1(SiO2)2', 'C1.5O3'. Check the chemparse documentation for
+  'CaMgSi2O5', '(Li2O)1(SiO2)2', 'C1.5O3'. Check the `chemparse` documentation for
   additional information.
 
 * List of floats: a simple list of floats can represent a chemical substance. To
