@@ -1,7 +1,14 @@
 GlassPy is licensed under the GNU General Public Licence version 3. SciGlass
-data is licensed under the ODC Open Database License (ODbL). The text of both
-licenses are below. In this repository, SciGlass data is stored in the folder
-/glasspy/data/datafiles.
+data is licensed under the ODC Open Database License (ODbL). Mendeleev data is
+licensed under the MIT license.  The text of all the  licenses are below. In
+this repository, SciGlass data is stored in the folder /glasspy/data/datafiles,
+mendeleev data is stored in /glasspy/chemistry/data.py and
+/glasspy/chemistry/data/chemical_properties.csv. Some data stored in the file
+/glasspy/chemistry/data/chemical_properties.csv comes from the reference:  Ward,
+L., Agrawal, A., Choudhary, A., and Wolverton, C. (2016). A general-purpose
+machine learning framework for predicting properties of inorganic materials. npj
+Computational Materials 2, 16028.  10.1038/npjcompumats.2016.28.
+
 
 
 ---------------
@@ -686,14 +693,42 @@ Public License instead of this License.  But first, please read
 
 
 
----------------------
-SciGlass data license
----------------------
+----------------
+SciGlass license
+----------------
 
 
 ODC Open Database License (ODbL)
 
 Copyright (c) 2019 EPAM Systems
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+-----------------
+Mendeleev license
+-----------------
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Lukasz Mentel
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
