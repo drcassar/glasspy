@@ -137,7 +137,9 @@ def to_array(
 
     if output_cols != "default":
         x_reorder = np.zeros((len(x), len(output_cols)))
-        idx = [(i, cols.index(c)) for i, c in enumerate(output_cols) if c in cols]
+        idx = [
+            (i, cols.index(c)) for i, c in enumerate(output_cols) if c in cols
+        ]
         for i, j in idx:
             x_reorder[:, i] = x[:, j]
         x, cols = x_reorder, output_cols
