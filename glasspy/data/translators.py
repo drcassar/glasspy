@@ -21,7 +21,7 @@ SciGK_translation = {
     # Metadata
     "Analysis": {
         "info": "Indicates if the glass composition was obtained by"
-        " chemical analysis",
+                " chemical analysis",
         "rename": "ChemicalAnalysis",
         "convert": lambda x: True if x == "a" else False,
         "metadata": True,
@@ -265,12 +265,12 @@ SciGK_translation = {
     },
     "nd300low": {
         "info": "Refractive index measured at a wavelenght between 0.6 and 1 "
-        "micron at 293 K",
+                "micron at 293 K",
         "rename": "RefractiveIndexLow",
     },
     "nd300hi": {
         "info": "Refractive index measured at a wavelenght greater than 1 "
-        "micron at 293 K",
+                "micron at 293 K",
         "rename": "RefractiveIndexHigh",
     },
     "DNFC300": {
@@ -282,8 +282,8 @@ SciGK_translation = {
     # Electrical and dielectrical
     "EPS730": {
         "info": "Relative permittivity at ambient temperature anf frequency of"
-        "1 MHz (or the nearest frequency in the range of 0.01 MHz to "
-        "10 MHz)",
+                "1 MHz (or the nearest frequency in the range of 0.01 MHz to "
+                "10 MHz)",
         "rename": "Permittivity",
     },
     "TGD730": {
@@ -293,7 +293,7 @@ SciGK_translation = {
     },
     "TK100C": {
         "info": "Temperature where the specific electrical resistivity is 1"
-        "MOhm.m",
+                "MOhm.m",
         "rename": "TresistivityIs1MOhm.m",
         "convert": lambda x: x + 273.15,
         "unit": "K",
@@ -408,7 +408,7 @@ SciGK_translation = {
     },
     "ANY_TEC": {
         "info": "Linear coefficient of thermal expansion measured below the "
-        "glass transition temperature",
+                "glass transition temperature",
         "rename": "CTEbelowTg",
         "convert": lambda x: x * 1e-7,
         "unit": "1/K",
