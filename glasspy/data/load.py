@@ -1,3 +1,16 @@
+"""This is the module to load available data in GlassPy.
+
+Right now, the main source of GlassPy data is the SciGlass database. The SciGlass database is available at https://github.com/epam/SciGlass licensed under ODC Open Database License (ODbL). For a plain text version of this database, see the for at
+https://github.com/drcassar/SciGlass. Data that ships with GlassPy is the same as the data in the plain text fork.
+
+Typical usage example:
+
+  sg = SciGlass()
+  df = sg.data
+
+
+"""
+
 import pandas as pd
 import numpy as np
 import os
@@ -12,15 +25,38 @@ _COMPOUNDS_PATH = os.path.join(__cur_path, "datafiles/select_Gcomp.csv.zip")
 
 
 class SciGlass:
-    """Loader of SciGlass data."""
+    """Loader of SciGlass data.
+
+    Args:
+      elements_cfg:
+        Dictonary configuring how the `elements` information is collected. See
+        docstring for `get_elements` method for more details.
+      properties_cfg:
+        Dictonary configuring how the `properties` information is collected. See
+        docstring for `get_properties` method for more details.
+      compounds_cfg:
+        Dictonary configuring how the `compounds` information is collected. See
+        docstring for `get_compounds` method for more details.
+      autocleanup:
+        If `True`, automatically delete columns of the final DataFrame that do
+        not have any information (only zeros). Default value: True.
+      metadata:
+        If `True`, add the `metadata` information to the DataFrame. Default
+        value: True.
+
+    Attributes:
+      data: DataFrame of the collected data.
+
+
+    """
 
     def __init__(
         self,
-        elements_cfg={},
-        properties_cfg={},
-        compounds_cfg={},
-        autocleanup=True,
-        metadata=True,
+        elements_cfg: dict = {},
+        properties_cfg: dict = {},
+        compounds_cfg: dict = {},
+        autocleanup: bool = True,
+        metadata: bool = True,
     ):
 
         # default behavior is returning everything if no config is given
@@ -126,16 +162,24 @@ class SciGlass:
                 self.remove_zero_sum_columns(scope="compounds")
 
     def get_properties(self, **kwargs):
-        """Get elemental atomic fraction information.
+        """Get properties information.
 
         Args:
-          path
-          keep
-          drop
-          translate
-          IDs
-
+          path : str
+            String with the path to the database csv file.
+          keep : list
+            List of properties to keep in the final DataFrame.
+          drop : list
+            List of properties to remove from the final DataFrame.
+          translate : dict
+            Dictionary with the information on how to read and convert the
+            properties. See variable `SciSK_translation` for an example.
+          IDs : pd.Index
+            IDs of the dataset to consider. Each glass in the SciGlass database
+            has a glass number and a paper number. This ID used in GlassPy is an
+            integer that merges both numbers
         """
+
         df = pd.read_csv(
             kwargs.get("path", _PROPERTIES_PATH), sep="\t", low_memory=False
         )
@@ -150,22 +194,39 @@ class SciGlass:
             for k, v in translate.items()
             if "convert" in v
         }
-        df = self.process_df(df, rename=rename, convert=convert, **kwargs)
+        df = self._process_df(df, rename=rename, convert=convert, **kwargs)
         return df
 
     def get_elements(self, **kwargs):
         """Get elemental atomic fraction information.
 
         Args:
-          path
-          keep
-          drop
-          translate
-          acceptable_sum_deviation
-          final_sum
-          IDs
-
+          path : str
+            String with the path to the database csv file.
+          keep : list
+            List of elements to keep in the final DataFrame.
+          drop : list
+            List of elements to remove from the final DataFrame.
+          translate : dict
+            Dictionary with the information on how to read and convert the
+            elements. See variable `AtMol_translation` for an example.
+          acceptable_sum_deviation : positive int or float
+            The sum of all atomic fractions should be 100%.  However, due to
+            float point errors or rounding errors, this sum will not be exactly
+            100%. This argument controls the acceptable deviation of this sum in
+            %. A value of 1 means that the sum of all atomic fractions can be
+            between 99 and 101. All examples that are not within this range are
+            discarted.
+          final_sum : positive int or float
+            The final sum of all atomic fractions is normalized to this value.
+            Usual values are 1 if you want atomic fractions or 100 if you want
+            atomic percentages.
+          IDs : pd.Index
+            IDs of the dataset to consider. Each glass in the SciGlass database
+            has a glass number and a paper number. This ID used in GlassPy is an
+            integer that merges both numbers
         """
+
         df = pd.read_csv(
             kwargs.get("path", _ELEMENTS_PATH), sep="\t", low_memory=False
         )
@@ -176,22 +237,39 @@ class SciGlass:
         if "IDs" in kwargs:
             idx = df.index.intersection(kwargs["IDs"])
             df = df.loc[idx]
-        df = self.process_df(df, rename=translate, **kwargs)
+        df = self._process_df(df, rename=translate, **kwargs)
         return df
 
     def get_compounds(self, **kwargs):
-        """Get elemental atomic fraction information.
+        """Get compound information.
 
         Args:
-          path
-          keep
-          rename
-          acceptable_sum_deviation
-          final_sum
-          return_weight
-          IDs
-
+          path : str
+            String with the path to the database csv file.
+          keep : list
+            List of compounds to keep in the final DataFrame.
+          drop : list
+            List of compounds to remove from the final DataFrame.
+          acceptable_sum_deviation : positive int or float
+            The sum of all compound fractions should be 100%.  However, due to
+            float point errors or rounding errors, this sum will not be exactly
+            100%. This argument controls the acceptable deviation of this sum in
+            %. A value of 1 means that the sum of all compound fractions can be
+            between 99 and 101. All examples that are not within this range are
+            discarted.
+          final_sum : positive int or float
+            The final sum of all compound fractions is normalized to this value.
+            Usual values are 1 if you want compound fractions or 100 if you want
+            compound percentages.
+          return_weight : bool
+            If `True`, the chemical information stored in the DataFrame will be
+            in weight%. Otherwise it will be in mol%.
+          IDs : pd.Index
+            IDs of the dataset to consider. Each glass in the SciGlass database
+            has a glass number and a paper number. This ID used in GlassPy is an
+            integer that merges both numbers
         """
+
         df = pd.read_csv(
             kwargs.get("path", _COMPOUNDS_PATH), sep="\t", low_memory=False
         )
@@ -224,11 +302,13 @@ class SciGlass:
             .dropna(axis=0, how="all")
             .fillna(0)
         )
-        df = self.process_df(data, **kwargs)
+        df = self._process_df(data, **kwargs)
         return df
 
     @staticmethod
-    def process_df(df, **kwargs):
+    def _process_df(df, **kwargs):
+        """Function to process the DataFrame."""
+
         df = df.drop_duplicates("ID", keep=False)
         df = df.set_index("ID", drop=True)
 
@@ -277,6 +357,8 @@ class SciGlass:
         return df
 
     def remove_zero_sum_columns(self, scope="compounds"):
+        """Removes all columns that have zero sum from the `data` attribute."""
+
         zero_sum_cols = self.data[scope].sum(axis=0) == 0
         drop_cols = self.data[scope].columns[zero_sum_cols].tolist()
         drop_cols = [(scope, el) for el in drop_cols]
@@ -285,11 +367,11 @@ class SciGlass:
     def remove_duplicate_composition(
         self, scope="elements", decimals=3, aggregator="median"
     ):
-        """Remove duplicate compositions
+        """Remove duplicate compositions from the `data` attribute.
 
-        Note that the original ID and metadata are lost upon this operation.
-
+        Note that the original ID and the metadata are lost upon this operation.
         """
+
         assert scope in ["elements", "compounds"]
         assert "property" in self.data.columns.levels[0]
         assert scope in self.data.columns.levels[0]
@@ -304,6 +386,19 @@ class SciGlass:
         self.data = pd.concat(df, axis=1, join="inner")
 
     def elements_from_compounds(self, final_sum=1, compounds_in_weight=False):
+        """Create atomic fraction information from compound information.
+
+        Args:
+          final_sum : positive int or float
+            The final sum of all atomic fractions is normalized to this value.
+            Usual values are 1 if you want atomic fractions or 100 if you want
+            atomic percentages. Default value is 1.
+          compounds_in_weight : bool
+            If `True`, then assume that the compounds fractions are in weight%,
+            otherwise assume that the compounds fractions are in mol%. Default
+            value is `False`.
+        """
+
         assert "compounds" in self.data.columns.levels[0]
         assert "elements" not in self.data.columns.levels[0]
 
@@ -333,6 +428,8 @@ class SciGlass:
 
     @staticmethod
     def available_properties():
+        """Returns a list of available properties."""
+
         metadata = [
             SciGK_translation[k].get("rename", k)
             for k in SciGK_translation
@@ -347,6 +444,8 @@ class SciGlass:
 
     @staticmethod
     def available_properties_metadata():
+        """Returns a list of available properties metadata."""
+
         return [
             SciGK_translation[k].get("rename", k)
             for k in SciGK_translation
