@@ -42,7 +42,7 @@ _all_aggregate_functions = ["sum", "mean", "min", "max", "std", "std1"]
 
 prop_idx = {p: i for i, p in enumerate(_prop)}
 
-all_chem_features = [
+all_features = [
     (p, a) for p, a in product(_prop, _all_aggregate_functions)
 ]
 
@@ -83,128 +83,7 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
         raise ValueError("Invalid function name")
 
 
-def extract_chem_feats(
-    x: CompositionLike,
-    input_cols: List[str] = [],
-    weighted_features: List[Tuple[str, str]] = [],
-    absolute_features: List[Tuple[str, str]] = [],
-    rescale_to_sum: Union[float, int, bool] = 1,
-    sep: str = "|",
-    check_invalid: bool = True,
-) -> Tuple[np.ndarray, List[str]]:
-    """Extract chemical features from a chemical object.
-
-    For a list of all possible features that can be extracted, check the
-    variable all_chem_features.
-
-    Args:
-      x:
-        Any composition like object.
-      input_cols:
-        List of strings representing the chemical entities related to each
-        column of x. Necessary only when x is a list or array, ignored otherwise.
-      absolute_features:
-        List of tuples containing the name of the feature to be extracted and
-        the aggregator function. Features computed from this list are absolute.
-      weighted_features:
-        List of tuples containing the name of the feature to be extracted and
-        the aggregator function. Features computed from this list are weighted.
-      rescale_to_sum:
-        A positive number representing the total sum of each chemical substance.
-        If False then the same input array is returned.
-      sep:
-        String used to separate the information of the name of each extracted
-        feature.
-      check_invalid:
-        Checks if there are invalid features that cannot be computed. Invalid
-        features are those with missing values in the desired chemical domain.
-        The function still works even with invalid features. However, it is not
-        recommended to use it in this case. Only disable this check if you are
-        sure that no invalid features exist in your chemical domain.
-
-    Returns:
-      features:
-        A 2D array. Each row is a chemical substance.
-      feature_columns;
-        A list of strings containing the name of the extracted chemical feature.
-        Strings starting with "A" are absolute features and strings starting
-        with "W" are weighted.
-
-    Raises:
-      AssertionError:
-        Raised when rescale_to_sum is negative.
-      ValueError:
-        Raised when the input composition has chemical elements that cannot be
-        used to extract features.
-      ValueError:
-        Raised when invalid features are present and check_invalid is True.
-
-    """
-    msg = '"rescale_to_sum" must be a positive number, try 1 or 100'
-    assert rescale_to_sum > 0, msg
-
-    o_elements = to_element_array(
-        x, input_cols, output_element_cols="default"
-    ).cols
-
-    if not set(o_elements).issubset(set(_elements)):
-        outofdomain = set(o_elements) - set(_elements)
-        raise ValueError(
-            f"Cannot featurize compositions with these elements: {outofdomain}"
-        )
-
-    if check_invalid:
-        unavailable_features = []
-        el_idx = tuple([i for i, v in enumerate(_elements) if v in o_elements])
-        for feat, _ in weighted_features:
-            if any(np.isnan(_data[el_idx, prop_idx[feat]])):
-                unavailable_features.append(feat)
-        for feat, _ in absolute_features:
-            if any(np.isnan(_data[el_idx, prop_idx[feat]])):
-                unavailable_features.append(feat)
-        if len(unavailable_features) > 0:
-            raise ValueError(f"Invalid features: {set(unavailable_features)}")
-
-    chemarray = to_element_array(
-        x, input_cols, list(_elements), rescale_to_sum
-    )
-
-    pos = 0
-    features = np.empty(
-        (len(chemarray), len(absolute_features) + len(weighted_features)),
-        dtype=float,
-    )
-    features.fill(np.nan)
-
-    # Weighted features
-    chemarray = np.ma.masked_equal(chemarray, 0)
-    feats = {feat for feat, _ in weighted_features}
-    cache = {feat: chemarray * _data[:, prop_idx[feat]] for feat in feats}
-    for feat, stat in weighted_features:
-        donthavenan = np.logical_not(np.isnan(cache[feat]).sum(axis=1))
-        features[donthavenan, pos] = _aggregate(cache[feat][donthavenan], stat)
-        pos += 1
-
-    # Absolute features
-    chemarray = chemarray.astype(bool)
-    feats = {feat for feat, _ in absolute_features}
-    cache = {feat: chemarray * _data[:, prop_idx[feat]] for feat in feats}
-    for feat, stat in absolute_features:
-        donthavenan = np.logical_not(np.isnan(cache[feat]).sum(axis=1))
-        features[donthavenan, pos] = _aggregate(cache[feat][donthavenan], stat)
-        pos += 1
-
-    feature_columns = [
-        f"W{sep}{feat}{sep}{stat}" for feat, stat in weighted_features
-    ]
-    feature_columns.extend(
-        [f"A{sep}{feat}{sep}{stat}" for feat, stat in absolute_features]
-    )
-
-    return features, feature_columns
-
-
-def extract_chem_feats_new(
+def featurizer(
     x: CompositionLike,
     input_cols: List[str] = [],
     elemental_features: List[str] = [],
@@ -215,10 +94,10 @@ def extract_chem_feats_new(
     check_invalid: bool = True,
     order: str = "ewa",
 ) -> Tuple[np.ndarray, List[str]]:
-    """Extract chemical features from a chemical object.
+    """Extract features from a chemical object.
 
     For a list of all possible features that can be extracted, check the
-    variable all_chem_features.
+    variable `all_features`.
 
     Args:
       x:
@@ -298,7 +177,6 @@ def extract_chem_feats_new(
         x, input_cols, list(_elements), rescale_to_sum
     )
 
-
     # Weighted wfeatures
     if "w" in order:
         pos = 0
@@ -346,7 +224,7 @@ def extract_chem_feats_new(
     if "e" in order:
         els = list(_elements)
         colidx = [els.index(e) for e in elemental_features]
-        efeatures = chemarray[:,colidx]
+        efeatures = chemarray[:, colidx]
         efeatures_columns = deepcopy(elemental_features)
 
     if order.startswith("e"):
