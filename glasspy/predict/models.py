@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, List, Tuple, NamedTuple, Union
+from typing import Dict, List, Tuple, NamedTuple, Union, Any
 from math import sqrt
 import os
 import pickle
@@ -183,8 +183,10 @@ class MLP(pl.LightningModule, Predict):
     learning_curve_train = []
     learning_curve_val = []
 
-    def __init__(self, hparams):
+    def __init__(self, hparams : Dict[str, Any]):
         super().__init__()
+
+        assert 'n_features' in hparams, '`n_features` is a required hparams key.'
 
         layers = []
         input_dim = hparams['n_features']
@@ -315,6 +317,21 @@ class MLP(pl.LightningModule, Predict):
         avg_loss = torch.stack([x["val_loss_step"] for x in outputs]).mean()
         self.log("val_loss", avg_loss)
         self.learning_curve_val.append(float(avg_loss))
+
+    def save_training(self, path):
+        if not isinstance(path, Path):
+            path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = (self.state_dict(), self.learning_curve_train,
+                self.learning_curve_val, self.hparams)
+        pickle.dump(data, open(path, 'wb'))
+
+    def load_training(self, path):
+        state_dict, learning_train, learning_val, hparams = pickle.load(open(path, 'rb'))
+        self.load_state_dict(state_dict)
+        self.learning_curve_train = learning_train
+        self.learning_curve_val = learning_val
+        self.hparams = hparams
 
 
 class BaseViscNet(MLP):
@@ -1052,7 +1069,7 @@ class ViscNet(BaseViscNet):
     state_dict_path = _basemodelpath / 'ViscNet_SD.p' 
 
     def __init__(self):
-        super().__init__(self.hparams, self.x_mean, self.x_std, self.parameters_range)
+        super().__init__(self.parameters_range, self.hparams, self.x_mean, self.x_std)
 
         state_dict = pickle.load(open(self.state_dict_path, 'rb'))
         self.load_state_dict(state_dict)
