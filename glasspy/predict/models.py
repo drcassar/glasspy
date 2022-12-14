@@ -1,18 +1,32 @@
+warning = """
+To use glasspy.predict you need to have `pytorch` and `pytorch-lightning`
+installed.  It is not a hard dependency of GlassPy to reduce the risk of
+interfering with your local installation. For pytorch, see the installation
+instructions at https://pytorch.org/get-started. For pytorch-lightning, see the
+instalation instructions at https://www.pytorchlightning.ai.
+"""
+
+try:
+    import torch
+    import torch.nn as nn
+    from torch.nn import functional as F
+    from torch.optim import SGD, Adam, AdamW
+    import pytorch_lightning as pl
+
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(warning)
+
+
+import os
+import pickle
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
+from math import sqrt
 from pathlib import Path
 from typing import Dict, List, Tuple, NamedTuple, Union, Any
-from math import sqrt
-import os
-import pickle
 
-from torch.nn import functional as F
-from torch.optim import SGD, Adam, AdamW
 import numpy as np
-import pytorch_lightning as pl
-import torch
-import torch.nn as nn
 
 from glasspy.chemistry import featurizer, CompositionLike
 
