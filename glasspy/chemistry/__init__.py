@@ -1,5 +1,5 @@
 from .types import CompositionLike, ChemArray
-from .fingerprint import all_features, featurizer
+from .featurizer import all_features, physchem_featurizer
 from .convert import (
     rescale_array,
     to_array,
@@ -13,7 +13,7 @@ __all__ = [
     CompositionLike,
     ChemArray,
     all_features,
-    featurizer,
+    physchem_featurizer,
     rescale_array,
     to_array,
     to_element_array,

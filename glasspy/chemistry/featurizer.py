@@ -83,7 +83,7 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
         raise ValueError("Invalid function name")
 
 
-def featurizer(
+def physchem_featurizer(
     x: CompositionLike,
     input_cols: List[str] = [],
     elemental_features: List[str] = [],
