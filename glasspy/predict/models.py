@@ -27,11 +27,134 @@ from pathlib import Path
 from typing import Dict, List, Tuple, NamedTuple, Union, Any
 
 import numpy as np
+import numpy.ma as ma
 
 from glasspy.chemistry import featurizer, CompositionLike
 
 
-_basemodelpath = Path(os.path.dirname(__file__)) / 'models'
+_basemodelpath = Path(os.path.dirname(__file__)) / "models"
+
+
+def _gen_architecture(
+    hparams: dict, reverse: bool = False, requires_grad: bool = True
+) -> nn.Sequential:
+    """Generates a dense network architecture for pytorch.
+
+    Args:
+      hparams:
+        Dictionary with the hyperparemeters of the network. The possible
+        parameters are:
+          + "n_features": number of input features (required). Must be a
+          positive integer.
+          + "num_layers": number of hidden layers (defaults to 1). Must be a
+          positive integer.
+          + "layer_n_size": number of neurons in layer n (replace n for an
+            integer starting at 1, defaults to 10). Must be a positive integer.
+          + "layer_n_activation": activation function of layer n (replace n for
+            an integer starting at 1, defaults to Tanh). Available values are
+            ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
+            "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
+          + "layer_n_dropout": dropout of layer n (replace n for an integer
+            starting at 1, defaults to False meaning no dropout). Any value
+            between 0 and 1 (or False) is permitted.
+          + "layer_n_batchnorm": `True` will use batch normalization in layer n,
+            `False` will not use batch normalization in layer n (replace n for
+            an integer starting at 1, defaults to False meaning no batch
+            normalization).
+      reverse:
+        Reverses the network sequence. Use `True` if creating a decoder, `False`
+        otherwise. Default value: False.
+      requires_grad:
+        `True` if the autograd should record operations on the network tensors,
+        `False otherwise`. Default value: True.
+
+    Returns:
+      Pytorch Sequetial object.
+
+    Raises:
+      AssertionError:
+        When the `hparams` dictionary does not have a "n_features" key.
+      NotImplementedError:
+        When the selected activation function is not one of the permited values.
+    """
+
+    assert "n_features" in hparams, "`n_features` is a required hparams key."
+
+    layers = []
+    input_dim = hparams["n_features"]
+
+    for n in range(1, hparams.get("num_layers", 1) + 1):
+
+        batchnorm = hparams.get(f"layer_{n}_batchnorm", False)
+        bias = False if batchnorm else True
+        activation_name = hparams.get(f"layer_{n}_activation", "Tanh")
+        layer_size = int(hparams.get(f"layer_{n}_size", 10))
+        dropout = hparams.get(f"layer_{n}_dropout", False)
+
+        if not reverse:
+            l = [nn.Linear(input_dim, layer_size, bias=bias)]
+
+            if batchnorm and (activation_name != "SELU"):
+                l.append(nn.BatchNorm1d(layer_size))
+
+        else:
+            l = [nn.Linear(layer_size, input_dim, bias=bias)]
+
+            if batchnorm and (activation_name != "SELU"):
+                l.append(nn.BatchNorm1d(input_dim))
+
+        if dropout:
+            if activation_name == "SELU":
+                l.append(nn.AlphaDropout(dropout))
+            else:
+                l.append(nn.Dropout(dropout))
+
+        if activation_name == "Tanh":
+            l.append(nn.Tanh())
+            nn.init.xavier_uniform_(l[0].weight)
+        elif activation_name == "Sigmoid":
+            l.append(nn.Sigmoid())
+            nn.init.xavier_uniform_(l[0].weight)
+        elif activation_name == "ReLU":
+            l.append(nn.ReLU())
+            nn.init.kaiming_uniform_(l[0].weight, nonlinearity="relu")
+        elif activation_name == "LeakyReLU":
+            l.append(nn.LeakyReLU())
+            nn.init.kaiming_uniform_(l[0].weight, nonlinearity="leaky_relu")
+        elif activation_name == "GELU":
+            l.append(nn.GELU())
+        elif activation_name == "SELU":
+            l.append(nn.SELU())
+        elif activation_name == "ELU":
+            l.append(nn.ELU())
+        elif activation_name == "PReLU":
+            l.append(nn.PReLU())
+        elif activation_name == "SiLU":
+            l.append(nn.SiLU())
+        elif activation_name == "Mish":
+            l.append(nn.Mish())
+        elif activation_name == "Softplus":
+            l.append(nn.Softplus())
+        elif activation_name == "Linear":
+            l.append(nn.Linear())
+        else:
+            raise NotImplementedError(
+                "Please add this activation to the model class."
+            )
+
+        layers.append(nn.Sequential(*l))
+        input_dim = layer_size
+
+    if reverse:
+        layers.reverse()
+
+    hidden_layers = nn.Sequential(*layers)
+
+    if not requires_grad:
+        for param in hidden_layers.parameters():
+            param.requires_grad = False
+
+    return hidden_layers
 
 class Domain(NamedTuple):
     '''Simple class to store chemical domain information.
