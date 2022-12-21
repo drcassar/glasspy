@@ -346,40 +346,39 @@ class MLP(pl.LightningModule, Predict):
       hparams:
         Dictionary with the hyperparemeters of the network. The possible
         parameters are:
-          + "n_features": number of input features (required). Must be a
+        + "n_features": number of input features (required). Must be a positive
+          integer.
+        + "num_layers": number of hidden layers (defaults to 1). Must be a
           positive integer.
-          + "num_layers": number of hidden layers (defaults to 1). Must be a
-          positive integer.
-          + "layer_n_size": number of neurons in layer n (replace n for an
-            integer starting at 1, defaults to 10). Must be a positive integer.
-          + "layer_n_activation": activation function of layer n (replace n for
-            an integer starting at 1, defaults to Tanh). Available values are
-            ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
-            "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
-          + "layer_n_dropout": dropout of layer n (replace n for an integer
-            starting at 1, defaults to False meaning no dropout). Any value
-            between 0 and 1 (or False) is permitted.
-          + "layer_n_batchnorm": `True` will use batch normalization in layer n,
-            `False` will not use batch normalization in layer n (replace n for
-            an integer starting at 1, defaults to False meaning no batch
-            normalization).
-          + "loss": loss function to use for the backpropagation algorithm
-            (defaults to `mse`). Use `mse` for mean squared error loss (L2) or
-            `huber` for a smooth L1 loss.
-          + "optimizer": optimizer algorithm to use (defaults `SGD`). Use `SGD`
-            for stochastic gradient descend, `Adam` for Adam, or `AdamW` for
-            weighted Adam.
-          + "lr": optimizer learning rate (defaults to 1e-4 if optimizer is
-            `SGD` or 1e-3 if optimizer is `Adam` or `AdamW`).
-          + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
-          + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
-            (defaults to 1e-8).
+        + "layer_n_size": number of neurons in layer n (replace n for an integer
+          starting at 1, defaults to 10). Must be a positive integer.
+        + "layer_n_activation": activation function of layer n (replace n for an
+          integer starting at 1, defaults to Tanh). Available values are
+          ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
+          "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
+        + "layer_n_dropout": dropout of layer n (replace n for an integer
+          starting at 1, defaults to False meaning no dropout). Any value
+          between 0 and 1 (or False) is permitted.
+        + "layer_n_batchnorm": `True` will use batch normalization in layer n,
+          `False` will not use batch normalization in layer n (replace n for an
+          integer starting at 1, defaults to False meaning no batch
+          normalization).
+        + "loss": loss function to use for the backpropagation algorithm
+          (defaults to `mse`). Use `mse` for mean squared error loss (L2) or
+          `huber` for a smooth L1 loss.
+        + "optimizer": optimizer algorithm to use (defaults `SGD`). Use `SGD`
+          for stochastic gradient descend, `Adam` for Adam, or `AdamW` for
+          weighted Adam.
+        + "lr": optimizer learning rate (defaults to 1e-4 if optimizer is `SGD`
+          or 1e-3 if optimizer is `Adam` or `AdamW`).
+        + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
+        + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
+          (defaults to 1e-8).
 
     Raises:
       NotImplementedError:
         When the selected hyperparameters is not one of the permited values.
     """
-
 
     learning_curve_train = []
     learning_curve_val = []
@@ -1139,13 +1138,13 @@ class ViscNet(BaseViscNet):
 
     References:
       [1] J.C. Mauro, Y. Yue, A.J. Ellison, P.K. Gupta, D.C. Allan, Viscosity of
-        glass-forming liquids., Proceedings of the National Academy of Sciences of
-        the United States of America. 106 (2009) 19780–19784.
-        https://doi.org/10.1073/pnas.0911705106.
+          glass-forming liquids., Proceedings of the National Academy of
+          Sciences of the United States of America. 106 (2009) 19780–19784.
+          https://doi.org/10.1073/pnas.0911705106.
       [2] D.R. Cassar, ViscNet: Neural network for predicting the fragility
-        index and the temperature-dependency of viscosity, Acta Materialia. 206
-        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
-        https://arxiv.org/abs/2007.03719
+          index and the temperature-dependency of viscosity, Acta Materialia.
+          206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+          https://arxiv.org/abs/2007.03719
 
     """
 
@@ -1307,6 +1306,7 @@ class ViscNet(BaseViscNet):
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
         """Computes the base-10 logarithm of viscosity using the MYEGA equation."""
+
         log_viscosity = (
             log_eta_inf
             + (12 - log_eta_inf)
@@ -1332,8 +1332,8 @@ class ViscNet(BaseViscNet):
 
         Returns:
           Array with the computed chemical features
-
         """
+
         (feat_array, feat_names) = featurizer.extract_chem_feats(
             composition,
             input_cols,
@@ -1362,14 +1362,13 @@ class ViscNetHuber(ViscNet):
 
     References:
       [1] J.C. Mauro, Y. Yue, A.J. Ellison, P.K. Gupta, D.C. Allan, Viscosity of
-        glass-forming liquids., Proceedings of the National Academy of Sciences of
-        the United States of America. 106 (2009) 19780–19784.
-        https://doi.org/10.1073/pnas.0911705106.
+          glass-forming liquids., Proceedings of the National Academy of
+          Sciences of the United States of America. 106 (2009) 19780–19784.
+          https://doi.org/10.1073/pnas.0911705106.
       [2] D.R. Cassar, ViscNet: Neural network for predicting the fragility
-        index and the temperature-dependency of viscosity, Acta Materialia. 206
-        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
-        https://arxiv.org/abs/2007.03719
-
+          index and the temperature-dependency of viscosity, Acta Materialia.
+          206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+          https://arxiv.org/abs/2007.03719
     """
 
     def __init__(self):
@@ -1393,18 +1392,17 @@ class ViscNetVFT(ViscNet):
 
     References:
       [1] H. Vogel, Das Temperatureabhängigketsgesetz der Viskosität von
-        Flüssigkeiten, Physikalische Zeitschrift. 22 (1921) 645–646.
+          Flüssigkeiten, Physikalische Zeitschrift. 22 (1921) 645–646.
       [2] G.S. Fulcher, Analysis of recent measurements of the viscosity of
-        glasses, Journal of the American Ceramic Society. 8 (1925) 339–355.
-        https://doi.org/10.1111/j.1151-2916.1925.tb16731.x.
+          glasses, Journal of the American Ceramic Society. 8 (1925) 339–355.
+          https://doi.org/10.1111/j.1151-2916.1925.tb16731.x.
       [3] G. Tammann, W. Hesse, Die Abhängigkeit der Viscosität von der
-        Temperatur bie unterkühlten Flüssigkeiten, Z. Anorg. Allg. Chem. 156
-        (1926) 245–257. https://doi.org/10.1002/zaac.19261560121.
+          Temperatur bie unterkühlten Flüssigkeiten, Z. Anorg. Allg. Chem. 156
+          (1926) 245–257. https://doi.org/10.1002/zaac.19261560121.
       [4] D.R. Cassar, ViscNet: Neural network for predicting the fragility
-        index and the temperature-dependency of viscosity, Acta Materialia. 206
-        (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
-        https://arxiv.org/abs/2007.03719
-
+          index and the temperature-dependency of viscosity, Acta Materialia.
+          206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+          https://arxiv.org/abs/2007.03719
     """
 
     def __init__(self):
@@ -1432,3 +1430,92 @@ class ViscNetVFT(ViscNet):
             m * (T / Tg - 1) + (12 - log_eta_inf)
         )
         return log_viscosity
+
+
+class MTL(MLP):
+    """Base class for creating Multi-task Learning NN.
+
+    Args:
+      hparams:
+        Dictionary with the hyperparemeters of the network. The possible
+        parameters are:
+        + "n_features": number of input features (required). Must be a positive
+          integer.
+        + "num_layers": number of hidden layers (defaults to 1). Must be a
+          positive integer.
+        + "layer_n_size": number of neurons in layer n (replace n for an integer
+          starting at 1, defaults to 10). Must be a positive integer.
+        + "layer_n_activation": activation function of layer n (replace n for an
+          integer starting at 1, defaults to Tanh). Available values are
+          ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
+          "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
+        + "layer_n_dropout": dropout of layer n (replace n for an integer
+          starting at 1, defaults to False meaning no dropout). Any value
+          between 0 and 1 (or False) is permitted.
+        + "layer_n_batchnorm": `True` will use batch normalization in layer n,
+          `False` will not use batch normalization in layer n (replace n for an
+          integer starting at 1, defaults to False meaning no batch
+          normalization).
+        + "loss": loss function to use for the backpropagation algorithm
+          (defaults to `mse`). Use `mse` for mean squared error loss (L2) or
+          `huber` for a smooth L1 loss.
+        + "optimizer": optimizer algorithm to use (defaults `SGD`). Use `SGD`
+          for stochastic gradient descend, `Adam` for Adam, or `AdamW` for
+          weighted Adam.
+        + "lr": optimizer learning rate (defaults to 1e-4 if optimizer is `SGD`
+          or 1e-3 if optimizer is `Adam` or `AdamW`).
+        + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
+        + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
+          (defaults to 1e-8).
+
+    Raises:
+      NotImplementedError:
+        When the selected hyperparameters is not one of the permited values.
+    """
+
+    def __init__(self, hparams: Dict[str, Any]):
+        super().__init__(hparams)
+
+        self.n_outputs = hparams["n_targets"]
+        self.loss_weights = nn.Parameter(
+            torch.ones(self.n_outputs, requires_grad=True)
+        )
+
+    def _compute_loss(self, yhat, y):
+        """Computes the loss of multi-task learning with missing values.
+
+        Reference:
+          Liebel, L., and Körner, M. (2018). Auxiliary Tasks in Multi-task
+          Learning (arXiv).
+        """
+
+        not_nan = y.isnan().logical_not()
+        good_cols = not_nan.any(dim=0)
+        y = y[:, good_cols],
+        yhat = yhat[:, good_cols],
+        weights = self.loss_weights[good_cols],
+        not_nan = not_nan[:, good_cols],
+
+        loss = torch.sum(
+            torch.stack(
+                [
+                    self.loss_fun(yhat[not_nan[:, i], i], y[not_nan[:, i], i])
+                    * 0.5
+                    / (weights[i] ** 2)
+                    + torch.log(1 + weights[i] ** 2)
+                    for i in range(len(weights))
+                ]
+            )
+        )
+
+        return loss
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self._compute_loss(self(x), y)
+        return {"loss": loss}
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self._compute_loss(self(x), y)
+        return {"val_loss_step": loss}
