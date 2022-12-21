@@ -156,18 +156,17 @@ def _gen_architecture(
 
     return hidden_layers
 
-class Domain(NamedTuple):
-    '''Simple class to store chemical domain information.
 
-    '''
+class Domain(NamedTuple):
+    """Simple class to store chemical domain information."""
+
     element: Dict[str, float] = None
     compound: Dict[str, float] = None
 
 
 class Predict(ABC):
-    '''Base class for GlassPy predictors.
+    """Base class for GlassPy predictors."""
 
-    '''
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -198,47 +197,55 @@ class Predict(ABC):
 
     @staticmethod
     def MSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        '''Computes the mean squared error.
+        """Computes the mean squared error.
 
         Args:
           y_true:
-            1D array with the true values of y.
+            Array with the true values of y. Can be 1D or 2D.
           y_pred:
-            1D array with the predicted values of y.
+            Aray with the predicted values of y. Can be 1D or 2D.
 
         Returns:
-          The mean squared error.
+          The mean squared error. Will be 1D if the input arrays are 2D.
+          Will be a scalar otherwise.
+        """
 
-        '''
-        MSE = sum((y_true - y_pred)**2) / len(y_true)
-        try:
-            return MSE[0]
-        except (TypeError, IndexError):
-            return MSE
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            RMSE = sum((y_true - y_pred) ** 2) / len(y_true)
+            return RMSE
+        else:
+            y_true = ma.masked_invalid(y_true)
+            RMSE = np.sum((y_true - y_pred) ** 2, axis=0) / len(y_true)
+            return RMSE.data
 
     @staticmethod
     def RMSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        '''Computes the root mean squared error.
+        """Computes the root mean squared error.
 
         Args:
           y_true:
-            1D array with the true values of y.
+            Array with the true values of y. Can be 1D or 2D.
           y_pred:
-            1D array with the predicted values of y.
+            Aray with the predicted values of y. Can be 1D or 2D.
 
         Returns:
-          The root mean squared error.
+          The root mean squared error. Will be 1D if the input arrays are 2D.
+          Will be a scalar otherwise.
+        """
 
-        '''
-        RMSE = sqrt(sum((y_true - y_pred)**2) / len(y_true))
-        try:
-            return RMSE[0]
-        except (TypeError, IndexError):
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            RMSE = sqrt(sum((y_true - y_pred) ** 2) / len(y_true))
             return RMSE
+        else:
+            y_true = ma.masked_invalid(y_true)
+            RMSE = np.sqrt(
+                np.sum((y_true - y_pred) ** 2, axis=0) / len(y_true)
+            )
+            return RMSE.data
 
     @staticmethod
     def RD(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        '''Computes the relative deviation.
+        """Computes the relative deviation.
 
         Args:
           y_true:
@@ -248,17 +255,21 @@ class Predict(ABC):
 
         Returns:
           The relative deviation.
+        """
 
-        '''
-        RD = (100 / len(y_true)) * sum(abs(y_true - y_pred) / y_true)
-        try:
-            return RD[0]
-        except (TypeError, IndexError):
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            RD = (100 / len(y_true)) * sum(abs(y_true - y_pred) / y_true)
             return RD
+        else:
+            y_true = ma.masked_invalid(y_true)
+            RD = (100 / len(y_true)) * np.sum(
+                np.abs(y_true - y_pred) / y_true, axis=0
+            )
+            return RD.data
 
     @staticmethod
     def RRMSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        '''Computes the relative root mean squared error.
+        """Computes the relative root mean squared error.
 
         Args:
           y_true:
@@ -268,22 +279,28 @@ class Predict(ABC):
 
         Returns:
           The relative root mean squared error.
+        """
 
-        '''
-        y_mean = sum(y_true) / len(y_true)
-        RRMSE = sqrt(sum((y_true - y_pred)**2) / sum((y_true - y_mean)**2))
-        try:
-            return RRMSE[0]
-        except (TypeError, IndexError):
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            y_mean = sum(y_true) / len(y_true)
+            RRMSE = sqrt(
+                sum((y_true - y_pred) ** 2) / sum((y_true - y_mean) ** 2)
+            )
             return RRMSE
+        else:
+            y_true = ma.masked_invalid(y_true)
+            y_mean = np.sum(y_true, axis=0) / len(y_true)
+            RRMSE = np.sqrt(
+                np.sum((y_true - y_pred) ** 2, axis=0)
+                / np.sum((y_true - y_mean) ** 2, axis=0)
+            )
+            return RRMSE.data
 
     @staticmethod
     def R2(
-            y_true: np.ndarray,
-            y_pred : np.ndarray,
-            one_param: bool = True
+        y_true: np.ndarray, y_pred: np.ndarray, one_param: bool = True
     ) -> float:
-        '''Computes the coefficient of determination.
+        """Computes the coefficient of determination.
 
         Args:
           y_true:
@@ -299,75 +316,87 @@ class Predict(ABC):
 
         Returns:
           The coefficient of determination.
+        """
 
-        '''
-        nominator = sum((y_true - y_pred)**2)
-        if one_param:
-            denominator = sum(y_true**2)
-        else:
-            denominator = sum((y_true - np.mean(y_true))**2)
-        R2 = 1 - nominator / denominator
-        try:
-            return R2[0]
-        except (TypeError, IndexError):
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            nominator = sum((y_true - y_pred) ** 2)
+            if one_param:
+                denominator = sum(y_true**2)
+            else:
+                denominator = sum((y_true - np.mean(y_true)) ** 2)
+            R2 = 1 - nominator / denominator
             return R2
+        else:
+            y_true = ma.masked_invalid(y_true)
+            nominator = np.sum((y_true - y_pred) ** 2, axis=0)
+            if one_param:
+                denominator = np.sum(y_true**2, axis=0)
+            else:
+                denominator = np.sum(
+                    (y_true - np.mean(y_true, axis=0)) ** 2, axis=0
+                )
+            R2 = 1 - nominator / denominator
+            return R2.data
 
 
 class MLP(pl.LightningModule, Predict):
-    '''Base class for creating Multilayer Perceptrons.
+    """Base class for creating Multilayer Perceptrons."""
 
-    '''
     learning_curve_train = []
     learning_curve_val = []
 
-    def __init__(self, hparams : Dict[str, Any]):
+    def __init__(self, hparams: Dict[str, Any]):
         super().__init__()
 
-        assert 'n_features' in hparams, '`n_features` is a required hparams key.'
+        assert (
+            "n_features" in hparams
+        ), "`n_features` is a required hparams key."
 
         layers = []
-        input_dim = hparams['n_features']
+        input_dim = hparams["n_features"]
 
-        for n in range(1, hparams.get('num_layers', 1) + 1):
+        for n in range(1, hparams.get("num_layers", 1) + 1):
 
-            batchnorm = hparams.get(f'layer_{n}_batchnorm', False)
+            batchnorm = hparams.get(f"layer_{n}_batchnorm", False)
             bias = False if batchnorm else True
-            activation_name = hparams.get(f'layer_{n}_activation', 'Tanh')
-            layer_size = int(hparams.get(f'layer_{n}_size', 10))
-            dropout = hparams.get(f'layer_{n}_dropout', False)
+            activation_name = hparams.get(f"layer_{n}_activation", "Tanh")
+            layer_size = int(hparams.get(f"layer_{n}_size", 10))
+            dropout = hparams.get(f"layer_{n}_dropout", False)
 
             l = [nn.Linear(input_dim, layer_size, bias=bias)]
 
-            if batchnorm and (activation_name != 'SELU'):
+            if batchnorm and (activation_name != "SELU"):
                 l.append(nn.BatchNorm1d(layer_size))
 
             if dropout:
-                if activation_name == 'SELU':
+                if activation_name == "SELU":
                     l.append(nn.AlphaDropout(dropout))
                 else:
                     l.append(nn.Dropout(dropout))
 
-            if activation_name == 'Tanh':
+            if activation_name == "Tanh":
                 l.append(nn.Tanh())
                 nn.init.xavier_uniform_(l[0].weight)
-            elif activation_name == 'Sigmoid':
+            elif activation_name == "Sigmoid":
                 l.append(nn.Sigmoid())
                 nn.init.xavier_uniform_(l[0].weight)
-            elif activation_name == 'ReLU':
+            elif activation_name == "ReLU":
                 l.append(nn.ReLU())
-                nn.init.kaiming_uniform_(l[0].weight, nonlinearity='relu')
-            elif activation_name == 'LeakyReLU':
+                nn.init.kaiming_uniform_(l[0].weight, nonlinearity="relu")
+            elif activation_name == "LeakyReLU":
                 l.append(nn.LeakyReLU())
-                nn.init.kaiming_uniform_(l[0].weight, nonlinearity='leaky_relu')
-            elif activation_name == 'GELU':
+                nn.init.kaiming_uniform_(
+                    l[0].weight, nonlinearity="leaky_relu"
+                )
+            elif activation_name == "GELU":
                 l.append(nn.GELU())
-            elif activation_name == 'SELU':
+            elif activation_name == "SELU":
                 l.append(nn.SELU())
-            elif activation_name == 'ELU':
+            elif activation_name == "ELU":
                 l.append(nn.ELU())
             else:
                 raise NotImplementedError(
-                    'Please add this activation to the model class.'
+                    "Please add this activation to the model class."
                 )
 
             layers.append(nn.Sequential(*l))
