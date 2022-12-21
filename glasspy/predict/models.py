@@ -29,7 +29,7 @@ from typing import Dict, List, Tuple, NamedTuple, Union, Any
 import numpy as np
 import numpy.ma as ma
 
-from glasspy.chemistry import featurizer, CompositionLike
+from glasspy.chemistry import physchem_featurizer, CompositionLike
 
 
 _basemodelpath = Path(os.path.dirname(__file__)) / "models"
@@ -1334,20 +1334,14 @@ class ViscNet(BaseViscNet):
           Array with the computed chemical features
         """
 
-        (feat_array, feat_names) = featurizer.extract_chem_feats(
-            composition,
-            input_cols,
-            self.weighted_features,
-            self.absolute_features,
-            1,
+        feat_array, _ = physchem_featurizer(
+            x = composition,
+            input_cols = input_cols,
+            weighted_features = self.weighted_features,
+            absolute_features = self.absolute_features,
+            rescale_to_sum = 1,
+            order = "aw"
         )
-        feat_idx = list(
-            range(
-                len(self.weighted_features),
-                len(self.weighted_features) + len(self.absolute_features),
-            )
-        ) + list(range(len(self.weighted_features)))
-        feat_array = feat_array[:, feat_idx]
         return feat_array
 
 
