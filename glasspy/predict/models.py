@@ -340,7 +340,46 @@ class Predict(ABC):
 
 
 class MLP(pl.LightningModule, Predict):
-    """Base class for creating Multilayer Perceptrons."""
+    """Base class for creating Multilayer Perceptrons.
+
+    Args:
+      hparams:
+        Dictionary with the hyperparemeters of the network. The possible
+        parameters are:
+          + "n_features": number of input features (required). Must be a
+          positive integer.
+          + "num_layers": number of hidden layers (defaults to 1). Must be a
+          positive integer.
+          + "layer_n_size": number of neurons in layer n (replace n for an
+            integer starting at 1, defaults to 10). Must be a positive integer.
+          + "layer_n_activation": activation function of layer n (replace n for
+            an integer starting at 1, defaults to Tanh). Available values are
+            ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
+            "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
+          + "layer_n_dropout": dropout of layer n (replace n for an integer
+            starting at 1, defaults to False meaning no dropout). Any value
+            between 0 and 1 (or False) is permitted.
+          + "layer_n_batchnorm": `True` will use batch normalization in layer n,
+            `False` will not use batch normalization in layer n (replace n for
+            an integer starting at 1, defaults to False meaning no batch
+            normalization).
+          + "loss": loss function to use for the backpropagation algorithm
+            (defaults to `mse`). Use `mse` for mean squared error loss (L2) or
+            `huber` for a smooth L1 loss.
+          + "optimizer": optimizer algorithm to use (defaults `SGD`). Use `SGD`
+            for stochastic gradient descend, `Adam` for Adam, or `AdamW` for
+            weighted Adam.
+          + "lr": optimizer learning rate (defaults to 1e-4 if optimizer is
+            `SGD` or 1e-3 if optimizer is `Adam` or `AdamW`).
+          + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
+          + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
+            (defaults to 1e-8).
+
+    Raises:
+      NotImplementedError:
+        When the selected hyperparameters is not one of the permited values.
+    """
+
 
     learning_curve_train = []
     learning_curve_val = []
@@ -348,119 +387,65 @@ class MLP(pl.LightningModule, Predict):
     def __init__(self, hparams: Dict[str, Any]):
         super().__init__()
 
-        assert (
-            "n_features" in hparams
-        ), "`n_features` is a required hparams key."
+        self.hidden_layers = _gen_architecture(hparams, reverse=False)
 
-        layers = []
-        input_dim = hparams["n_features"]
-
-        for n in range(1, hparams.get("num_layers", 1) + 1):
-
-            batchnorm = hparams.get(f"layer_{n}_batchnorm", False)
-            bias = False if batchnorm else True
-            activation_name = hparams.get(f"layer_{n}_activation", "Tanh")
-            layer_size = int(hparams.get(f"layer_{n}_size", 10))
-            dropout = hparams.get(f"layer_{n}_dropout", False)
-
-            l = [nn.Linear(input_dim, layer_size, bias=bias)]
-
-            if batchnorm and (activation_name != "SELU"):
-                l.append(nn.BatchNorm1d(layer_size))
-
-            if dropout:
-                if activation_name == "SELU":
-                    l.append(nn.AlphaDropout(dropout))
-                else:
-                    l.append(nn.Dropout(dropout))
-
-            if activation_name == "Tanh":
-                l.append(nn.Tanh())
-                nn.init.xavier_uniform_(l[0].weight)
-            elif activation_name == "Sigmoid":
-                l.append(nn.Sigmoid())
-                nn.init.xavier_uniform_(l[0].weight)
-            elif activation_name == "ReLU":
-                l.append(nn.ReLU())
-                nn.init.kaiming_uniform_(l[0].weight, nonlinearity="relu")
-            elif activation_name == "LeakyReLU":
-                l.append(nn.LeakyReLU())
-                nn.init.kaiming_uniform_(
-                    l[0].weight, nonlinearity="leaky_relu"
-                )
-            elif activation_name == "GELU":
-                l.append(nn.GELU())
-            elif activation_name == "SELU":
-                l.append(nn.SELU())
-            elif activation_name == "ELU":
-                l.append(nn.ELU())
-            else:
-                raise NotImplementedError(
-                    "Please add this activation to the model class."
-                )
-
-            layers.append(nn.Sequential(*l))
-            input_dim = layer_size
-
-        self.hidden_layers = nn.Sequential(*layers)
-
-        if hparams.get('loss', 'mse') == 'mse':
+        if hparams.get("loss", "mse") == "mse":
             self.loss_fun = F.mse_loss
-        elif hparams['loss'] == 'huber':
+        elif hparams["loss"] == "huber":
             self.loss_fun = F.smooth_l1_loss
         else:
             raise NotImplementedError(
-                'Please add this loss function to the model class.'
+                "Please add this loss function to the model class."
             )
 
     @property
     def domain(self) -> Domain:
         # TODO
-        raise NotImplementedError('GlassPy error: not implemented.')
+        raise NotImplementedError("GlassPy error: not implemented.")
 
-    def is_within_domain():
+    def is_within_domain(self):
         # TODO
-        raise NotImplementedError('GlassPy error: not implemented.')
+        raise NotImplementedError("GlassPy error: not implemented.")
 
     def get_training_dataset(self):
         # TODO
-        raise NotImplementedError('GlassPy error: not implemented.')
+        raise NotImplementedError("GlassPy error: not implemented.")
 
     def get_validation_dataset(self):
         # TODO
-        raise NotImplementedError('GlassPy error: not implemented.')
+        raise NotImplementedError("GlassPy error: not implemented.")
 
     def get_test_dataset(self):
         # TODO
-        raise NotImplementedError('GlassPy error: not implemented.')
+        raise NotImplementedError("GlassPy error: not implemented.")
 
     def distance_from_training(self):
         # TODO
-        raise NotImplementedError('GlassPy error: not implemented.')
+        raise NotImplementedError("GlassPy error: not implemented.")
 
     def configure_optimizers(self):
-        if 'optimizer' not in self.hparams:
+        if "optimizer" not in self.hparams:
             optimizer = SGD(self.parameters(), lr=1e-4)
 
-        elif self.hparams['optimizer'] == 'SGD':
-            optimizer = SGD( 
+        elif self.hparams["optimizer"] == "SGD":
+            optimizer = SGD(
                 self.parameters(),
-                lr=self.hparams.get('lr', 1e-4),
-                momentum=self.hparams.get('momentum', 0),
+                lr=self.hparams.get("lr", 1e-4),
+                momentum=self.hparams.get("momentum", 0),
             )
 
-        elif self.hparams['optimizer'] == 'Adam':
-            optimizer = Adam( 
+        elif self.hparams["optimizer"] == "Adam":
+            optimizer = Adam(
                 self.parameters(),
-                lr=self.hparams.get('lr', 1e-3),
-                eps=self.hparams.get('optimizer_Adam_eps', 1e-08),
+                lr=self.hparams.get("lr", 1e-3),
+                eps=self.hparams.get("optimizer_Adam_eps", 1e-08),
             )
 
-        elif self.hparams['optimizer'] == 'AdamW':
-            optimizer = AdamW( 
+        elif self.hparams["optimizer"] == "AdamW":
+            optimizer = AdamW(
                 self.parameters(),
-                lr=self.hparams.get('lr', 1e-3),
-                eps=self.hparams.get('optimizer_Adam_eps', 1e-08),
+                lr=self.hparams.get("lr", 1e-3),
+                eps=self.hparams.get("optimizer_Adam_eps", 1e-08),
             )
 
         return optimizer
@@ -468,7 +453,9 @@ class MLP(pl.LightningModule, Predict):
     def training_step(self, batch, batch_idx):
         x, y = batch
         loss = self.loss_fun(self(x), y)
-        return {'loss': loss,}
+        return {
+            "loss": loss,
+        }
 
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
@@ -477,7 +464,9 @@ class MLP(pl.LightningModule, Predict):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         loss = self.loss_fun(self(x), y)
-        return {'val_loss_step': loss,}
+        return {
+            "val_loss_step": loss,
+        }
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x["val_loss_step"] for x in outputs]).mean()
@@ -488,16 +477,23 @@ class MLP(pl.LightningModule, Predict):
         if not isinstance(path, Path):
             path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        data = (self.state_dict(), self.learning_curve_train,
-                self.learning_curve_val, self.hparams)
-        pickle.dump(data, open(path, 'wb'))
+        data = (
+            self.state_dict(),
+            self.learning_curve_train,
+            self.learning_curve_val,
+            self.hparams,
+        )
+        pickle.dump(data, open(path, "wb"))
 
     def load_training(self, path):
-        state_dict, learning_train, learning_val, hparams = pickle.load(open(path, 'rb'))
+        state_dict, learning_train, learning_val, hparams = pickle.load(
+            open(path, "rb")
+        )
         self.load_state_dict(state_dict)
         self.learning_curve_train = learning_train
         self.learning_curve_val = learning_val
-        self.hparams = hparams
+
+        return hparams
 
 
 class BaseViscNet(MLP):
