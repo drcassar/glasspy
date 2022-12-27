@@ -1449,7 +1449,7 @@ class GlassNet(MTL):
         """
 
         def myega_residuals(x, T, y):
-            return myega_alt(T, x[0], x[1], x[2]) - y
+            return myega_alt(T, *x) - y
 
         for visc_array in self.viscosity_table_gen(
             composition,
@@ -1487,6 +1487,70 @@ class GlassNet(MTL):
             except ValueError:
                 yield visc_array, np.nan, np.nan, np.nan
 
+    def viscosity_parameters(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        log_visc_limit: float = 12,
+        columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
+        n_points_low: int = 10,
+        return_dataframe: bool = True,
+    ):
+        """Predict the MYEGA viscosity parameters.
+
+        This method performs a robust non-linear regression of the MYEGA
+        equation on viscosity data predicted by GlassNet. If the regression
+        cannot be performed, the parameters returned will be NaN.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          log_visc_limit:
+            Maximum value of log10(viscosity) (viscosity in Pa.s) that is
+            acceptable. Predictions of values greater than 12 for the log10 of
+            viscosity are prone to higher errors. Default value is 12.
+          columns:
+            Which targets of GlassNet that will be considered to build the
+            table.
+          n_points_low:
+            Number of viscosity data points to consider to guess the fragility
+            index. Must be a positive integer. Default value is 10.
+          return_dataframe:
+            If `True`, then returns a pandas DataFrame, else returns an array.
+            Default value is `True`.
+
+        Returns:
+          parameters:
+            Numpy array or DataFrame of the viscosity parameters. The first
+            column is the asymptotic viscosity (in base-10 logarithm of Pa.s);
+            the second column is the temperature where the viscosity is 10^12
+            Pa.s; and the third column is the fragility index.
+        """
+
+        parameters = [
+            x
+            for _, *x in self.viscosity_parameters_gen(
+                composition,
+                input_cols,
+                log_visc_limit,
+                columns,
+                n_points_low,
+            )
+        ]
+
+        if return_dataframe:
+            return pd.DataFrame(parameters, columns=[
+                "log10_eta_infinity (Pa.s)",
+                "Tg_MYEGA (K)",
+                "fragility",
+            ])
+        else:
+            return np.array(parameters)
+
     def predict_log10_viscosity(
         self,
         T: Union[float, List[float], np.ndarray],
@@ -1495,6 +1559,7 @@ class GlassNet(MTL):
         log_visc_limit: float = 12,
         columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
         n_points_low: int = 10,
+        return_parameters: bool = False,
     ):
         """Predict the base-10 logarithm of viscosity (viscosity in Pa.s).
 
@@ -1523,6 +1588,8 @@ class GlassNet(MTL):
           n_points_low:
             Number of viscosity data points to consider to guess the fragility
             index. Must be a positive integer. Default value is 10.
+          return_parameters:
+            If `True`, also returns the viscosity parameters array.
 
         Returns:
           log_10_viscosity:
@@ -1531,25 +1598,27 @@ class GlassNet(MTL):
             Numpy array of the viscosity parameters. The first column is the
             asymptotic viscosity (in base-10 logarithm of Pa.s); the second
             column is the temperature where the viscosity is 10^12 Pa.s; and the
-            third column is the fragility index.
+            third column is the fragility index. Only returned if
+            `return_parameters` is `True`.
         """
 
-        parameters = [
-            x
-            for _, *x in self.viscosity_parameters_gen(
+        parameters = self.viscosity_parameters(
                 composition,
                 input_cols,
                 log_visc_limit,
                 columns,
                 n_points_low,
-            )
-        ]
+                return_dataframe=False,
+        )
 
-        parameters = np.array(parameters)
-        log_10_viscosity = myega_alt(
+        log10_viscosity = myega_alt(
             T, parameters[:, 0], parameters[:, 1], parameters[:, 2]
         )
-        return log_10_viscosity, parameters
+
+        if return_parameters:
+            return log10_viscosity, parameters
+        else:
+            return log10_viscosity
 
     def predict_viscosity(
         self,
@@ -1559,6 +1628,7 @@ class GlassNet(MTL):
         log_visc_limit: float = 12,
         columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
         n_points_low: int = 10,
+        return_parameters: bool = False,
     ):
         """Predict the viscosity in Pa.s.
 
@@ -1588,6 +1658,8 @@ class GlassNet(MTL):
             Number of viscosity data points to consider to guess the fragility
             index for the regression. Must be a positive integer. Default value
             is 10.
+          return_parameters:
+            If `True`, also returns the viscosity parameters array.
 
         Returns:
           viscosity:
@@ -1596,7 +1668,8 @@ class GlassNet(MTL):
             Numpy array of the viscosity parameters. The first column is the
             asymptotic viscosity (in base-10 logarithm of Pa.s); the second
             column is the temperature where the viscosity is 10^12 Pa.s; and the
-            third column is the fragility index.
+            third column is the fragility index. Only returned if
+            `return_parameters` is `True`.
         """
 
         log10_viscosity, parameters = self.predict_log10_viscosity(
@@ -1606,9 +1679,13 @@ class GlassNet(MTL):
             log_visc_limit,
             columns,
             n_points_low,
+            return_parameters=True,
         )
 
-        return 10**log10_viscosity, parameters
+        if return_parameters:
+            return 10**log10_viscosity, parameters
+        else:
+            return 10**log10_viscosity
 
     @staticmethod
     def citation(bibtex: bool = False) -> str:
