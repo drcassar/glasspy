@@ -65,8 +65,8 @@ def _aggregate(array: np.array, function_name: str) -> np.ndarray:
     Raises:
       ValueError:
         Raises this error if the function_name is not valid.
-
     """
+
     if function_name == "sum":
         return np.sum(array, axis=1)
     elif function_name == "mean":
@@ -146,8 +146,8 @@ def physchem_featurizer(
         used to extract features.
       ValueError:
         Raised when invalid features are present and check_invalid is True.
-
     """
+
     msg = '"rescale_to_sum" must be a positive number, try 1 or 100'
     assert rescale_to_sum > 0, msg
 
