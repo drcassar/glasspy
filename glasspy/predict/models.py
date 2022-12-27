@@ -1217,12 +1217,14 @@ class GlassNet(MTL):
     def __init__(self):
         super().__init__(self.hparams)
 
-        dim = int(hparams[f'layer_{self.hparams["num_layers"]}_size'])
+        dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
         self.output_layer = nn.Sequential(
             nn.Linear(dim, self.hparams["n_targets"]),
         )
 
-        self.scaler_x, self.scaler_y = pickle.load(open(scaler_file, "rb"))
+        self.scaler_x, self.scaler_y = pickle.load(
+            open(self.scaler_file, "rb")
+        )
         self.load_training(self.training_file)
 
     def featurizer(
@@ -1311,7 +1313,7 @@ class GlassNet(MTL):
         with torch.no_grad():
             features = self.featurizer(composition, input_cols)
             features = torch.from_numpy(features).float()
-            y_pred = self.scaler_y.inverse_transform(self(feats).detach())
+            y_pred = self.scaler_y.inverse_transform(self(features).detach())
 
         if is_training:
             self.train()
@@ -1536,18 +1538,12 @@ class GlassNet(MTL):
             x
             for _, *x in self.viscosity_parameters_gen(
                 composition,
-                input_columns,
+                input_cols,
                 log_visc_limit,
                 columns,
                 n_points_low,
             )
         ]
-
-        # parameters = []
-        # for _, *x in self.viscosity_parameters_gen(
-        #     composition, input_columns, log_visc_limit, columns, n_points_low
-        # ):
-        #     parameters.append(x)
 
         parameters = np.array(parameters)
         log_10_viscosity = myega_alt(
@@ -1603,16 +1599,16 @@ class GlassNet(MTL):
             third column is the fragility index.
         """
 
-        log10_viscosity, parameters = self.predict_log10_viscositi(
+        log10_viscosity, parameters = self.predict_log10_viscosity(
             T,
             composition,
-            input_columns,
+            input_cols,
             log_visc_limit,
             columns,
             n_points_low,
         )
 
-        return 10 ** log10_viscosity, parameters
+        return 10**log10_viscosity, parameters
 
     @staticmethod
     def citation(bibtex: bool = False) -> str:
