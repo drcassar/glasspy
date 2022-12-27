@@ -1,15 +1,51 @@
-from .base import MLP
+from .base import MLP, MTL
 from glasspy.chemistry import physchem_featurizer, CompositionLike
+from glasspy.viscosity.equilibrium_log import myega_alt
 
 from typing import Dict, List, Tuple, NamedTuple, Union, Any
 
 import torch
 import torch.nn as nn
 import numpy as np
+import pandas as pd
+
+from scipy.stats import theilslopes
+from scipy.optimize import least_squares
 from torch.nn import functional as F
 
 
 _basemodelpath = Path(os.path.dirname(__file__)) / "models"
+
+_VISCOSITY_COLUMNS_FOR_REGRESSION = [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5",
+    "T6",
+    "T7",
+    "T8",
+    "T9",
+    "T10",
+    "T11",
+    "T12",
+    "Viscosity773K",
+    "Viscosity873K",
+    "Viscosity973K",
+    "Viscosity1073K",
+    "Viscosity1173K",
+    "Viscosity1273K",
+    "Viscosity1373K",
+    "Viscosity1473K",
+    "Viscosity1573K",
+    "Viscosity1673K",
+    "Viscosity1773K",
+    "Viscosity1873K",
+    "Viscosity2073K",
+    "Viscosity2273K",
+    "Tg",
+    "TLittletons",
+]
 
 
 class BaseViscNet(MLP):
@@ -104,8 +140,8 @@ class BaseViscNet(MLP):
         Returns:
           Dictionary with the viscosity parameters as keys and the viscosity
           parameters as values.
-
         """
+
         features = self.featurizer(composition, input_cols)
         features = torch.from_numpy(features).float()
         parameters = self.viscosity_parameters_from_tensor(
@@ -203,8 +239,8 @@ class BaseViscNet(MLP):
 
         Returns
           Tensor with the viscosity prediction.
-
         """
+
         T = x[:, -1].detach().clone()
         parameters = self.viscosity_parameters_from_tensor(x[:, :-1], True)
         log_viscosity = self.log_viscosity_fun(T, **parameters)
@@ -294,8 +330,8 @@ class BaseViscNet(MLP):
 
         Returns:
           Predicted values of the base-10 logarithm of viscosity.
-
         """
+
         return self.predict(T, composition, input_cols, table_mode)
 
     def predict_viscosity(
@@ -941,3 +977,638 @@ class ViscNetVFT(ViscNet):
             m * (T / Tg - 1) + (12 - log_eta_inf)
         )
         return log_viscosity
+
+
+class GlassNet(MTL):
+
+    hparams = {
+        "batch_size": 256,
+        "layer_1_activation": "Softplus",
+        "layer_1_batchnorm": True,
+        "layer_1_dropout": 0.08118311665886885,
+        "layer_1_size": 280,
+        "layer_2_activation": "Mish",
+        "layer_2_batchnorm": True,
+        "layer_2_dropout": 0.0009472891190852595,
+        "layer_2_size": 500,
+        "layer_3_activation": "LeakyReLU",
+        "layer_3_batchnorm": False,
+        "layer_3_dropout": 0.08660291424886811,
+        "layer_3_size": 390,
+        "layer_4_activation": "PReLU",
+        "layer_4_batchnorm": False,
+        "layer_4_dropout": 0.16775047518280012,
+        "layer_4_size": 480,
+        "loss": "mse",
+        "lr": 1.3252600209332101e-05,
+        "max_epochs": 2000,
+        "n_features": 98,
+        "n_targets": 85,
+        "num_layers": 4,
+        "optimizer": "AdamW",
+        "patience": 27,
+    }
+
+    targets = [
+        "T0",
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "T7",
+        "T8",
+        "T9",
+        "T10",
+        "T11",
+        "T12",
+        "Viscosity773K",
+        "Viscosity873K",
+        "Viscosity973K",
+        "Viscosity1073K",
+        "Viscosity1173K",
+        "Viscosity1273K",
+        "Viscosity1373K",
+        "Viscosity1473K",
+        "Viscosity1573K",
+        "Viscosity1673K",
+        "Viscosity1773K",
+        "Viscosity1873K",
+        "Viscosity2073K",
+        "Viscosity2273K",
+        "Viscosity2473K",
+        "Tg",
+        "Tmelt",
+        "Tliquidus",
+        "TLittletons",
+        "TAnnealing",
+        "Tstrain",
+        "Tsoft",
+        "TdilatometricSoftening",
+        "AbbeNum",
+        "RefractiveIndex",
+        "RefractiveIndexLow",
+        "RefractiveIndexHigh",
+        "MeanDispersion",
+        "Permittivity",
+        "TangentOfLossAngle",
+        "TresistivityIs1MOhm.m",
+        "Resistivity273K",
+        "Resistivity373K",
+        "Resistivity423K",
+        "Resistivity573K",
+        "Resistivity1073K",
+        "Resistivity1273K",
+        "Resistivity1473K",
+        "Resistivity1673K",
+        "YoungModulus",
+        "ShearModulus",
+        "Microhardness",
+        "PoissonRatio",
+        "Density293K",
+        "Density1073K",
+        "Density1273K",
+        "Density1473K",
+        "Density1673K",
+        "ThermalConductivity",
+        "ThermalShockRes",
+        "CTEbelowTg",
+        "CTE328K",
+        "CTE373K",
+        "CTE433K",
+        "CTE483K",
+        "CTE623K",
+        "Cp293K",
+        "Cp473K",
+        "Cp673K",
+        "Cp1073K",
+        "Cp1273K",
+        "Cp1473K",
+        "Cp1673K",
+        "TMaxGrowthVelocity",
+        "MaxGrowthVelocity",
+        "CrystallizationPeak",
+        "CrystallizationOnset",
+        "SurfaceTensionAboveTg",
+        "SurfaceTension1173K",
+        "SurfaceTension1473K",
+        "SurfaceTension1573K",
+        "SurfaceTension1673K",
+    ]
+
+    target_trans = {p: i for i, p in enumerate(targets)}
+
+    element_features = [
+        "Ag",
+        "Al",
+        "As",
+        "B",
+        "Ba",
+        "Be",
+        "Bi",
+        "Br",
+        "C",
+        "Ca",
+        "Cd",
+        "Ce",
+        "Cl",
+        "Co",
+        "Cr",
+        "Cs",
+        "Cu",
+        "Dy",
+        "Er",
+        "Eu",
+        "Fe",
+        "Ga",
+        "Gd",
+        "Ge",
+        "H",
+        "Hf",
+        "Hg",
+        "Ho",
+        "I",
+        "In",
+        "K",
+        "La",
+        "Li",
+        "Lu",
+        "Mg",
+        "Mn",
+        "Mo",
+        "N",
+        "Na",
+        "Nb",
+        "Nd",
+        "Ni",
+        "P",
+        "Pb",
+        "Pr",
+        "Rb",
+        "S",
+        "Sb",
+        "Sc",
+        "Se",
+        "Sm",
+        "Sn",
+        "Sr",
+        "Ta",
+        "Tb",
+        "Te",
+        "Ti",
+        "Tl",
+        "V",
+        "W",
+        "Y",
+        "Yb",
+        "Zn",
+        "Zr",
+    ]
+
+    weighted_features = [
+        ("c6_gb", "min"),
+        ("ElectronAffinity", "min"),
+        ("NUnfilled", "std1"),
+        ("NdValence", "min"),
+        ("NfValence", "min"),
+        ("NpUnfilled", "min"),
+        ("NsUnfilled", "min"),
+        ("nvalence", "max"),
+        ("atomic_volume", "min"),
+        ("GSbandgap", "min"),
+        ("GSenergy_pa", "max"),
+        ("FusionEnthalpy", "min"),
+    ]
+
+    absolute_features = [
+        ("num_oxistates", "max"),
+        ("NUnfilled", "min"),
+        ("NdUnfilled", "max"),
+        ("NdValence", "max"),
+        ("NfUnfilled", "sum"),
+        ("NfValence", "sum"),
+        ("NpUnfilled", "sum"),
+        ("NpUnfilled", "max"),
+        ("NpValence", "max"),
+        ("NsUnfilled", "sum"),
+        ("NsValence", "min"),
+        ("nvalence", "max"),
+        ("vdw_radius_uff", "max"),
+        ("atomic_radius_rahm", "max"),
+        ("GSbandgap", "min"),
+        ("GSestFCClatcnt", "std1"),
+        ("GSmagmom", "sum"),
+        ("en_Sanderson", "max"),
+        ("en_Tardini_Organov", "min"),
+        ("zeff", "std1"),
+        ("boiling_point", "std1"),
+        ("FusionEnthalpy", "max"),
+    ]
+
+    training_file = _basemodelpath / "GlassNet.p"
+    scaler_file = _basemodelpath / "GlassNet_scalers.p"
+
+    def __init__(self):
+        super().__init__(self.hparams)
+
+        dim = int(hparams[f'layer_{self.hparams["num_layers"]}_size'])
+        self.output_layer = nn.Sequential(
+            nn.Linear(dim, self.hparams["n_targets"]),
+        )
+
+        self.scaler_x, self.scaler_y = pickle.load(open(scaler_file, "rb"))
+        self.load_training(self.training_file)
+
+    def featurizer(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        auto_scale: bool = True,
+    ) -> np.ndarray:
+        """Compute the features used for input in GlassNet.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          auto_scale:
+            If `True`, then the features are automatically scaled and ready to
+            use with GlassNet. If `False`, then the features will not be scaled
+            and should not be used to make predictions with Glassnet. Default
+            value is `True`.
+
+        Returns:
+          Array with the computed features.
+        """
+
+        feat_array, _ = physchem_featurizer(
+            x=composition,
+            input_cols=input_cols,
+            elemental_features=self.element_features,
+            weighted_features=self.weighted_features,
+            absolute_features=self.absolute_features,
+            rescale_to_sum=1,
+            order="eaw",
+        )
+
+        if auto_scale:
+            feat_array = self.scaler_x.transform(feat_array)
+
+        return feat_array
+
+    def forward(self, x):
+        """Method used for training the neural network.
+
+        Consider using the other methods for prediction.
+
+        Args:
+          x:
+            Feature tensor.
+
+        Returns
+          Tensor with the predictions.
+        """
+
+        return self.output_layer(self.hidden_layers(x))
+
+    def predict(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        return_dataframe: bool = True,
+    ):
+        """Makes prediction of properties using GlassNet.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          return_dataframe:
+            If `True`, then returns a pandas DataFrame, else returns an array.
+            Default value is `True`.
+
+        Returns:
+          Predicted values of properties. Will be a DataFrame if
+          `return_dataframe` is True, otherwise will be an array.
+        """
+
+        is_training = self.training
+        if is_training:
+            self.eval()
+
+        with torch.no_grad():
+            features = self.featurizer(composition, input_cols)
+            features = torch.from_numpy(features).float()
+            y_pred = self.scaler_y.inverse_transform(self(feats).detach())
+
+        if is_training:
+            self.train()
+
+        if return_dataframe:
+            return pd.DataFrame(y_pred, columns=self.targets)
+        else:
+            return y_pred
+
+    def viscosity_table_gen(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        log_visc_limit: float = 12,
+        columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
+        return_dataframe: bool = True,
+    ):
+        """Generator of viscosity tables.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          log_visc_limit:
+            Maximum value of log10(viscosity) (viscosity in Pa.s) that is
+            acceptable. Predictions of values greater than 12 for the log10 of
+            viscosity are prone to higher errors. Default value is 12.
+          columns:
+            Which targets of GlassNet that will be considered to build the
+            table.
+          return_dataframe:
+            If `True`, returns a pandas DataFrame. Else returns a numpy array.
+
+        Yields:
+          Viscosity table.
+        """
+
+        for predictions in self.predict(composition, input_cols, False):
+
+            data = []
+
+            for col in columns:
+                value = predictions[self.target_trans[col]]
+
+                if col.startswith("Viscosity"):
+                    T = int(col[9:-1])
+                    log_visc = value
+
+                elif col.startswith("T"):
+                    T = value
+
+                    if col[1].isdigit():
+                        log_visc = int(col[1:])
+
+                    else:
+                        if col == "Tg":
+                            log_visc = 12
+                        elif col == "TLittletons":
+                            log_visc = 6.6
+                        elif col == "TAnnealing":
+                            log_visc = 12.4
+                        elif col == "Tstrain":
+                            log_visc = 13.5
+                        elif col == "TdilatometricSoftening":
+                            log_visc = 10
+                        elif col == "Tsoft":
+                            log_visc = 6.6
+                        elif col == "Tmelt":
+                            log_visc = 1
+                        else:
+                            log_visc = np.nan
+
+                if log_visc > log_visc_limit:
+                    log_visc = np.nan
+
+                if np.isfinite(log_visc):
+                    data.append((T, log_visc))
+
+            data = np.array(sorted(data))
+
+            if return_dataframe:
+                yield pd.DataFrame(
+                    data, columns=["Temperature (K)", "log10_viscosity (Pa.s)"]
+                )
+            else:
+                yield data
+
+    def viscosity_parameters_gen(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        log_visc_limit: float = 12,
+        columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
+        n_points_low: int = 10,
+    ):
+        """Generator of MYEGA viscosity parameters.
+
+        This method performs a robust non-linear regression of the MYEGA
+        equation on viscosity data predicted by GlassNet. If the regression
+        cannot be performed, the parameters returned will be NaN.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          log_visc_limit:
+            Maximum value of log10(viscosity) (viscosity in Pa.s) that is
+            acceptable. Predictions of values greater than 12 for the log10 of
+            viscosity are prone to higher errors. Default value is 12.
+          columns:
+            Which targets of GlassNet that will be considered to build the
+            table.
+          n_points_low:
+            Number of viscosity data points to consider to guess the fragility
+            index. Must be a positive integer. Default value is 10.
+
+        Yields:
+          visc_array:
+            Numpy array of the viscosity table.
+          log_eta_inf:
+            Base-10 logarithm of the asymptotic viscosity in the limit of
+            infinite temperature (viscosity in Pa.s).
+          Tg_MYEGA:
+            Temperature where viscosity is equal to 10^12 Pa.s.
+          fragility:
+            Fragility of the liquid as defined by Angell.
+        """
+
+        def myega_residuals(x, T, y):
+            return myega_alt(T, x[0], x[1], x[2]) - y
+
+        for visc_array in self.viscosity_table_gen(
+            composition,
+            input_cols,
+            log_visc_limit,
+            columns,
+            return_dataframe=False,
+        ):
+
+            try:
+                slope, _, _, _ = theilslopes(
+                    visc_array[:n_points_low, 1],
+                    1 / visc_array[:n_points_low, 0],
+                )
+
+                closest_to_Tg = np.argmin(np.abs(visc_array[:, 1] - 12))
+
+                guess_Tg = visc_array[closest_to_Tg, 0]
+                guess_m = slope / guess_Tg
+                guess_ninf = visc_array[-1, 1]
+
+                regression = least_squares(
+                    myega_residuals,
+                    [guess_ninf, guess_Tg, guess_m],
+                    loss="cauchy",
+                    f_scale=0.5,  # inlier residuals are lower than this value
+                    args=(visc_array[:, 0], visc_array[:, 1]),
+                    bounds=([-np.inf, 0, 10], [11, np.inf, np.inf]),
+                )
+
+                log_eta_inf, Tg_MYEGA, fragility = regression.x
+
+                yield visc_array, log_eta_inf, Tg_MYEGA, fragility
+
+            except ValueError:
+                yield visc_array, np.nan, np.nan, np.nan
+
+    def predict_log10_viscosity(
+        self,
+        T: Union[float, List[float], np.ndarray],
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        log_visc_limit: float = 12,
+        columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
+        n_points_low: int = 10,
+    ):
+        """Predict the base-10 logarithm of viscosity (viscosity in Pa.s).
+
+        This method performs a robust non-linear regression of the MYEGA
+        equation on viscosity data predicted by GlassNet. If the regression
+        cannot be performed, the predicted viscosity will be NaN.
+
+        Args:
+          T:
+            Temperature (in Kelvin) to compute the viscosity. If this is a numpy
+            array, it must have only one dimension.
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          log_visc_limit:
+            Maximum value of log10(viscosity) (viscosity in Pa.s) that is
+            acceptable for the regression. Predictions of values greater than 12
+            for the log10 of viscosity are prone to higher errors. Default value
+            is 12.
+          columns:
+            Which targets of GlassNet that will be considered to build the
+            table.
+          n_points_low:
+            Number of viscosity data points to consider to guess the fragility
+            index. Must be a positive integer. Default value is 10.
+
+        Returns:
+          log_10_viscosity:
+            Numpy array of the predicted base-10 logarithm of viscosity
+          parameters:
+            Numpy array of the viscosity parameters. The first column is the
+            asymptotic viscosity (in base-10 logarithm of Pa.s); the second
+            column is the temperature where the viscosity is 10^12 Pa.s; and the
+            third column is the fragility index.
+        """
+
+        parameters = [
+            x
+            for _, *x in self.viscosity_parameters_gen(
+                composition,
+                input_columns,
+                log_visc_limit,
+                columns,
+                n_points_low,
+            )
+        ]
+
+        # parameters = []
+        # for _, *x in self.viscosity_parameters_gen(
+        #     composition, input_columns, log_visc_limit, columns, n_points_low
+        # ):
+        #     parameters.append(x)
+
+        parameters = np.array(parameters)
+        log_10_viscosity = myega_alt(
+            T, parameters[:, 0], parameters[:, 1], parameters[:, 2]
+        )
+        return log_10_viscosity, parameters
+
+    def predict_viscosity(
+        self,
+        T: Union[float, List[float], np.ndarray],
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        log_visc_limit: float = 12,
+        columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
+        n_points_low: int = 10,
+    ):
+        """Predict the viscosity in Pa.s.
+
+        This method performs a robust non-linear regression of the MYEGA
+        equation on viscosity data predicted by GlassNet. If the regression
+        cannot be performed, the predicted viscosity will be NaN.
+
+        Args:
+          T:
+            Temperature (in Kelvin) to compute the viscosity. If this is a numpy
+            array, it must have only one dimension.
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          log_visc_limit:
+            Maximum value of log10(viscosity) (viscosity in Pa.s) that is
+            acceptable for the regression. Predictions of values greater than 12
+            for the log10 of viscosity are prone to higher errors. Default value
+            is 12.
+          columns:
+            Which targets of GlassNet that will be considered to perform the
+            regression.
+          n_points_low:
+            Number of viscosity data points to consider to guess the fragility
+            index for the regression. Must be a positive integer. Default value
+            is 10.
+
+        Returns:
+          viscosity:
+            Numpy array of the predicted viscosity in Pa.s.
+          parameters:
+            Numpy array of the viscosity parameters. The first column is the
+            asymptotic viscosity (in base-10 logarithm of Pa.s); the second
+            column is the temperature where the viscosity is 10^12 Pa.s; and the
+            third column is the fragility index.
+        """
+
+        log10_viscosity, parameters = self.predict_log10_viscositi(
+            T,
+            composition,
+            input_columns,
+            log_visc_limit,
+            columns,
+            n_points_low,
+        )
+
+        return 10 ** log10_viscosity, parameters
+
+    @staticmethod
+    def citation(bibtex: bool = False) -> str:
+        raise NotImplementedError("Not implemented yet.")
