@@ -21,7 +21,7 @@ setuptools.setup(
         "pandas>=1.3",
         "lmfit>=1.0.0",
         "chemparse>=0.1.0",
-        # "mendeleev>=0.9.0",
+        "scikit-learn>=1.1.2",
         # "torch>=1.7.0",
         # "pytorch-lightning",
     ],
