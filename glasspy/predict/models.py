@@ -2,13 +2,18 @@ from .base import MLP, MTL
 from glasspy.chemistry import physchem_featurizer, CompositionLike
 from glasspy.viscosity.equilibrium_log import myega_alt
 
+import os
+import pickle
 from typing import Dict, List, Tuple, NamedTuple, Union, Any
+from pathlib import Path
+from abc import abstractmethod
+from collections import defaultdict
+from collections.abc import Iterable
 
 import torch
 import torch.nn as nn
 import numpy as np
 import pandas as pd
-
 from scipy.stats import theilslopes
 from scipy.optimize import least_squares
 from torch.nn import functional as F
@@ -48,7 +53,7 @@ _VISCOSITY_COLUMNS_FOR_REGRESSION = [
 ]
 
 
-class BaseViscNet(MLP):
+class _BaseViscNet(MLP):
     """Base class for creating ViscNet-like models.
 
     References:
@@ -682,7 +687,7 @@ class BaseViscNet(MLP):
         return c
 
 
-class ViscNet(BaseViscNet):
+class ViscNet(_BaseViscNet):
     """ViscNet predictor of viscosity and viscosity parameters.
 
     ViscNet is a physics-informed neural network that has the MYEGA [1]
