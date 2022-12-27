@@ -1,4 +1,4 @@
-'''Equations for equilibrium viscosity.'''
+"""Equations for equilibrium viscosity."""
 
 from numpy import exp, log, log10
 import numpy as np
@@ -6,7 +6,7 @@ import numpy as np
 from glasspy.viscosity.equilibrium_log import _belowT0correction
 
 
-def MYEGA(T, eta_inf, K, C):
+def myega(T, eta_inf, K, C):
     """
     Computes the viscosity using the equation developed by Mauro and co-authors
 
@@ -36,7 +36,7 @@ def MYEGA(T, eta_inf, K, C):
     Notes
     -----
     In the original reference the equation is in base-10 logarithm, see Eq. (6)
-    in [1]. 
+    in [1].
 
     References
     ----------
@@ -49,12 +49,12 @@ def MYEGA(T, eta_inf, K, C):
         Technol 16, 244–249.
 
     """
-    viscosity = eta_inf * 10**(K / T * exp(C / T))
+    viscosity = eta_inf * 10 ** (K / T * exp(C / T))
 
     return viscosity
 
 
-def MYEGA_alt(T, eta_inf, T12, m):
+def myega_alt(T, eta_inf, T12, m):
     """
     Computes the viscosity using the equation developed by Mauro and co-authors
 
@@ -92,14 +92,16 @@ def MYEGA_alt(T, eta_inf, T12, m):
 
     """
     log_eta_inf = log10(eta_inf)
-    viscosity = eta_inf * 10**(
-        (12-log_eta_inf)*(T12/T)*exp((m/(12-log_eta_inf)-1)*(T12/T-1))
+    viscosity = eta_inf * 10 ** (
+        (12 - log_eta_inf)
+        * (T12 / T)
+        * exp((m / (12 - log_eta_inf) - 1) * (T12 / T - 1))
     )
 
     return viscosity
 
 
-def VFT(T, eta_inf, A, T0):
+def vft(T, eta_inf, A, T0):
     """
     Computes the viscosity using the empirical Vogel-Fulcher-Tammann eq.
 
@@ -141,12 +143,12 @@ def VFT(T, eta_inf, A, T0):
     return viscosity
 
 
-def VFT_alt(T, eta_inf, T12, m):
+def vft_alt(T, eta_inf, T12, m):
     """
     Computes the viscosity using the Vogel-Fulcher-Tammann eq.
 
     This is the rewriten VFT equation found in ref. [4].
-    
+
     Parameters
     ----------
     T : float or array_like
@@ -189,14 +191,15 @@ def VFT_alt(T, eta_inf, T12, m):
 
     """
     log_eta_inf = log10(eta_inf)
-    viscosity = log_eta_inf * 10**((12 - log_eta_inf)**2 / \
-        (m * (T / T12 - 1) + (12 - log_eta_inf)))
+    viscosity = log_eta_inf * 10 ** (
+        (12 - log_eta_inf) ** 2 / (m * (T / T12 - 1) + (12 - log_eta_inf))
+    )
     T0 = T12 * (1 - (12 - log_eta_inf) / m)
     viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
-def AM(T, eta_inf, alpha, beta):
+def am(T, eta_inf, alpha, beta):
     """
     Computes the viscosity using the equation developed by Avramov & Milchev.
 
@@ -230,17 +233,17 @@ def AM(T, eta_inf, alpha, beta):
         relationship of liquids. Chemical Engineering Science 4, 238–246.
 
     """
-    viscosity = eta_inf * exp((beta / T)**alpha)
+    viscosity = eta_inf * exp((beta / T) ** alpha)
 
     return viscosity
 
 
-def AM_alt(T, eta_inf, T12, m):
+def am_alt(T, eta_inf, T12, m):
     """
     Computes the viscosity using the equation developed by Avramov & Milchev.
 
     This is the rewriten AM equation found in ref. [3].
-    
+
     Parameters
     ----------
     T : float or array_like
@@ -280,13 +283,14 @@ def AM_alt(T, eta_inf, T12, m):
 
     """
     log_eta_inf = log10(eta_inf)
-    viscosity = log_eta_inf * 10**((12 - log_eta_inf) * \
-        (T12 / T)**(m/(12 - log_eta_inf)))
+    viscosity = log_eta_inf * 10 ** (
+        (12 - log_eta_inf) * (T12 / T) ** (m / (12 - log_eta_inf))
+    )
 
     return viscosity
 
 
-def AG(T, eta_inf, B, S_conf_fun):
+def ag(T, eta_inf, B, S_conf_fun):
     """
     Computes the viscosity using the equation developed by Adam & Gibbs
 
@@ -324,7 +328,7 @@ def AG(T, eta_inf, B, S_conf_fun):
     return viscosity
 
 
-def CLU(T, pre_exp, A, T0):
+def clu(T, pre_exp, A, T0):
     """
     Computes the viscosity using the Cukierman-Lane-Uhlmann eq.
 
@@ -355,12 +359,12 @@ def CLU(T, pre_exp, A, T0):
         The Journal of Chemical Physics 59, 3639–3644.
 
     """
-    viscosity = pre_exp*T**(1/2)*(A / (T - T0))
+    viscosity = pre_exp * T ** (1 / 2) * (A / (T - T0))
     viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
-def BS(T, eta_inf, A, T0, gamma=1):
+def bs(T, eta_inf, A, T0, gamma=1):
     """
     Computes the viscosity using the Bendler-Shlesinger eq.
 
@@ -393,12 +397,12 @@ def BS(T, eta_inf, A, T0, gamma=1):
         glass-forming liquids. J Stat Phys 53, 531–541.
 
     """
-    viscosity = eta_inf * exp(A / (T - T0)**(3 * gamma / 2))
+    viscosity = eta_inf * exp(A / (T - T0) ** (3 * gamma / 2))
     viscosity = _belowT0correction(T, T0, viscosity)
     return viscosity
 
 
-def Dienes(T, eta_inf, A, B, T0):
+def dienes(T, eta_inf, A, B, T0):
     """
     Computes the viscosity using the Dienes eq.
 
@@ -436,7 +440,7 @@ def Dienes(T, eta_inf, A, B, T0):
     return viscosity
 
 
-def DML(T, eta_inf, A, B, T0):
+def dml(T, eta_inf, A, B, T0):
     """
     Computes the viscosity using the DML eq.
 

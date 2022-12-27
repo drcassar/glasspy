@@ -1,15 +1,15 @@
-'''Equations for the base-10 logarithm of equilibrium viscosity.'''
+"""Equations for the base-10 logarithm of equilibrium viscosity."""
 
 from numpy import exp, log, log10
 import numpy as np
 
 
 def _belowT0correction(T, T0, viscosity):
-    '''Returns infinity viscosity below the divergence temperature (T0).'''
+    """Returns infinity viscosity below the divergence temperature (T0)."""
     return np.where(np.less_equal(T, T0), np.inf, viscosity)
 
 
-def MYEGA(T, log_eta_inf, K, C):
+def myega(T, log_eta_inf, K, C):
     """
     Computes the viscosity using the equation developed by Mauro and co-authors
 
@@ -39,7 +39,7 @@ def MYEGA(T, log_eta_inf, K, C):
     Notes
     -----
     In the original reference the equation is in base-10 logarithm, see Eq. (6)
-    in [1]. 
+    in [1].
 
     References
     ----------
@@ -57,7 +57,7 @@ def MYEGA(T, log_eta_inf, K, C):
     return log10_viscosity
 
 
-def MYEGA_alt(T, log_eta_inf, T12, m):
+def myega_alt(T, log_eta_inf, T12, m):
     """
     Computes the base-10 log of viscosity using the MYEGA equation.
 
@@ -94,13 +94,14 @@ def MYEGA_alt(T, log_eta_inf, T12, m):
         Research Laboratory), pp. 3–12.
 
     """
-    log10_viscosity = log_eta_inf + \
-        (12-log_eta_inf)*(T12/T)*exp((m/(12-log_eta_inf)-1)*(T12/T-1))
+    log10_viscosity = log_eta_inf + (12 - log_eta_inf) * (T12 / T) * exp(
+        (m / (12 - log_eta_inf) - 1) * (T12 / T - 1)
+    )
 
     return log10_viscosity
 
 
-def VFT(T, log_eta_inf, A, T0):
+def vft(T, log_eta_inf, A, T0):
     """
     Computes the base-10 log of viscosity using the Vogel-Fulcher-Tammann eq.
 
@@ -142,12 +143,12 @@ def VFT(T, log_eta_inf, A, T0):
     return log10_viscosity
 
 
-def VFT_alt(T, log_eta_inf, T12, m):
+def vft_alt(T, log_eta_inf, T12, m):
     """
     Computes the base-10 log of viscosity using the Vogel-Fulcher-Tammann eq.
 
     This is the rewriten VFT equation found in ref. [4].
-    
+
     Parameters
     ----------
     T : float or array_like
@@ -189,14 +190,15 @@ def VFT_alt(T, log_eta_inf, T12, m):
         Research Laboratory), pp. 3–12.
 
     """
-    log10_viscosity = log_eta_inf + (12 - log_eta_inf)**2 / \
-        (m * (T / T12 - 1) + (12 - log_eta_inf))
+    log10_viscosity = log_eta_inf + (12 - log_eta_inf) ** 2 / (
+        m * (T / T12 - 1) + (12 - log_eta_inf)
+    )
     T0 = T12 * (1 - (12 - log_eta_inf) / m)
     log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
-def AM(T, log_eta_inf, alpha, beta):
+def am(T, log_eta_inf, alpha, beta):
     """
     Computes the base-10 log of viscosity using the Avramov & Milchev eq.
 
@@ -230,17 +232,17 @@ def AM(T, log_eta_inf, alpha, beta):
         relationship of liquids. Chemical Engineering Science 4, 238–246.
 
     """
-    log10_viscosity = log_eta_inf + (beta / T)**alpha / log(10)
+    log10_viscosity = log_eta_inf + (beta / T) ** alpha / log(10)
 
     return log10_viscosity
 
 
-def AM_alt(T, log_eta_inf, T12, m):
+def am_alt(T, log_eta_inf, T12, m):
     """
     Computes the base-10 log of viscosity using the Avramov & Milchev eq.
 
     This is the rewriten AM equation found in ref. [3].
-    
+
     Parameters
     ----------
     T : float or array_like
@@ -279,13 +281,14 @@ def AM_alt(T, log_eta_inf, T12, m):
         Research Laboratory), pp. 3–12.
 
     """
-    log10_viscosity = log_eta_inf + (12 - log_eta_inf) * \
-        (T12 / T)**(m/(12 - log_eta_inf))
+    log10_viscosity = log_eta_inf + (12 - log_eta_inf) * (T12 / T) ** (
+        m / (12 - log_eta_inf)
+    )
 
     return log10_viscosity
 
 
-def AG(T, eta_inf, B, S_conf_fun):
+def ag(T, eta_inf, B, S_conf_fun):
     """
     Computes the base-10 log of viscosity using the Adam & Gibbs eq.
 
@@ -323,7 +326,7 @@ def AG(T, eta_inf, B, S_conf_fun):
     return log10_viscosity
 
 
-def CLU(T, log_pre_exp, A, T0):
+def clu(T, log_pre_exp, A, T0):
     """
     Computes the base-10 log of viscosity using the Cukierman-Lane-Uhlmann eq.
 
@@ -358,7 +361,7 @@ def CLU(T, log_pre_exp, A, T0):
     return log10_viscosity
 
 
-def BS(T, log_eta_inf, A, T0, gamma=1):
+def bs(T, log_eta_inf, A, T0, gamma=1):
     """
     Computes the base-10 log of viscosity using the BS eq.
 
@@ -391,12 +394,12 @@ def BS(T, log_eta_inf, A, T0, gamma=1):
         glass-forming liquids. J Stat Phys 53, 531–541.
 
     """
-    log10_viscosity = log_eta_inf + A / (T - T0)**(3 * gamma / 2) / log(10)
+    log10_viscosity = log_eta_inf + A / (T - T0) ** (3 * gamma / 2) / log(10)
     log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
-def Dienes(T, log_eta_inf, A, B, T0):
+def dienes(T, log_eta_inf, A, B, T0):
     """
     Computes the base-10 log of viscosity using the Dienes eq.
 
@@ -431,13 +434,17 @@ def Dienes(T, log_eta_inf, A, B, T0):
         Order. Journal of Applied Physics 24, 779–782.
 
     """
-    log10_viscosity = log_eta_inf - log10(2) + (B / T * log(10)) + \
-        log10(exp(A / (T - T0)) + 1)
+    log10_viscosity = (
+        log_eta_inf
+        - log10(2)
+        + (B / T * log(10))
+        + log10(exp(A / (T - T0)) + 1)
+    )
     log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity
 
 
-def DML(T, log_eta_inf, A, B, T0):
+def dml(T, log_eta_inf, A, B, T0):
     """
     Computes the base-10 log of viscosity using the DML eq.
 
@@ -476,6 +483,8 @@ def DML(T, log_eta_inf, A, B, T0):
         Chemical Physics 42, 245–256.
 
     """
-    log10_viscosity = log_eta_inf + B / (T * log(10)) + A / ((T - T0) * log(10))
+    log10_viscosity = (
+        log_eta_inf + B / (T * log(10)) + A / ((T - T0) * log(10))
+    )
     log10_viscosity = _belowT0correction(T, T0, log10_viscosity)
     return log10_viscosity

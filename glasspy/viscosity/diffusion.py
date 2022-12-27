@@ -1,10 +1,10 @@
-'''Equations for computing the effective diffusion coefficient from
-viscosity.'''
+"""Equations for computing the effective diffusion coefficient from
+viscosity."""
 
 from scipy.constants import k, pi
 
 
-def diffCoeffEyring(T, viscosity, diameter):
+def diff_coeff_eyring(T, viscosity, diameter):
     """
     Computes the viscosity diffusion coefficient using Eyring equation
 
@@ -31,10 +31,10 @@ def diffCoeffEyring(T, viscosity, diameter):
     [1] Eyring, H. (1936). Viscosity, plasticity, and diffusion as examples of
         absolute reaction rates. The Journal of Chemical Physics 4, 283–291.
     """
-    return k*T/(viscosity*diameter)
+    return k * T / (viscosity * diameter)
 
 
-def diffCoeffStokesEinstein(T, viscosity, diameter):
+def diff_coeff_stokeseinstein(T, viscosity, diameter):
     """
     Computes the viscosity diffusion coefficient using Stokes-Einstein equation
 
@@ -70,4 +70,4 @@ def diffCoeffStokesEinstein(T, viscosity, diameter):
         on the motion of pendulums. Transactions of the Cambridge Philosophical
         Society 9, 8–106.
     """
-    return k*T/(3*pi*viscosity*diameter)
+    return k * T / (3 * pi * viscosity * diameter)
