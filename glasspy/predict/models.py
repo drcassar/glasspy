@@ -62,7 +62,6 @@ class _BaseViscNet(MLP):
         index and the temperature-dependency of viscosity, Acta Materialia. 206
         (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
         https://arxiv.org/abs/2007.03719
-
     """
 
     def __init__(self, parameters_range, hparams={}, x_mean=0, x_std=1):
@@ -104,8 +103,8 @@ class _BaseViscNet(MLP):
         """Predicts the viscosity parameters from a feature tensor.
 
         Consider using other methods for predicting the viscosity parameters.
-
         """
+
         xf = self.hidden_layers((feature_tensor - self.x_mean) / self.x_std)
         xf = self.output_layer(xf)
 
@@ -177,8 +176,8 @@ class _BaseViscNet(MLP):
         Returns:
           Dictionary with the viscosity parameters as keys and an array with the
           the parameters distribution as values.
-
         """
+
         features = self.featurizer(composition, input_cols)
         features = torch.from_numpy(features).float()
 
@@ -225,8 +224,8 @@ class _BaseViscNet(MLP):
         Returns:
           Dictionary with the viscosity parameters as keys and an array with the
           the confidence band as values.
-
         """
+
         q = [(100 - 100 * confidence) / 2, 100 - (100 - 100 * confidence) / 2]
         dist = self.viscosity_parameters_dist(
             composition, input_cols, num_samples
@@ -281,8 +280,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Predicted values of the base-10 logarithm of viscosity.
-
         """
+
         parameters = self.viscosity_parameters(composition, input_cols, True)
         num_compositions = len(list(parameters.values())[0])
 
@@ -369,8 +368,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Predicted values of the viscosity.
-
         """
+
         return 10 ** self.predict(T, composition, input_cols, table_mode)
 
     def predict_fragility(
@@ -390,8 +389,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Predicted values of the liquid fragility.
-
         """
+
         parameters = self.viscosity_parameters(composition, input_cols)
         fragility = parameters["m"]
         return fragility
@@ -413,8 +412,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Predicted values of the glass transition temperature.
-
         """
+
         parameters = self.viscosity_parameters(composition, input_cols)
         Tg = parameters["Tg"]
         return Tg
@@ -436,8 +435,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Predicted values of the base-10 logarithm of the asymptotic viscosity.
-
         """
+
         parameters = self.viscosity_parameters(composition, input_cols)
         log_eta_inf = parameters["log_eta_inf"]
         return log_eta_inf
@@ -459,8 +458,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Predicted values of the asymptotic viscosity.
-
         """
+
         return 10 ** self.predict_log10_eta_infinity(composition, input_cols)
 
     def predict_Tg_unc(
@@ -487,8 +486,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Confidence bands of the glass transition temperature.
-
         """
+
         parameters_unc = self.viscosity_parameters_unc(
             composition, input_cols, confidence, num_samples
         )
@@ -519,8 +518,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Confidence bands of the liquid fragility.
-
         """
+
         parameters_unc = self.viscosity_parameters_unc(
             composition, input_cols, confidence, num_samples
         )
@@ -551,8 +550,8 @@ class _BaseViscNet(MLP):
 
         Returns:
           Confidence bands of the base-10 logarithm of the asymptotic viscosity.
-
         """
+
         parameters_unc = self.viscosity_parameters_unc(
             composition, input_cols, confidence, num_samples
         )
@@ -610,8 +609,8 @@ class _BaseViscNet(MLP):
             composition.
           pdistribution:
             Dictionary with the distribution of the viscosity parameters.
-
         """
+
         pdistribution = self.viscosity_parameters_dist(
             composition, input_cols, num_samples
         )
@@ -704,7 +703,6 @@ class ViscNet(_BaseViscNet):
           index and the temperature-dependency of viscosity, Acta Materialia.
           206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
           https://arxiv.org/abs/2007.03719
-
     """
 
     parameters_range = {
@@ -977,8 +975,8 @@ class ViscNetVFT(ViscNet):
           [3] G. Tammann, W. Hesse, Die Abhängigkeit der Viscosität von der
             Temperatur bie unterkühlten Flüssigkeiten, Z. Anorg. Allg. Chem. 156
             (1926) 245–257. https://doi.org/10.1002/zaac.19261560121.
-
         """
+
         log_viscosity = log_eta_inf + (12 - log_eta_inf) ** 2 / (
             m * (T / Tg - 1) + (12 - log_eta_inf)
         )
@@ -986,6 +984,7 @@ class ViscNetVFT(ViscNet):
 
 
 class GlassNet(MTL):
+    """Multi-task neural network for predicting glass properties."""
 
     hparams = {
         "batch_size": 256,
