@@ -22,8 +22,7 @@ setuptools.setup(
         "lmfit>=1.0.0",
         "chemparse>=0.1.0",
         "scikit-learn>=1.1.2",
-        # "torch>=1.7.0",
-        # "pytorch-lightning",
+        "compress_pickle>=2.1.0",
     ],
     keywords="glass, non-crystalline materials",
     classifiers=[
