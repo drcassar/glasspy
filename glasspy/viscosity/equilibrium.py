@@ -2,7 +2,7 @@
 
 from numpy import exp, log, log10
 
-from glasspy.viscosity.equilibrium_log import _belowT0correction
+from .equilibrium_log import _belowT0correction
 
 
 def myega(T, eta_inf, K, C):
