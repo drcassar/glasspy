@@ -34,14 +34,13 @@ First steps
     Check out some examples of what GlassPy can do.
 
 
-..
-   Modules
-   =======
+Modules
+=======
 
-   .. toctree::
-      :maxdepth: 1
+.. toctree::
+   :maxdepth: 1
 
-      modules/modules
+   modules/modules
 
 Indices and tables
 ==================
