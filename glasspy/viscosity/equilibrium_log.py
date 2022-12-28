@@ -1,12 +1,11 @@
 """Equations for the base-10 logarithm of equilibrium viscosity."""
 
-from numpy import exp, log, log10
-import numpy as np
+from numpy import exp, log, log10, where, inf, less_equal
 
 
 def _belowT0correction(T, T0, viscosity):
     """Returns infinity viscosity below the divergence temperature (T0)."""
-    return np.where(np.less_equal(T, T0), np.inf, viscosity)
+    return where(less_equal(T, T0), inf, viscosity)
 
 
 def myega(T, log_eta_inf, K, C):

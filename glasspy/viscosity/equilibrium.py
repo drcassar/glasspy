@@ -1,7 +1,6 @@
 """Equations for equilibrium viscosity."""
 
 from numpy import exp, log, log10
-import numpy as np
 
 from glasspy.viscosity.equilibrium_log import _belowT0correction
 
