@@ -233,6 +233,52 @@ class Predict(ABC):
             return RMSE.data
 
     @staticmethod
+    def MAE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        """Computes the mean average error.
+
+        Args:
+          y_true:
+            Array with the true values of y. Can be 1D or 2D.
+          y_pred:
+            Aray with the predicted values of y. Can be 1D or 2D.
+
+        Returns:
+          The mean average error. Will be 1D if the input arrays are 2D.
+          Will be a scalar otherwise.
+        """
+
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            MAE = np.sum(np.abs(y_true - y_pred)) / len(y_true)
+            return MAE
+        else:
+            y_true = ma.masked_invalid(y_true)
+            MAE = np.sum(np.abs(y_true - y_pred), axis=0) / y_true.count(axis=0)
+            return MAE.data
+
+    @staticmethod
+    def MedAE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        """Computes the median average error.
+
+        Args:
+          y_true:
+            Array with the true values of y. Can be 1D or 2D.
+          y_pred:
+            Aray with the predicted values of y. Can be 1D or 2D.
+
+        Returns:
+          The median average error. Will be 1D if the input arrays are 2D.
+          Will be a scalar otherwise.
+        """
+
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            MedAE = np.median(np.abs(y_true - y_pred))
+            return MedAE
+        else:
+            y_true = ma.masked_invalid(y_true)
+            MedAE = ma.median(np.abs(y_true - y_pred), axis=0)
+            return MedAE.data
+
+    @staticmethod
     def RD(y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Computes the relative deviation.
 
