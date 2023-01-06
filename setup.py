@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read().replace(
-        "![Screenshot](docs/logo/logo_text_small.png)\n\n", ""
+        "![Screenshot](docs/source/logo/logo_text_small.png)\n\n", ""
     )
 
 setuptools.setup(
