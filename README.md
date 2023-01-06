@@ -3,7 +3,7 @@
 
 GlassPy is a Python module for scientists working with glass materials.
 
-![Screenshot](docs/logo/logo_text_small.png)
+![Screenshot](docs/source/logo/logo_text_small.png)
 
 ## What is it?
 The aim is to provide classes and functions written in Python for materials scientists working with glass and non-crystalline materials. The hope is that with an open and collaborative project, we can build a reliable toolset to support faster and reproducible research on this topic.
@@ -24,7 +24,7 @@ pip install --upgrade git+git://github.com/drcassar/glasspy@dev
 ```
 
 ## Development
-GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a collection of MATLAB code that I wrote for the Glass State graduate course of 2010 and the numerical analysis during my PhD.
+GlassPy was born as a personal tool back in 2013 when I started coding with Python. It is based on a collection of MATLAB code that I wrote for the Glass State graduate course of 2010 and for the numerical analysis during my PhD.
 
 Right now, I'm sorting all my code and adequately documenting it to build this Python module. My personal objective is to increase my research's reproducibility and hopefully be useful for researchers working in the field of glass science.
 
@@ -69,7 +69,7 @@ Copyright (c) 2019 EPAM Systems
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
 
-GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2021 Daniel Roberto Cassar
+GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2022 Daniel Roberto Cassar
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

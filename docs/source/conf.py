@@ -9,21 +9,14 @@ sys.path.insert(0, os.path.abspath(r"../.."))
 project = "GlassPy"
 copyright = f"2019-{datetime.now().year}, Daniel Roberto Cassar"
 author = "Daniel Roberto Cassar"
-
-try:
-    import glasspy
-
-    # version = '.'.join(map(str, glasspy.version_info[:2]))
-    # release = glasspy.__version__
-    version = "0.4"
-    release = "0.4"
-except ImportError:
-    version = ""
-    release = ""
+version = "latest"
+release = "latest"
 
 extensions = [
     "sphinx.ext.napoleon",
+    "nbsphinx",
 ]
+
 
 # Napoleon settings
 napoleon_google_docstring = True
@@ -40,6 +33,12 @@ napoleon_use_rtype = True
 napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
+# autodoc settings
+autodoc_default_options = {
+    'members': True,
+    'inherited-members': False,
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -47,6 +46,8 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
+
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -60,3 +61,28 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+#
+html_theme_options = {
+    #'canonical_url': '',
+    'logo_only': False,
+    'display_version': False,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': False,
+    'style_nav_header_background': '#FFFFFF',
+    # Toc options
+    'collapse_navigation': True,
+    'sticky_navigation': True,
+    'navigation_depth': 4,
+    'includehidden': True,
+    'titles_only': False
+}
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_favicon = 'logo/favicon.ico'
+html_logo = "logo/logo_text_small.png"
+
+htmlhelp_basename = 'GlassPydoc'
