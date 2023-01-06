@@ -208,7 +208,7 @@ class Predict(ABC):
             return RMSE
         else:
             y_true = ma.masked_invalid(y_true)
-            RMSE = np.sum((y_true - y_pred) ** 2, axis=0) / len(y_true)
+            RMSE = np.sum((y_true - y_pred) ** 2, axis=0) / y_true.count(axis=0)
             return RMSE.data
 
     @staticmethod
@@ -232,7 +232,7 @@ class Predict(ABC):
         else:
             y_true = ma.masked_invalid(y_true)
             RMSE = np.sqrt(
-                np.sum((y_true - y_pred) ** 2, axis=0) / len(y_true)
+                np.sum((y_true - y_pred) ** 2, axis=0) / y_true.count(axis=0)
             )
             return RMSE.data
 
@@ -255,7 +255,7 @@ class Predict(ABC):
             return RD
         else:
             y_true = ma.masked_invalid(y_true)
-            RD = (100 / len(y_true)) * np.sum(
+            RD = (100 / y_true.count(axis=0)) * np.sum(
                 np.abs(y_true - y_pred) / y_true, axis=0
             )
             return RD.data
@@ -282,7 +282,7 @@ class Predict(ABC):
             return RRMSE
         else:
             y_true = ma.masked_invalid(y_true)
-            y_mean = np.sum(y_true, axis=0) / len(y_true)
+            y_mean = np.sum(y_true, axis=0) / y_true.count(axis=0)
             RRMSE = np.sqrt(
                 np.sum((y_true - y_pred) ** 2, axis=0)
                 / np.sum((y_true - y_mean) ** 2, axis=0)
