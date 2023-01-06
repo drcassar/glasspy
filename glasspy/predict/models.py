@@ -1,6 +1,7 @@
 from .base import MLP, MTL
 from glasspy.chemistry import physchem_featurizer, CompositionLike
 from glasspy.viscosity.equilibrium_log import myega_alt
+from glasspy.data import SciGlass
 
 import os
 import pickle
@@ -18,6 +19,7 @@ from compress_pickle import load
 from scipy.stats import theilslopes
 from scipy.optimize import least_squares
 from torch.nn import functional as F
+from sklearn.model_selection import train_test_split
 
 
 _basemodelpath = Path(os.path.dirname(__file__)) / "models"
@@ -1244,6 +1246,358 @@ class GlassNet(MTL):
 
         self.load_training(self.training_file)
 
+    def _load_gfa_model(self):
+        """Loads the glass-forming ability model."""
+
+        if not hasattr(self, "_gfa_model"):
+            self._gfa_model = load(open(self.gfa_file, "rb"))
+            self._gfa_indices = [
+                self.target_trans[k] for k in self._gfa_features
+            ]
+
+    def _load_data(self):
+        """Loads the data used to train GlassNet.
+
+        This method takes some time to run, that is why it is not run
+        automatically when a new instance of the class is created. After running
+        once, the instance will have a `data` attribute that is a DataFrame with
+        all the data.
+
+        Returns:
+          DataFrame with the all the data used to train and validate
+          GlassNet."""
+
+        if not hasattr(self, "data"):
+            remove_dupe_decimals = 3
+
+            removed_compounds = [
+                "",
+                "Al2O3+Fe2O3",
+                "MoO3+WO3",
+                "CaO+MgO",
+                "FeO+Fe2O3",
+                "Li2O+Na2O+K2O",
+                "Na2O+K2O",
+                "F2O-1",
+                "FemOn",
+                "HF+H2O",
+                "R2O",
+                "R2O3",
+                "R2O3",
+                "RO",
+                "RmOn",
+            ]
+
+            removed_elements = [
+                "Ac",
+                "Am",
+                "Ar",
+                "At",
+                "Bk",
+                "Cf",
+                "Cm",
+                "Es",
+                "Fm",
+                "Fr",
+                "He",
+                "Kr",
+                "Ne",
+                "Np",
+                "Pa",
+                "Pm",
+                "Po",
+                "Pu",
+                "Ra",
+                "Rn",
+                "Th",
+                "U",
+                "Xe",
+            ]
+
+            treatment = {
+                "AbbeNum": {
+                    "max": 115,
+                },
+                "Cp293K": {
+                    "max": 2000,
+                },
+                "Cp473K": {
+                    "max": 2000,
+                },
+                "Cp673K": {
+                    "max": 3000,
+                },
+                "Cp1073K": {
+                    "min": 500,
+                    "max": 2500,
+                },
+                "Cp1273K": {
+                    "min": 500,
+                    "max": 3000,
+                },
+                "Cp1473K": {
+                    "min": 500,
+                    "max": 3000,
+                },
+                "Cp1673K": {
+                    "min": 500,
+                    "max": 2250,
+                },
+                "CTE328K": {
+                    "min": 10**-6.5,
+                    "log": True,
+                },
+                "CTE373K": {
+                    "min": 10**-6.5,
+                    "log": True,
+                },
+                "CTE433K": {
+                    "min": 10**-8,
+                    "log": True,
+                },
+                "CTE483K": {
+                    "min": 10**-7,
+                    "log": True,
+                },
+                "CTE623K": {
+                    "min": 10**-6.5,
+                    "log": True,
+                },
+                "CTEbelowTg": {
+                    "min": 0,
+                    "log": True,
+                },
+                "Density293K": {
+                    "min": 1,
+                    "max": 10,
+                },
+                "CTE623K": {
+                    "log": True,
+                },
+                "MaxGrowthVelocity": {
+                    "min": 1e-10,
+                    "log": True,
+                },
+                "MeanDispersion": {
+                    "log": True,
+                },
+                "Microhardness": {
+                    "max": 15,
+                },
+                "Permittivity": {
+                    "max": 50,
+                },
+                "PoissonRatio": {
+                    "min": 0,
+                    "max": 1,
+                },
+                "RefractiveIndex": {
+                    "max": 4,
+                },
+                "RefractiveIndexHigh": {
+                    "min": 1.7,
+                    "max": 3.5,
+                },
+                "Resistivity273K": {
+                    "log": True,
+                    "max": 1e40,
+                },
+                "Resistivity373K": {
+                    "log": True,
+                    "max": 1e28,
+                },
+                "Resistivity423K": {
+                    "log": True,
+                },
+                "Resistivity573K": {
+                    "log": True,
+                },
+                "Resistivity1073K": {
+                    "max": 10**4,
+                    "log": True,
+                },
+                "Resistivity1273K": {
+                    "max": 10**5,
+                    "log": True,
+                },
+                "Resistivity1473K": {
+                    "log": True,
+                },
+                "Resistivity1673K": {
+                    "log": True,
+                },
+                "SurfaceTension1473K": {
+                    "max": 0.5,
+                },
+                "SurfaceTension1573K": {
+                    "max": 0.7,
+                },
+                "SurfaceTension1673K": {
+                    "max": 0.7,
+                },
+                "SurfaceTensionAboveTg": {
+                    "max": 0.8,
+                },
+                "Viscosity773K": {
+                    "log": True,
+                },
+                "Viscosity873K": {
+                    "log": True,
+                },
+                "Viscosity973K": {
+                    "log": True,
+                },
+                "Viscosity1073K": {
+                    "log": True,
+                },
+                "Viscosity1173K": {
+                    "log": True,
+                },
+                "Viscosity1273K": {
+                    "log": True,
+                },
+                "Viscosity1373K": {
+                    "log": True,
+                },
+                "Viscosity1473K": {
+                    "log": True,
+                },
+                "Viscosity1573K": {
+                    "log": True,
+                },
+                "Viscosity1673K": {
+                    "log": True,
+                },
+                "Viscosity1773K": {
+                    "max": 10**10,
+                    "log": True,
+                },
+                "Viscosity1873K": {
+                    "max": 10**10,
+                    "log": True,
+                },
+                "Viscosity2073K": {
+                    "max": 10**8,
+                    "log": True,
+                },
+                "Viscosity2273K": {
+                    "max": 10**8,
+                    "log": True,
+                },
+                "Viscosity2473K": {
+                    "log": True,
+                },
+                "T3": {
+                    "max": 2350,
+                },
+                "T4": {
+                    "max": 2000,
+                },
+                "TangentOfLossAngle": {
+                    "min": 1e-4,
+                    "max": 0.16,
+                    "log": True,
+                },
+                "ThermalConductivity": {
+                    "max": 6,
+                },
+                "TresistivityIs1MOhm.m": {
+                    "max": 2000,
+                },
+                "YoungModulus": {
+                    "max": 175,
+                },
+                "Tsoft": {
+                    "max": 1600,
+                },
+            }
+
+            min_cols = [
+                col
+                for col in treatment
+                if treatment[col].get("min", None) is not None
+            ]
+
+            max_cols = [
+                col
+                for col in treatment
+                if treatment[col].get("max", None) is not None
+            ]
+
+            log_cols = [
+                ("property", col)
+                for col in treatment
+                if treatment[col].get("log", False)
+            ]
+
+            propconf = {"keep": self.targets}
+
+            compconf = {
+                "acceptable_sum_deviation": 1,
+                "final_sum": 1,
+                "return_weight": False,
+                "dropline": removed_compounds,
+                "drop_compound_with_element": removed_elements,
+            }
+
+            sg = SciGlass(False, propconf, compconf)
+
+            for col in min_cols:
+                logic = sg.data["property"][col] < treatment[col]["min"]
+                sg.data.loc[logic, ("property", col)] = np.nan
+
+            for col in max_cols:
+                logic = sg.data["property"][col] > treatment[col]["max"]
+                sg.data.loc[logic, ("property", col)] = np.nan
+
+            sg.data[log_cols] = sg.data[log_cols].apply(np.log10, axis=1)
+
+            sg.elements_from_compounds(final_sum=1, compounds_in_weight=False)
+
+            sg.remove_duplicate_composition(
+                scope="elements",
+                decimals=remove_dupe_decimals,
+                aggregator="median",
+            )
+
+            self.data = sg.data
+
+        return self.data
+
+    def get_training_dataset(self):
+        """Gets the training dataset used in the GlassNet paper.
+
+        Returns:
+          DataFrame containing the training dataset used in the GlassNet
+          paper."""
+
+        self._load_data()
+        indices = self.data.index
+        train_idx, _ = train_test_split(
+            indices,
+            test_size=0.1,
+            random_state=61455,
+            shuffle=True,
+        )
+        return self.data.loc[train_idx]
+
+    def get_test_dataset(self):
+        """Gets the holdout dataset used in the GlassNet paper.
+
+        Returns:
+          DataFrame containing the holdout dataset used in the GlassNet
+          paper."""
+
+        self._load_data()
+        indices = self.data.index
+        _, test_idx = train_test_split(
+            indices,
+            test_size=0.1,
+            random_state=61455,
+            shuffle=True,
+        )
+        return self.data.loc[test_idx]
+
     def featurizer(
         self,
         composition: CompositionLike,
@@ -1723,11 +2077,7 @@ class GlassNet(MTL):
           Array or DataFrame with the computed features.
         """
 
-        if not hasattr(self, "_gfa_model"):
-            self._gfa_model = load(open(self.gfa_file, "rb"))
-            self._gfa_indices = [
-                self.target_trans[k] for k in self._gfa_features
-            ]
+        self._load_gfa_model()
 
         y = self.predict(composition, input_cols, False)
 
