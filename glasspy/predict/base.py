@@ -181,10 +181,6 @@ class Predict(ABC):
         pass
 
     @abstractmethod
-    def get_validation_dataset(self):
-        pass
-
-    @abstractmethod
     def get_test_dataset(self):
         pass
 
@@ -400,10 +396,6 @@ class MLP(pl.LightningModule, Predict):
         raise NotImplementedError("GlassPy error: not implemented.")
 
     def get_training_dataset(self):
-        # TODO
-        raise NotImplementedError("GlassPy error: not implemented.")
-
-    def get_validation_dataset(self):
         # TODO
         raise NotImplementedError("GlassPy error: not implemented.")
 
