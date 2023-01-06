@@ -234,7 +234,7 @@ class Predict(ABC):
 
     @staticmethod
     def MAE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Computes the mean average error.
+        """Computes the mean absolute error.
 
         Args:
           y_true:
@@ -243,7 +243,7 @@ class Predict(ABC):
             Aray with the predicted values of y. Can be 1D or 2D.
 
         Returns:
-          The mean average error. Will be 1D if the input arrays are 2D.
+          The mean absolute error. Will be 1D if the input arrays are 2D.
           Will be a scalar otherwise.
         """
 
@@ -257,7 +257,7 @@ class Predict(ABC):
 
     @staticmethod
     def MedAE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Computes the median average error.
+        """Computes the median absolute error.
 
         Args:
           y_true:
@@ -266,7 +266,7 @@ class Predict(ABC):
             Aray with the predicted values of y. Can be 1D or 2D.
 
         Returns:
-          The median average error. Will be 1D if the input arrays are 2D.
+          The median absolute error. Will be 1D if the input arrays are 2D.
           Will be a scalar otherwise.
         """
 
@@ -277,6 +277,30 @@ class Predict(ABC):
             y_true = ma.masked_invalid(y_true)
             MedAE = ma.median(np.abs(y_true - y_pred), axis=0)
             return MedAE.data
+
+    @staticmethod
+    def PercAE(y_true: np.ndarray, y_pred: np.ndarray, q=75) -> float:
+        """Computes the percentile absolute error.
+
+        Args:
+          y_true:
+            Array with the true values of y. Can be 1D or 2D.
+          y_pred:
+            Aray with the predicted values of y. Can be 1D or 2D.
+          q:
+            Percentile to compute.
+
+        Returns:
+          The percentile absolute error. Will be 1D if the input arrays are 2D.
+          Will be a scalar otherwise.
+        """
+
+        if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            PercAE = np.percentile(np.abs(y_true - y_pred), q)
+            return PercAE
+        else:
+            PercAE = np.nanpercentile(np.abs(y_true - y_pred), q, axis=0)
+            return PercAE
 
     @staticmethod
     def RD(y_true: np.ndarray, y_pred: np.ndarray) -> float:
