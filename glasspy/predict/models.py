@@ -1228,6 +1228,30 @@ class GlassNet(MTL):
         "fragility",
     ]
 
+    _rf_models = [
+        "AbbeNum",
+        "CrystallizationOnset",
+        "CrystallizationPeak",
+        "CTE433K",
+        "CTEbelowTg",
+        "Density293K",
+        "MeanDispersion",
+        "Microhardness",
+        "RefractiveIndex",
+        "Resistivity273K",
+        "Resistivity373K",
+        "Resistivity423K",
+        "Resistivity573K",
+        "TdilatometricSoftening",
+        "Tg",
+        "Tliquidus",
+        "Tmelt",
+        "TresistivityIs1MOhm.m",
+        "Tsoft",
+        "Tstrain",
+        "YoungModulus",
+    ]
+
     training_file = _basemodelpath / "GlassNet.p"
     scaler_file = _basemodelpath / "GlassNet_scalers.p"
     gfa_file = _basemodelpath / "GlassNet_gfa.xz"
@@ -1245,6 +1269,8 @@ class GlassNet(MTL):
         )
 
         self.load_training(self.training_file)
+
+        self.rf_models_loaded = False
 
     def _load_gfa_model(self):
         """Loads the glass-forming ability model."""
@@ -1564,6 +1590,16 @@ class GlassNet(MTL):
 
         return self.data
 
+    def _load_rf_models(self):
+        if not self.rf_models_loaded:
+            rf_dict = {}
+            for target in self._rf_models:
+                rf_dict[target] = load(
+                    open(_basemodelpath / f"RF_{target}.gz", "rb")
+                )
+            self.rf_dict = rf_dict
+            self.rf_models_loaded = True
+
     def get_training_dataset(self):
         """Gets the training dataset used in the GlassNet paper.
 
@@ -1688,6 +1724,12 @@ class GlassNet(MTL):
 
         if is_training:
             self.train()
+
+        if self.rf_models_loaded:
+            for target in self.rf_dict:
+                y_pred[:, self.target_trans[target]] = self.rf_dict[
+                    target
+                ].predict(features)
 
         if return_dataframe:
             return pd.DataFrame(y_pred, columns=self.targets)
