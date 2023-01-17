@@ -609,10 +609,10 @@ class MTL(MLP):
 
         not_nan = y.isnan().logical_not()
         good_cols = not_nan.any(dim=0)
-        y = y[:, good_cols],
-        yhat = yhat[:, good_cols],
-        weights = self.loss_weights[good_cols],
-        not_nan = not_nan[:, good_cols],
+        y = y[:, good_cols]
+        yhat = yhat[:, good_cols]
+        weights = self.loss_weights[good_cols]
+        not_nan = not_nan[:, good_cols]
 
         loss = torch.sum(
             torch.stack(
