@@ -1228,49 +1228,86 @@ class GlassNet(MTL):
         "fragility",
     ]
 
-    _rf_models = [
-        "AbbeNum",
-        "CrystallizationOnset",
-        "CrystallizationPeak",
-        "CTE433K",
-        "CTEbelowTg",
-        "Density293K",
-        "MeanDispersion",
-        "Microhardness",
-        "RefractiveIndex",
-        "Resistivity273K",
-        "Resistivity373K",
-        "Resistivity423K",
-        "Resistivity573K",
-        "TdilatometricSoftening",
-        "Tg",
-        "Tliquidus",
-        "Tmelt",
-        "TresistivityIs1MOhm.m",
-        "Tsoft",
-        "Tstrain",
-        "YoungModulus",
-    ]
-
     training_file = _basemodelpath / "GlassNet.p"
+    training_file_mh = _basemodelpath / "GlassNetMH.p"
     scaler_file = _basemodelpath / "GlassNet_scalers.p"
     gfa_file = _basemodelpath / "GlassNet_gfa.xz"
 
-    def __init__(self):
+    def __init__(self, multihead=True, loadrf=False):
         super().__init__(self.hparams)
-
-        dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
-        self.output_layer = nn.Sequential(
-            nn.Linear(dim, self.hparams["n_targets"]),
-        )
 
         self.scaler_x, self.scaler_y = pickle.load(
             open(self.scaler_file, "rb")
         )
 
-        self.load_training(self.training_file)
+        dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
+
+        if multihead:
+            self.multihead = True
+            self.output_layer = nn.Identity()
+            self.tasks = nn.ModuleList([
+                nn.Sequential(
+                    nn.Linear(dim, 10),
+                    nn.ReLU(),
+                    nn.Linear(10, 1)
+                )
+                for n in range(self.hparams["n_targets"])
+            ])
+            self.load_training(self.training_file_mh)
+            self._rf_models = [
+                "AbbeNum",
+                "CrystallizationOnset",
+                "CrystallizationPeak",
+                "CTE433K",
+                "CTEbelowTg",
+                "Density293K",
+                "MeanDispersion",
+                "Microhardness",
+                "RefractiveIndex",
+                "Resistivity273K",
+                "Resistivity373K",
+                "Resistivity423K",
+                "Resistivity573K",
+                "TdilatometricSoftening",
+                "Tg",
+                "Tliquidus",
+                "Tmelt",
+                "Density1073K",
+            ]
+
+        else:
+            self.multihead = False
+            self.output_layer = nn.Sequential(
+                nn.Linear(dim, self.hparams["n_targets"]),
+            )
+            self.load_training(self.training_file)
+            self._rf_models = [
+                "AbbeNum",
+                "CrystallizationOnset",
+                "CrystallizationPeak",
+                "CTE433K",
+                "CTEbelowTg",
+                "Density293K",
+                "MeanDispersion",
+                "Microhardness",
+                "RefractiveIndex",
+                "Resistivity273K",
+                "Resistivity373K",
+                "Resistivity423K",
+                "Resistivity573K",
+                "TdilatometricSoftening",
+                "Tg",
+                "Tliquidus",
+                "Tmelt",
+                "TresistivityIs1MOhm.m",
+                "Tsoft",
+                "Tstrain",
+                "YoungModulus",
+            ]
 
         self.rf_models_loaded = False
+        if loadrf:
+            self._load_rf_models()
 
     def _load_gfa_model(self):
         """Loads the glass-forming ability model."""
@@ -1687,7 +1724,12 @@ class GlassNet(MTL):
           Tensor with the predictions.
         """
 
-        return self.output_layer(self.hidden_layers(x))
+        if self.multihead:
+            dense = self.hidden_layers(x)
+            return torch.hstack([task(dense) for task in self.tasks])
+
+        else:
+            return self.output_layer(self.hidden_layers(x))
 
     def predict(
         self,
@@ -2199,3 +2241,4 @@ class GlassNet(MTL):
     @staticmethod
     def citation(bibtex: bool = False) -> str:
         raise NotImplementedError("Not implemented yet.")
+
