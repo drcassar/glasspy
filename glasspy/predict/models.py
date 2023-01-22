@@ -11,6 +11,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
 
+import joblib
 import torch
 import torch.nn as nn
 import numpy as np
@@ -54,6 +55,10 @@ _VISCOSITY_COLUMNS_FOR_REGRESSION = [
     "Tg",
     "TLittletons",
 ]
+
+
+def _myega_residuals(x, T, y):
+    return myega_alt(T, *x) - y
 
 
 class _BaseViscNet(MLP):
@@ -1245,14 +1250,14 @@ class GlassNet(MTL):
         if multihead:
             self.multihead = True
             self.output_layer = nn.Identity()
-            self.tasks = nn.ModuleList([
-                nn.Sequential(
-                    nn.Linear(dim, 10),
-                    nn.ReLU(),
-                    nn.Linear(10, 1)
-                )
-                for n in range(self.hparams["n_targets"])
-            ])
+            self.tasks = nn.ModuleList(
+                [
+                    nn.Sequential(
+                        nn.Linear(dim, 10), nn.ReLU(), nn.Linear(10, 1)
+                    )
+                    for n in range(self.hparams["n_targets"])
+                ]
+            )
             self.load_training(self.training_file_mh)
             self._rf_models = [
                 "AbbeNum",
@@ -1308,12 +1313,13 @@ class GlassNet(MTL):
         self.rf_models_loaded = False
         if loadrf:
             self._load_rf_models()
+            self.rf_models_loaded = True
 
     def _load_gfa_model(self):
         """Loads the glass-forming ability model."""
 
         if not hasattr(self, "_gfa_model"):
-            self._gfa_model = load(open(self.gfa_file, "rb"))
+            self._gfa_model = joblib.load(self.gfa_file)
             self._gfa_indices = [
                 self.target_trans[k] for k in self._gfa_features
             ]
@@ -1635,7 +1641,6 @@ class GlassNet(MTL):
                     open(_basemodelpath / f"RF_{target}.gz", "rb")
                 )
             self.rf_dict = rf_dict
-            self.rf_models_loaded = True
 
     def get_training_dataset(self):
         """Gets the training dataset used in the GlassNet paper.
@@ -1676,6 +1681,7 @@ class GlassNet(MTL):
         composition: CompositionLike,
         input_cols: List[str] = [],
         auto_scale: bool = True,
+        return_cols: bool = False,
     ) -> np.ndarray:
         """Compute the features used for input in GlassNet.
 
@@ -1691,12 +1697,16 @@ class GlassNet(MTL):
             use with GlassNet. If `False`, then the features will not be scaled
             and should not be used to make predictions with Glassnet. Default
             value is `True`.
+          return_cols:
+            If `True`, then a list with the name of the feature columns is also
+            returned.
 
         Returns:
-          Array with the computed features.
+          Array with the computed features. Optionally, the name of the coulmns
+          can also be returned if `return_cols` is True.
         """
 
-        feat_array, _ = physchem_featurizer(
+        feat_array, cols = physchem_featurizer(
             x=composition,
             input_cols=input_cols,
             elemental_features=self.element_features,
@@ -1709,7 +1719,10 @@ class GlassNet(MTL):
         if auto_scale:
             feat_array = self.scaler_x.transform(feat_array)
 
-        return feat_array
+        if return_cols:
+            return feat_array, cols
+        else:
+            return feat_array
 
     def forward(self, x):
         """Method used for training the neural network.
@@ -1778,7 +1791,7 @@ class GlassNet(MTL):
         else:
             return y_pred
 
-    def viscosity_table_gen(
+    def _deprecated_viscosity_table_gen(
         self,
         composition: CompositionLike,
         input_cols: List[str] = [],
@@ -1859,19 +1872,78 @@ class GlassNet(MTL):
             else:
                 yield data
 
-    def viscosity_parameters_gen(
+    def _viscosity_table_single(
         self,
-        composition: CompositionLike,
-        input_cols: List[str] = [],
+        prediction,
+        log_visc_limit: float = 12,
+        columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
+    ):
+        """Viscosity table prediction.
+
+        Args:
+          log_visc_limit:
+            Maximum value of log10(viscosity) (viscosity in Pa.s) that is
+            acceptable. Predictions of values greater than 12 for the log10 of
+            viscosity are prone to higher errors. Default value is 12.
+          columns:
+            Which targets of GlassNet that will be considered to build the
+            table.
+
+        Returns:
+          Viscosity table.
+        """
+
+        data = []
+
+        for col in columns:
+            value = prediction[self.target_trans[col]]
+
+            if col.startswith("Viscosity"):
+                T = int(col[9:-1])
+                log_visc = value
+
+            elif col.startswith("T"):
+                T = value
+
+                if col[1].isdigit():
+                    log_visc = int(col[1:])
+
+                else:
+                    if col == "Tg":
+                        log_visc = 12
+                    elif col == "TLittletons":
+                        log_visc = 6.6
+                    elif col == "TAnnealing":
+                        log_visc = 12.4
+                    elif col == "Tstrain":
+                        log_visc = 13.5
+                    elif col == "TdilatometricSoftening":
+                        log_visc = 10
+                    elif col == "Tsoft":
+                        log_visc = 6.6
+                    elif col == "Tmelt":
+                        log_visc = 1
+                    else:
+                        log_visc = np.nan
+
+            if log_visc > log_visc_limit:
+                log_visc = np.nan
+
+            if np.isfinite(log_visc):
+                data.append((T, log_visc))
+
+        data = np.array(sorted(data))
+
+        return data
+
+    def _viscosity_param_single(
+        self,
+        prediction,
         log_visc_limit: float = 12,
         columns: list = _VISCOSITY_COLUMNS_FOR_REGRESSION,
         n_points_low: int = 10,
     ):
-        """Generator of MYEGA viscosity parameters.
-
-        This method performs a robust non-linear regression of the MYEGA
-        equation on viscosity data predicted by GlassNet. If the regression
-        cannot be performed, the parameters returned will be NaN.
+        """Generator of viscosity tables.
 
         Args:
           composition:
@@ -1887,60 +1959,47 @@ class GlassNet(MTL):
           columns:
             Which targets of GlassNet that will be considered to build the
             table.
+          return_dataframe:
+            If `True`, returns a pandas DataFrame. Else returns a numpy array.
           n_points_low:
             Number of viscosity data points to consider to guess the fragility
             index. Must be a positive integer. Default value is 10.
 
-        Yields:
-          visc_array:
-            Numpy array of the viscosity table.
-          log_eta_inf:
-            Base-10 logarithm of the asymptotic viscosity in the limit of
-            infinite temperature (viscosity in Pa.s).
-          Tg_MYEGA:
-            Temperature where viscosity is equal to 10^12 Pa.s.
-          fragility:
-            Fragility of the liquid as defined by Angell.
+        Return:
+          Viscosity parameters.
         """
 
-        def myega_residuals(x, T, y):
-            return myega_alt(T, *x) - y
+        data = self._viscosity_table_single(
+            prediction, log_visc_limit, columns
+        )
 
-        for visc_array in self.viscosity_table_gen(
-            composition,
-            input_cols,
-            log_visc_limit,
-            columns,
-            return_dataframe=False,
-        ):
+        try:
+            slope, _, _, _ = theilslopes(
+                data[:n_points_low, 1],
+                1 / data[:n_points_low, 0],
+            )
 
-            try:
-                slope, _, _, _ = theilslopes(
-                    visc_array[:n_points_low, 1],
-                    1 / visc_array[:n_points_low, 0],
-                )
+            closest_to_Tg = np.argmin(np.abs(data[:, 1] - 12))
 
-                closest_to_Tg = np.argmin(np.abs(visc_array[:, 1] - 12))
+            guess_Tg = data[closest_to_Tg, 0]
+            guess_m = slope / guess_Tg
+            guess_ninf = data[-1, 1]
 
-                guess_Tg = visc_array[closest_to_Tg, 0]
-                guess_m = slope / guess_Tg
-                guess_ninf = visc_array[-1, 1]
+            regression = least_squares(
+                _myega_residuals,
+                [guess_ninf, guess_Tg, guess_m],
+                loss="cauchy",
+                f_scale=0.5,  # inlier residuals are lower than this value
+                args=(data[:, 0], data[:, 1]),
+                bounds=([-np.inf, 0, 10], [11, np.inf, np.inf]),
+            )
 
-                regression = least_squares(
-                    myega_residuals,
-                    [guess_ninf, guess_Tg, guess_m],
-                    loss="cauchy",
-                    f_scale=0.5,  # inlier residuals are lower than this value
-                    args=(visc_array[:, 0], visc_array[:, 1]),
-                    bounds=([-np.inf, 0, 10], [11, np.inf, np.inf]),
-                )
+            log_eta_inf, Tg_MYEGA, fragility = regression.x
 
-                log_eta_inf, Tg_MYEGA, fragility = regression.x
+            return log_eta_inf, Tg_MYEGA, fragility
 
-                yield visc_array, log_eta_inf, Tg_MYEGA, fragility
-
-            except ValueError:
-                yield visc_array, np.nan, np.nan, np.nan
+        except ValueError:
+            return np.nan, np.nan, np.nan
 
     def viscosity_parameters(
         self,
@@ -1986,15 +2045,12 @@ class GlassNet(MTL):
             Pa.s; and the third column is the fragility index.
         """
 
+        predictions = self.predict(composition, input_cols, False)
         parameters = [
-            x
-            for _, *x in self.viscosity_parameters_gen(
-                composition,
-                input_cols,
-                log_visc_limit,
-                columns,
-                n_points_low,
+            self._viscosity_param_single(
+                i, log_visc_limit, columns, n_points_low
             )
+            for i in predictions
         ]
 
         if return_dataframe:
@@ -2161,6 +2217,13 @@ class GlassNet(MTL):
           Array or DataFrame with the computed features.
         """
 
+        turn_rf_models_off = False
+
+        if not self.rf_models_loaded:
+            self._load_rf_models()
+            turn_rf_models_off = True
+            self.rf_models_loaded = True
+
         self._load_gfa_model()
 
         y = self.predict(composition, input_cols, False)
@@ -2178,6 +2241,9 @@ class GlassNet(MTL):
                 visc_Tliq.reshape(-1, 1),
             )
         )
+
+        if turn_rf_models_off:
+            self.rf_models_loaded = False
 
         if return_dataframe:
             cols = (
@@ -2241,4 +2307,3 @@ class GlassNet(MTL):
     @staticmethod
     def citation(bibtex: bool = False) -> str:
         raise NotImplementedError("Not implemented yet.")
-
