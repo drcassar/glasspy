@@ -22,7 +22,6 @@ _elements = np.genfromtxt(
     dtype=str,
 )
 
-
 _prop = np.genfromtxt(
     __chem_prop_path,
     delimiter=",",
