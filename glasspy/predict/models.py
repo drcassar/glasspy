@@ -22,8 +22,15 @@ from scipy.optimize import least_squares
 from torch.nn import functional as F
 from sklearn.model_selection import train_test_split
 
+# fmt: off
+try:
+    from glasspy_extra import load_rf_model
+    _HAS_GLASSPY_EXTRA = True
+except ModuleNotFoundError:
+    _HAS_GLASSPY_EXTRA = False
+# fmt: on
 
-_basemodelpath = Path(os.path.dirname(__file__)) / "models"
+_BASEMODELPATH = Path(os.path.dirname(__file__)) / "models"
 
 _VISCOSITY_COLUMNS_FOR_REGRESSION = [
     "T1",
@@ -858,7 +865,7 @@ class ViscNet(_BaseViscNet):
         ]
     ).float()
 
-    state_dict_path = _basemodelpath / "ViscNet_SD.p"
+    state_dict_path = _BASEMODELPATH / "ViscNet_SD.p"
 
     def __init__(self):
         super().__init__(
@@ -936,7 +943,7 @@ class ViscNetHuber(ViscNet):
         self.hparams["loss"] = "huber"
         self.loss_fun = F.smooth_l1_loss
 
-        state_dict_path = _basemodelpath / "ViscNetHuber_SD.p"
+        state_dict_path = _BASEMODELPATH / "ViscNetHuber_SD.p"
         state_dict = pickle.load(open(state_dict_path, "rb"))
         self.load_state_dict(state_dict)
 
@@ -966,7 +973,7 @@ class ViscNetVFT(ViscNet):
     def __init__(self):
         super().__init__()
 
-        state_dict_path = _basemodelpath / "ViscNetVFT_SD.p"
+        state_dict_path = _BASEMODELPATH / "ViscNetVFT_SD.p"
         state_dict = pickle.load(open(state_dict_path, "rb"))
         self.load_state_dict(state_dict)
 
@@ -1111,72 +1118,16 @@ class GlassNet(MTL):
 
     target_trans = {p: i for i, p in enumerate(targets)}
 
+    # fmt: off
     element_features = [
-        "Ag",
-        "Al",
-        "As",
-        "B",
-        "Ba",
-        "Be",
-        "Bi",
-        "Br",
-        "C",
-        "Ca",
-        "Cd",
-        "Ce",
-        "Cl",
-        "Co",
-        "Cr",
-        "Cs",
-        "Cu",
-        "Dy",
-        "Er",
-        "Eu",
-        "Fe",
-        "Ga",
-        "Gd",
-        "Ge",
-        "H",
-        "Hf",
-        "Hg",
-        "Ho",
-        "I",
-        "In",
-        "K",
-        "La",
-        "Li",
-        "Lu",
-        "Mg",
-        "Mn",
-        "Mo",
-        "N",
-        "Na",
-        "Nb",
-        "Nd",
-        "Ni",
-        "P",
-        "Pb",
-        "Pr",
-        "Rb",
-        "S",
-        "Sb",
-        "Sc",
-        "Se",
-        "Sm",
-        "Sn",
-        "Sr",
-        "Ta",
-        "Tb",
-        "Te",
-        "Ti",
-        "Tl",
-        "V",
-        "W",
-        "Y",
-        "Yb",
-        "Zn",
-        "Zr",
+        "Ag", "Al", "As", "B", "Ba", "Be", "Bi", "Br", "C", "Ca", "Cd", "Ce",
+        "Cl", "Co", "Cr", "Cs", "Cu", "Dy", "Er", "Eu", "Fe", "Ga", "Gd", "Ge",
+        "H", "Hf", "Hg", "Ho", "I", "In", "K", "La", "Li", "Lu", "Mg", "Mn",
+        "Mo", "N", "Na", "Nb", "Nd", "Ni", "P", "Pb", "Pr", "Rb", "S", "Sb",
+        "Sc", "Se", "Sm", "Sn", "Sr", "Ta", "Tb", "Te", "Ti", "Tl", "V", "W",
+        "Y", "Yb", "Zn", "Zr",
     ]
+    # fmt: on
 
     weighted_features = [
         ("c6_gb", "min"),
@@ -1233,17 +1184,20 @@ class GlassNet(MTL):
         "fragility",
     ]
 
-    training_file = _basemodelpath / "GlassNet.p"
-    training_file_mh = _basemodelpath / "GlassNetMH.p"
-    scaler_file = _basemodelpath / "GlassNet_scalers.p"
-    gfa_file = _basemodelpath / "GlassNet_gfa.xz"
+    training_file = _BASEMODELPATH / "GlassNet.p"
+    training_file_mh = _BASEMODELPATH / "GlassNetMH.p"
+    scaler_x_file = _BASEMODELPATH / "GlassNet_scaler_x.joblib"
+    scaler_y_file = _BASEMODELPATH / "GlassNet_scaler_y.joblib"
+    gfa_file = _BASEMODELPATH / "GlassNet_gfa.xz"
 
     def __init__(self, multihead=True, loadrf=False):
+        msg = "To use `loadrf=True` you must have `glasspy_extra` installed"
+        assert not loadrf or _HAS_GLASSPY_EXTRA, msg
+
         super().__init__(self.hparams)
 
-        self.scaler_x, self.scaler_y = pickle.load(
-            open(self.scaler_file, "rb")
-        )
+        self.scaler_x = joblib.load(self.scaler_x_file)
+        self.scaler_y = joblib.load(self.scaler_y_file)
 
         dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 
@@ -1315,14 +1269,13 @@ class GlassNet(MTL):
             self._load_rf_models()
             self.rf_models_loaded = True
 
+        self._gfa_indices = [self.target_trans[k] for k in self._gfa_features]
+
     def _load_gfa_model(self):
         """Loads the glass-forming ability model."""
 
         if not hasattr(self, "_gfa_model"):
             self._gfa_model = joblib.load(self.gfa_file)
-            self._gfa_indices = [
-                self.target_trans[k] for k in self._gfa_features
-            ]
 
     def _load_data(self):
         """Loads the data used to train GlassNet.
@@ -1637,9 +1590,7 @@ class GlassNet(MTL):
         if not self.rf_models_loaded:
             rf_dict = {}
             for target in self._rf_models:
-                rf_dict[target] = load(
-                    open(_basemodelpath / f"RF_{target}.gz", "rb")
-                )
+                rf_dict[target] = load_rf_model(target)
             self.rf_dict = rf_dict
 
     def get_training_dataset(self):
@@ -2224,8 +2175,6 @@ class GlassNet(MTL):
             turn_rf_models_off = True
             self.rf_models_loaded = True
 
-        self._load_gfa_model()
-
         y = self.predict(composition, input_cols, False)
 
         Tliq = y[:, self.target_trans["Tliquidus"]]
@@ -2276,6 +2225,7 @@ class GlassNet(MTL):
           glassformer.
         """
 
+        self._load_gfa_model()
         features = self.featurizer_gfa(composition, input_cols)
         gfa_proba = self._gfa_model.predict_proba(features)[:, 1]
         return gfa_proba
@@ -2300,6 +2250,7 @@ class GlassNet(MTL):
           (`True`) or not a glass former (`False`).
         """
 
+        self._load_gfa_model()
         features = self.featurizer_gfa(composition, input_cols)
         gfa = self._gfa_model.predict(features)
         return gfa
