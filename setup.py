@@ -22,6 +22,9 @@ setuptools.setup(
         "scikit-learn==1.2.0",
         "compress_pickle>=2.1.0",
     ],
+    extras_require={
+        "extra": ["glasspy_extra"],
+    },
     keywords="glass, non-crystalline materials",
     classifiers=[
         "Programming Language :: Python :: 3.9",
