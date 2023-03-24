@@ -1169,15 +1169,6 @@ class GlassNet(MTL):
         ("FusionEnthalpy", "max"),
     ]
 
-    _gfa_features = [
-        "Tg",
-        "Tliquidus",
-        "TMaxGrowthVelocity",
-        "MaxGrowthVelocity",
-        "CrystallizationPeak",
-        "CrystallizationOnset",
-    ]
-
     _visc_parameters = [
         "log10_eta_infinity (Pa.s)",
         "Tg_MYEGA (K)",
@@ -1188,7 +1179,6 @@ class GlassNet(MTL):
     training_file_mh = _BASEMODELPATH / "GlassNetMH.p"
     scaler_x_file = _BASEMODELPATH / "GlassNet_scaler_x.joblib"
     scaler_y_file = _BASEMODELPATH / "GlassNet_scaler_y.joblib"
-    gfa_file = _BASEMODELPATH / "GlassNet_gfa.xz"
 
     def __init__(self, multihead=True, loadrf=False):
         msg = "To use `loadrf=True` you must have `glasspy_extra` installed"
@@ -1268,14 +1258,6 @@ class GlassNet(MTL):
         if loadrf:
             self._load_rf_models()
             self.rf_models_loaded = True
-
-        self._gfa_indices = [self.target_trans[k] for k in self._gfa_features]
-
-    def _load_gfa_model(self):
-        """Loads the glass-forming ability model."""
-
-        if not hasattr(self, "_gfa_model"):
-            self._gfa_model = joblib.load(self.gfa_file)
 
     def _load_data(self):
         """Loads the data used to train GlassNet.
@@ -2063,116 +2045,6 @@ class GlassNet(MTL):
             return 10**log10_viscosity, parameters
         else:
             return 10**log10_viscosity
-
-    def featurizer_gfa(
-        self,
-        composition: CompositionLike,
-        input_cols: List[str] = [],
-        return_dataframe: bool = False,
-    ):
-        """Compute the features for glass-forming ability prediction.
-
-        Args:
-          composition:
-            Any composition-like object.
-          input_cols:
-            List of strings representing the chemical entities related to each
-            column of `composition`. Necessary only when `composition` is a list
-            or array, ignored otherwise.
-          return_dataframe:
-            If `True`, then returns a pandas DataFrame, else returns an array.
-            Default value is `True`.
-
-        Returns:
-          Array or DataFrame with the computed features.
-        """
-
-        turn_rf_models_off = False
-
-        if not self.rf_models_loaded:
-            self._load_rf_models()
-            turn_rf_models_off = True
-            self.rf_models_loaded = True
-
-        y = self.predict(composition, input_cols, False)
-
-        Tliq = y[:, self.target_trans["Tliquidus"]]
-
-        visc_Tliq, visc_parameters = self.predict_viscosity(
-            Tliq, composition, input_cols, return_parameters=True
-        )
-
-        features = np.hstack(
-            (
-                y[:, self._gfa_indices],
-                visc_parameters,
-                visc_Tliq.reshape(-1, 1),
-            )
-        )
-
-        if turn_rf_models_off:
-            self.rf_models_loaded = False
-
-        if return_dataframe:
-            cols = (
-                self._gfa_features
-                + self._visc_parameters
-                + ["Viscosity at Tliq (Pa.s)"]
-            )
-            return pd.DataFrame(features, columns=cols)
-        else:
-            return features
-
-    def predict_gfa_proba(
-        self,
-        composition: CompositionLike,
-        input_cols: List[str] = [],
-    ):
-        """Predict the glass-forming ability probability.
-
-        Args:
-          composition:
-            Any composition-like object.
-          input_cols:
-            List of strings representing the chemical entities related to each
-            column of `composition`. Necessary only when `composition` is a list
-            or array, ignored otherwise.
-
-        Returns:
-          Array with the glass-forming ability probability. The closer to 1, the
-          more confidence the model has that the composition is a good
-          glassformer.
-        """
-
-        self._load_gfa_model()
-        features = self.featurizer_gfa(composition, input_cols)
-        gfa_proba = self._gfa_model.predict_proba(features)[:, 1]
-        return gfa_proba
-
-    def predict_gfa(
-        self,
-        composition: CompositionLike,
-        input_cols: List[str] = [],
-    ):
-        """Predict the glass-forming ability.
-
-        Args:
-          composition:
-            Any composition-like object.
-          input_cols:
-            List of strings representing the chemical entities related to each
-            column of `composition`. Necessary only when `composition` is a list
-            or array, ignored otherwise.
-
-        Returns:
-          Array with the prediction if the composition is a glass former
-          (`True`) or not a glass former (`False`).
-        """
-
-        self._load_gfa_model()
-        features = self.featurizer_gfa(composition, input_cols)
-        gfa = self._gfa_model.predict(features)
-        return gfa
 
     @staticmethod
     def citation(bibtex: bool = False) -> str:
