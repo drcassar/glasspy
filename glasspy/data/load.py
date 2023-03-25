@@ -17,10 +17,10 @@ import os
 from glasspy.chemistry.convert import to_element_array, wt_to_mol
 from .translators import AtMol_translation, SciGK_translation
 
-__cur_path = os.path.dirname(__file__)
-_ELEMENTS_PATH = os.path.join(__cur_path, "datafiles/select_AtMol.csv.zip")
-_PROPERTIES_PATH = os.path.join(__cur_path, "datafiles/select_SciGK.csv.zip")
-_COMPOUNDS_PATH = os.path.join(__cur_path, "datafiles/select_Gcomp.csv.zip")
+__CUR_PATH = os.path.dirname(__file__)
+_ELEMENTS_PATH = os.path.join(__CUR_PATH, "datafiles/select_AtMol.csv.zip")
+_PROPERTIES_PATH = os.path.join(__CUR_PATH, "datafiles/select_SciGK.csv.zip")
+_COMPOUNDS_PATH = os.path.join(__CUR_PATH, "datafiles/select_Gcomp.csv.zip")
 
 
 class SciGlass:
