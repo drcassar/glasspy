@@ -5,8 +5,8 @@ https://github.com/drcassar/SciGlass. Data that ships with GlassPy is the same a
 
 Typical usage example:
 
-  sg = SciGlass()
-  df = sg.data
+  source = SciGlass()
+  df = source.data
 
 """
 
