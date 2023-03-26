@@ -13,6 +13,7 @@ version = "latest"
 release = "latest"
 
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "nbsphinx",
 ]
