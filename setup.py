@@ -29,10 +29,10 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "License :: OSI Approved :: GNU General Public License v3"
+        "License :: OSI Approved :: GNU General Public License v3 "
             "or later (GPLv3+)",
         "Operating System :: OS Independent",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Topic :: Scientific/Engineering",
         "Intended Audience :: Science/Research",
         "Environment :: Console",
