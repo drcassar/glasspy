@@ -20,7 +20,7 @@ pip install glasspy
 Optionally, you can install GlassPy with additional features. Currently, the additional features are random forest models to improve GlassNet's prediction. Note that this adds about 1GB to the installation. To install GlassPy with all the extra stuff, run
 
 ```sh
-pip install "glasspy[extra]"
+pip install --upgrade git+https://github.com/drcassar/glasspy_extra
 ```
 
 Note that you need to have PyTorch and Lightning installed if you want to use the predictive models that come with GlassPy. These modules are not installed by default. Please read the [PyTorch Installation Guide](https://pytorch.org/get-started/locally/) and the [Lightning Installation Guide](https://lightning.ai/docs/pytorch/stable/#install-lightning) for more information.
