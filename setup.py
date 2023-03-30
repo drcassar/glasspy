@@ -21,6 +21,8 @@ setuptools.setup(
         "chemparse>=0.1.0",
         "scikit-learn==1.2.0",
         "compress_pickle>=2.1.0",
+        "torch",
+        "lightning",
     ],
     extras_require={
         "extra": ["glasspy_extra"],
