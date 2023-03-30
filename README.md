@@ -23,13 +23,11 @@ Optionally, you can install GlassPy with additional features. Currently, the add
 pip install --upgrade git+https://github.com/drcassar/glasspy_extra
 ```
 
-Note that you need to have PyTorch and Lightning installed if you want to use the predictive models that come with GlassPy. These modules are not installed by default. Please read the [PyTorch Installation Guide](https://pytorch.org/get-started/locally/) and the [Lightning Installation Guide](https://lightning.ai/docs/pytorch/stable/#install-lightning) for more information.
-
 ## Development
 GlassPy is under development. API changes are not only likely, but expected as development continues.
 
 ## How to cite
-Daniel R. Cassar. drcassar/glasspy: GlassPy. Zenodo. https://doi.org/10.5281/zenodo.3930350
+D.R. Cassar, GlassNet: a multitask deep neural network for predicting many glass properties, (2023). https://doi.org/10.48550/arXiv.2303.15538.
 
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
