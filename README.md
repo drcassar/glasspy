@@ -6,7 +6,7 @@ GlassPy is a Python module for scientists working with glass materials.
 ![Screenshot](docs/source/logo/logo_text_small.png)
 
 ## What is it?
-GlassPy's current focus is to provide an easy way to load SciGlass data and use GlassNet and ViscNet, two deep learning predictive models of glass and glass-forming liquid properties.
+GlassPy's current focus is on providing an easy way to load SciGlass data and use GlassNet and ViscNet, two deep learning predictive models of glass and glass-forming liquid properties. Click [here](https://glasspy.readthedocs.io) for the documentation.
 
 ## How to install
 The source code is available on GitHub at https://github.com/drcassar/glasspy.
