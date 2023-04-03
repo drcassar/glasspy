@@ -27,12 +27,4 @@ Optionally, you can install GlassPy with additional features. Currently, the add
 
     pip install --upgrade git+https://github.com/drcassar/glasspy_extra
 
-Note that you will need to have PyTorch and Lightning installed if you want to use the predictive models that come with GlassPy. These modules are not installed by default. Please read the `PyTorch installation guide`_ and the `Lightning installation guide`_.
-
-.. _PyTorch installation guide: https://pytorch.org/get-started/locally/
-.. _Lightning installation guide: https://lightning.ai/docs/pytorch/stable/#install-lightning
-
-GlassPy is a Python module for researchers working with `glass materials`_ and
-
-
 .. _Python Package Index: https://pypi.org/project/glasspy/
