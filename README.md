@@ -11,7 +11,7 @@ GlassPy's current focus is on providing an easy way to load SciGlass data and us
 ## How to install
 The source code is available on GitHub at https://github.com/drcassar/glasspy.
 
-Binary installers for the latest released version are available from the [Python Package Index] (https://pypi.org/project/glasspy/). To install GlassPy with pip run
+Binary installers for the latest released version are available from the [Python Package Index](https://pypi.org/project/glasspy/). To install GlassPy with pip run
 
 ```sh
 pip install glasspy
