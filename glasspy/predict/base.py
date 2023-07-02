@@ -456,6 +456,10 @@ class MLP(pl.LightningModule, Predict):
                 "Please add this loss function to the model class."
             )
 
+        # for lightning
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
     @property
     def domain(self) -> Domain:
         # TODO
@@ -507,25 +511,30 @@ class MLP(pl.LightningModule, Predict):
     def training_step(self, batch, batch_idx):
         x, y = batch
         loss = self.loss_fun(self(x), y)
+        self.training_step_outputs.append(loss)
         return {
             "loss": loss,
         }
 
-    def training_epoch_end(self, outputs):
-        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+    def on_train_epoch_end(self):
+        avg_loss = torch.stack(self.training_step_outputs).mean()
+        self.log("training_epoch_average", avg_loss)
         self.learning_curve_train.append(float(avg_loss))
+        self.training_step_outputs.clear()  # free memory
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         loss = self.loss_fun(self(x), y)
+        self.validation_step_outputs.append(loss)
         return {
             "val_loss_step": loss,
         }
 
-    def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x["val_loss_step"] for x in outputs]).mean()
+    def on_validation_epoch_end(self):
+        avg_loss = torch.stack(self.validation_step_outputs).mean()
         self.log("val_loss", avg_loss)
         self.learning_curve_val.append(float(avg_loss))
+        self.validation_step_outputs.clear()  # free memory
 
     def save_training(self, path):
         if not isinstance(path, Path):
