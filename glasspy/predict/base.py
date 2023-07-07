@@ -200,12 +200,12 @@ class Predict(ABC):
         """
 
         if len(y_true.shape) == 1 or y_true.shape[1] == 1:
-            RMSE = sum((y_true - y_pred) ** 2) / len(y_true)
-            return RMSE
+            MSE = sum((y_true - y_pred) ** 2) / len(y_true)
+            return MSE
         else:
             y_true = ma.masked_invalid(y_true)
-            RMSE = np.sum((y_true - y_pred) ** 2, axis=0) / y_true.count(axis=0)
-            return RMSE.data
+            MSE = np.sum((y_true - y_pred) ** 2, axis=0) / y_true.count(axis=0)
+            return MSE.data
 
     @staticmethod
     def RMSE(y_true: np.ndarray, y_pred: np.ndarray) -> float:
