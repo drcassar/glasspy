@@ -997,7 +997,160 @@ class ViscNetVFT(ViscNet):
         return log_viscosity
 
 
-class GlassNet(MTL):
+class _BaseGlassNet(MTL):
+    """Base clas for GlassNet-like networks."""
+
+    def __init__(self, hparams):
+        super().__init__(self.hparams)
+        self.multihead = False
+        self.rf_models_loaded = False
+
+    @property
+    @abstractmethod
+    def element_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def weighted_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def absolute_features(self):
+        pass
+
+    # @property
+    # @abstractmethod
+    # def scaler_x(self):
+    #     pass
+
+    # @property
+    # @abstractmethod
+    # def scaler_y(self):
+    #     pass
+
+    def featurizer(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        auto_scale: bool = True,
+        return_cols: bool = False,
+    ) -> np.ndarray:
+        """Compute the features used for input.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          auto_scale:
+            If `True`, then the features are automatically scaled and ready to
+            use with GlassNet. If `False`, then the features will not be scaled
+            and should not be used to make predictions with Glassnet. Default
+            value is `True`.
+          return_cols:
+            If `True`, then a list with the name of the feature columns is also
+            returned.
+
+        Returns:
+          Array with the computed features. Optionally, the name of the coulmns
+          can also be returned if `return_cols` is True.
+        """
+
+        feat_array, cols = physchem_featurizer(
+            x=composition,
+            input_cols=input_cols,
+            elemental_features=self.element_features,
+            weighted_features=self.weighted_features,
+            absolute_features=self.absolute_features,
+            rescale_to_sum=1,
+            order="eaw",
+        )
+
+        if auto_scale:
+            feat_array = self.scaler_x.transform(feat_array)
+
+        if return_cols:
+            return feat_array, cols
+        else:
+            return feat_array
+
+    def forward(self, x):
+        """Method used for training the neural network.
+
+        Consider using the other methods for prediction.
+
+        Args:
+          x:
+            Feature tensor.
+
+        Returns
+          Tensor with the predictions.
+        """
+
+        if self.multihead:
+            dense = self.hidden_layers(x)
+            return torch.hstack([task(dense) for task in self.tasks])
+
+        else:
+            return self.output_layer(self.hidden_layers(x))
+
+    def predict(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+        return_dataframe: bool = True,
+    ):
+        """Makes prediction of properties.
+
+        Args:
+          composition:
+            Any composition-like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+          return_dataframe:
+            If `True`, then returns a pandas DataFrame, else returns an array.
+            Default value is `True`.
+
+        Returns:
+          Predicted values of properties. Will be a DataFrame if
+          `return_dataframe` is True, otherwise will be an array.
+        """
+
+        is_training = self.training
+        if is_training:
+            self.eval()
+
+        with torch.no_grad():
+            features = self.featurizer(composition, input_cols)
+            features = torch.from_numpy(features).float()
+            y_pred = self.scaler_y.inverse_transform(self(features).detach())
+
+        if is_training:
+            self.train()
+
+        if self.rf_models_loaded:
+            for target in self.rf_dict:
+                y_pred[:, self.target_trans[target]] = self.rf_dict[
+                    target
+                ].predict(features)
+
+        if return_dataframe:
+            return pd.DataFrame(y_pred, columns=self.targets)
+        else:
+            return y_pred
+
+    @staticmethod
+    def citation(bibtex: bool = False) -> str:
+        raise NotImplementedError("Not implemented yet.")
+
+
+class GlassNet(_BaseGlassNet):
     """Multi-task neural network for predicting glass properties."""
 
     hparams = {
@@ -1608,121 +1761,6 @@ class GlassNet(MTL):
             shuffle=True,
         )
         return self.data.loc[test_idx]
-
-    def featurizer(
-        self,
-        composition: CompositionLike,
-        input_cols: List[str] = [],
-        auto_scale: bool = True,
-        return_cols: bool = False,
-    ) -> np.ndarray:
-        """Compute the features used for input in GlassNet.
-
-        Args:
-          composition:
-            Any composition-like object.
-          input_cols:
-            List of strings representing the chemical entities related to each
-            column of `composition`. Necessary only when `composition` is a list
-            or array, ignored otherwise.
-          auto_scale:
-            If `True`, then the features are automatically scaled and ready to
-            use with GlassNet. If `False`, then the features will not be scaled
-            and should not be used to make predictions with Glassnet. Default
-            value is `True`.
-          return_cols:
-            If `True`, then a list with the name of the feature columns is also
-            returned.
-
-        Returns:
-          Array with the computed features. Optionally, the name of the coulmns
-          can also be returned if `return_cols` is True.
-        """
-
-        feat_array, cols = physchem_featurizer(
-            x=composition,
-            input_cols=input_cols,
-            elemental_features=self.element_features,
-            weighted_features=self.weighted_features,
-            absolute_features=self.absolute_features,
-            rescale_to_sum=1,
-            order="eaw",
-        )
-
-        if auto_scale:
-            feat_array = self.scaler_x.transform(feat_array)
-
-        if return_cols:
-            return feat_array, cols
-        else:
-            return feat_array
-
-    def forward(self, x):
-        """Method used for training the neural network.
-
-        Consider using the other methods for prediction.
-
-        Args:
-          x:
-            Feature tensor.
-
-        Returns
-          Tensor with the predictions.
-        """
-
-        if self.multihead:
-            dense = self.hidden_layers(x)
-            return torch.hstack([task(dense) for task in self.tasks])
-
-        else:
-            return self.output_layer(self.hidden_layers(x))
-
-    def predict(
-        self,
-        composition: CompositionLike,
-        input_cols: List[str] = [],
-        return_dataframe: bool = True,
-    ):
-        """Makes prediction of properties using GlassNet.
-
-        Args:
-          composition:
-            Any composition-like object.
-          input_cols:
-            List of strings representing the chemical entities related to each
-            column of `composition`. Necessary only when `composition` is a list
-            or array, ignored otherwise.
-          return_dataframe:
-            If `True`, then returns a pandas DataFrame, else returns an array.
-            Default value is `True`.
-
-        Returns:
-          Predicted values of properties. Will be a DataFrame if
-          `return_dataframe` is True, otherwise will be an array.
-        """
-
-        is_training = self.training
-        if is_training:
-            self.eval()
-
-        with torch.no_grad():
-            features = self.featurizer(composition, input_cols)
-            features = torch.from_numpy(features).float()
-            y_pred = self.scaler_y.inverse_transform(self(features).detach())
-
-        if is_training:
-            self.train()
-
-        if self.rf_models_loaded:
-            for target in self.rf_dict:
-                y_pred[:, self.target_trans[target]] = self.rf_dict[
-                    target
-                ].predict(features)
-
-        if return_dataframe:
-            return pd.DataFrame(y_pred, columns=self.targets)
-        else:
-            return y_pred
 
     def _viscosity_table_single(
         self,
