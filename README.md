@@ -17,12 +17,6 @@ Binary installers for the latest released version are available from the [Python
 pip install glasspy
 ```
 
-Optionally, you can install GlassPy with additional features. Currently, the additional features are random forest models to improve GlassNet's prediction. Note that this adds about 1GB to the installation. To install GlassPy with all the extra stuff, run
-
-```sh
-pip install --upgrade git+https://github.com/drcassar/glasspy_extra
-```
-
 ## Development
 GlassPy is under development. API changes are not only likely, but expected as development continues.
 
