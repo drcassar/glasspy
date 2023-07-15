@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="glasspy",
-    version="0.4.0",
+    version="0.4.1",
     author="Daniel Roberto Cassar",
     author_email="daniel.r.cassar@gmail.com",
     description="Python module for scientists working with glass materials",
@@ -22,7 +22,7 @@ setuptools.setup(
         "scikit-learn==1.2.0",
         "compress_pickle>=2.1.0",
         "torch",
-        "lightning",
+        "lightning<2",
     ],
     extras_require={
         "extra": ["glasspy_extra"],
