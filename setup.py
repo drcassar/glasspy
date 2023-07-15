@@ -22,7 +22,7 @@ setuptools.setup(
         "scikit-learn==1.2.0",
         "compress_pickle>=2.1.0",
         "torch",
-        "lightning<2",
+        "lightning>=2.0.0",
     ],
     extras_require={
         "extra": ["glasspy_extra"],
