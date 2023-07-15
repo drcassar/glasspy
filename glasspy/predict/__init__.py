@@ -1,8 +1,19 @@
-from .models import ViscNet, ViscNetHuber, ViscNetVFT, GlassNet
-
-__all__ = [
+from .models import (
     ViscNet,
     ViscNetHuber,
     ViscNetVFT,
-    GlassNet
+    GlassNet,
+    GlassNetMTMLP,
+    GlassNetMTMH,
+    GlassNetSTNN,
+)
+
+__all__ = [
+    "ViscNet",
+    "ViscNetHuber",
+    "ViscNetVFT",
+    "GlassNet",
+    "GlassNetMTMLP",
+    "GlassNetMTMH",
+    "GlassNetSTNN",
 ]
