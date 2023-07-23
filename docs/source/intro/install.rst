@@ -23,8 +23,4 @@ pip run::
 
     pip install glasspy
 
-Optionally, you can install GlassPy with additional features. Currently, the additional features are Random Forest models to complement GlassNet. But be careful! This adds about 1 Gb to the installation. To install GlassPy with all the extra stuff, run::
-
-    pip install --upgrade git+https://github.com/drcassar/glasspy_extra
-
 .. _Python Package Index: https://pypi.org/project/glasspy/
