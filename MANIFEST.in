@@ -1,5 +1,5 @@
 include *.txt
 recursive-include docs *
-recursive-include glasspy/data/datafiles/*
-recursive-include glasspy/predict/models/*
-recursive-include glasspy/chemistry/data/*
+recursive-include glasspy/data/datafiles
+recursive-include glasspy/predict/models
+recursive-include glasspy/chemistry/data
