@@ -23,6 +23,7 @@ setuptools.setup(
         "compress_pickle>=2.1.0",
         "torch",
         "lightning>=2.0.0",
+        "platformdirs",
     ],
     extras_require={
         "extra": ["glasspy_extra"],

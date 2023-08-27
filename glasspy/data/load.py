@@ -1,7 +1,10 @@
 """This is the module to load available data in GlassPy.
 
-Right now, the main source of GlassPy data is the SciGlass database. The SciGlass database is available at https://github.com/epam/SciGlass licensed under ODC Open Database License (ODbL). For a plain text version of this database, see the for at
-https://github.com/drcassar/SciGlass. Data that ships with GlassPy is the same as the data in the plain text fork.
+Right now, the main source of GlassPy data is the SciGlass database. The
+SciGlass database is available at https://github.com/epam/SciGlass licensed
+under ODC Open Database License (ODbL). For a plain text version of this
+database, see the for at https://github.com/drcassar/SciGlass. Data that ships
+with GlassPy is the same as the data in the plain text fork.
 
 Typical usage example:
 
@@ -9,18 +12,60 @@ Typical usage example:
   df = source.data
 
 """
-
+import io
+import shutil
+import zipfile
+from pathlib import Path
+import requests
 import pandas as pd
-import numpy as np
-import os
+from platformdirs import user_data_dir
 
 from glasspy.chemistry.convert import to_element_array, wt_to_mol
 from .translators import AtMol_translation, SciGK_translation
 
-__CUR_PATH = os.path.dirname(__file__)
-_ELEMENTS_PATH = os.path.join(__CUR_PATH, "datafiles/select_AtMol.csv.zip")
-_PROPERTIES_PATH = os.path.join(__CUR_PATH, "datafiles/select_SciGK.csv.zip")
-_COMPOUNDS_PATH = os.path.join(__CUR_PATH, "datafiles/select_Gcomp.csv.zip")
+
+def _download_sciglass_data(path_dict):
+    """Downloads the SciGlass database to your computer."""
+
+    print("Downloading SciGlass database to your computer...")
+    print("This is only required once and may take a few minutes.")
+
+    record_id = "8287159"
+    api_url = f"https://zenodo.org/api/records/{record_id}"
+    response = requests.get(api_url, timeout=60)
+    record_data = response.json()
+    url = record_data["files"][0]["links"]["self"]
+
+    download = requests.get(url, timeout=3600)
+    zip_file = io.BytesIO(download.content)
+
+    with zipfile.ZipFile(zip_file, "r") as zip_ref:
+        for item in zip_ref.namelist():
+            for name, path in path_dict.values():
+                if name in item:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    with zip_ref.open(item) as source_file:
+                        with open(path, "wb") as target_file:
+                            shutil.copyfileobj(source_file, target_file)
+
+    print("Download completed!")
+
+
+def _sciglass_path_dict():
+    """Get the SciGlass file paths in your system."""
+
+    data_dir = Path(user_data_dir("GlassPy"))
+
+    path_dict = {
+        "elements": ("AtMol", data_dir / "select_AtMol.csv.zip"),
+        "properties": ("SciGK", data_dir / "select_SciGK.csv.zip"),
+        "compounds": ("Gcomp", data_dir / "select_Gcomp.csv.zip"),
+    }
+
+    if not all(val[1].is_file() for val in path_dict.values()):
+        _download_sciglass_data(path_dict)
+
+    return path_dict
 
 
 class SciGlass:
@@ -57,18 +102,19 @@ class SciGlass:
         autocleanup: bool = True,
         metadata: bool = True,
     ):
+        path_dict = _sciglass_path_dict()
 
         # default behavior is returning everything if no config is given
         if (not elements_cfg) and (not properties_cfg) and (not compounds_cfg):
             elements_cfg = {
-                "path": _ELEMENTS_PATH,
+                "path": path_dict["elements"][1],
                 "translate": AtMol_translation,
                 "acceptable_sum_deviation": 1,
                 "final_sum": 1,
             }
 
             compounds_cfg = {
-                "path": _COMPOUNDS_PATH,
+                "path": path_dict["compounds"][1],
                 "acceptable_sum_deviation": 1,
                 "final_sum": 1,
                 "return_weight": False,
@@ -92,7 +138,7 @@ class SciGlass:
             }
 
             properties_cfg = {
-                "path": _PROPERTIES_PATH,
+                "path": path_dict["properties"][1],
                 "translate": SciGK_translation,
                 "keep": self.available_properties(),
             }
@@ -122,7 +168,7 @@ class SciGlass:
 
         if metadata:
             metadata_cfg = {
-                "path": _PROPERTIES_PATH,
+                "path": path_dict["properties"][1],
                 "translate": SciGK_translation,
                 "keep": self.available_properties_metadata(),
             }
@@ -148,7 +194,7 @@ class SciGlass:
         dfs = {
             k: dfs[k]
             for k in ["elements", "compounds", "property", "metadata"]
-            if k in dfs.keys()
+            if k in dfs
         }
 
         self.data = pd.concat(dfs, axis=1, join="inner")
@@ -179,8 +225,12 @@ class SciGlass:
             integer that merges both numbers
         """
 
+        path_dict = _sciglass_path_dict()
+
         df = pd.read_csv(
-            kwargs.get("path", _PROPERTIES_PATH), sep="\t", low_memory=False
+            kwargs.get("path", path_dict["properties"][1]),
+            sep="\t",
+            low_memory=False,
         )
         df = df.assign(ID=lambda x: x.KOD * 100000000 + x.GLASNO)
         df = df.drop(["KOD", "GLASNO"], axis=1)
@@ -225,9 +275,12 @@ class SciGlass:
             has a glass number and a paper number. This ID used in GlassPy is an
             integer that merges both numbers
         """
+        path_dict = _sciglass_path_dict()
 
         df = pd.read_csv(
-            kwargs.get("path", _ELEMENTS_PATH), sep="\t", low_memory=False
+            kwargs.get("path", path_dict["elements"][1]),
+            sep="\t",
+            low_memory=False,
         )
         df = df.assign(ID=lambda x: x.Kod * 100000000 + x.GlasNo)
         df = df.drop(["Kod", "GlasNo"], axis=1)
@@ -268,9 +321,12 @@ class SciGlass:
             has a glass number and a paper number. This ID used in GlassPy is an
             integer that merges both numbers
         """
+        path_dict = _sciglass_path_dict()
 
         df = pd.read_csv(
-            kwargs.get("path", _COMPOUNDS_PATH), sep="\t", low_memory=False
+            kwargs.get("path", path_dict["compounds"][1]),
+            sep="\t",
+            low_memory=False,
         )
         df = df.assign(ID=lambda x: x.Kod * 100000000 + x.GlasNo)
         df = df.drop(["Kod", "GlasNo"], axis=1)
