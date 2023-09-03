@@ -82,6 +82,7 @@ def sciglass_dbinfo():
         meta = " [metadata]" if meta else ""
         print(f"{name}: {info}{units}{meta}")
 
+
 class SciGlass:
     """Loader of SciGlass data.
 
@@ -499,9 +500,9 @@ class SciGlass:
         """Returns a list of available properties."""
 
         metadata = [
-            SciGK_translation[k].get("rename", k)
-            for k in SciGK_translation
-            if SciGK_translation[k].get("metadata", False)
+            v.get("rename", k)
+            for k, v in SciGK_translation.items()
+            if v.get("metadata", False)
         ]
 
         return [
@@ -515,9 +516,9 @@ class SciGlass:
         """Returns a list of available properties metadata."""
 
         return [
-            SciGK_translation[k].get("rename", k)
-            for k in SciGK_translation
-            if SciGK_translation[k].get("metadata", False)
+            v.get("rename", k)
+            for k, v in SciGK_translation.items()
+            if v.get("metadata", False)
         ]
 
     @staticmethod
