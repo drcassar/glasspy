@@ -68,6 +68,20 @@ def _sciglass_path_dict():
     return path_dict
 
 
+def sciglass_dbinfo():
+    """Prints the SciGlass database information."""
+
+    print()
+
+    for key, value in SciGK_translation.items():
+        name = value.get("rename", key)
+        info = value.get("info", "")
+        units = value.get("unit", None)
+        units = f" ({units})" if units else ""
+        meta = value.get("metadata", False)
+        meta = " [metadata]" if meta else ""
+        print(f"{name}: {info}{units}{meta}")
+
 class SciGlass:
     """Loader of SciGlass data.
 
