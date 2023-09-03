@@ -520,3 +520,8 @@ class SciGlass:
             for k in SciGK_translation
             if SciGK_translation[k].get("metadata", False)
         ]
+
+    @staticmethod
+    def database_info():
+        """Prints database information."""
+        sciglass_dbinfo()
