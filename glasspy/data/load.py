@@ -68,6 +68,21 @@ def _sciglass_path_dict():
     return path_dict
 
 
+def sciglass_dbinfo():
+    """Prints the SciGlass database information."""
+
+    print()
+
+    for key, value in SciGK_translation.items():
+        name = value.get("rename", key)
+        info = value.get("info", "")
+        units = value.get("unit", None)
+        units = f" ({units})" if units else ""
+        meta = value.get("metadata", False)
+        meta = " [metadata]" if meta else ""
+        print(f"{name}: {info}{units}{meta}")
+
+
 class SciGlass:
     """Loader of SciGlass data.
 
@@ -90,22 +105,18 @@ class SciGlass:
 
     Attributes:
       data: DataFrame of the collected data.
-
-
     """
-
     def __init__(
         self,
-        elements_cfg: dict = {},
-        properties_cfg: dict = {},
-        compounds_cfg: dict = {},
+        elements_cfg: dict | None = None,
+        properties_cfg: dict | None = None,
+        compounds_cfg: dict | None = None,
         autocleanup: bool = True,
         metadata: bool = True,
     ):
         path_dict = _sciglass_path_dict()
 
-        # default behavior is returning everything if no config is given
-        if (not elements_cfg) and (not properties_cfg) and (not compounds_cfg):
+        if elements_cfg is None:
             elements_cfg = {
                 "path": path_dict["elements"][1],
                 "translate": AtMol_translation,
@@ -113,6 +124,7 @@ class SciGlass:
                 "final_sum": 1,
             }
 
+        if compounds_cfg is None:
             compounds_cfg = {
                 "path": path_dict["compounds"][1],
                 "acceptable_sum_deviation": 1,
@@ -137,11 +149,13 @@ class SciGlass:
                 ],
             }
 
+        if properties_cfg is None:
             properties_cfg = {
                 "path": path_dict["properties"][1],
                 "translate": SciGK_translation,
                 "keep": self.available_properties(),
             }
+
 
         dfs = {}
 
@@ -486,9 +500,9 @@ class SciGlass:
         """Returns a list of available properties."""
 
         metadata = [
-            SciGK_translation[k].get("rename", k)
-            for k in SciGK_translation
-            if SciGK_translation[k].get("metadata", False)
+            v.get("rename", k)
+            for k, v in SciGK_translation.items()
+            if v.get("metadata", False)
         ]
 
         return [
@@ -502,7 +516,12 @@ class SciGlass:
         """Returns a list of available properties metadata."""
 
         return [
-            SciGK_translation[k].get("rename", k)
-            for k in SciGK_translation
-            if SciGK_translation[k].get("metadata", False)
+            v.get("rename", k)
+            for k, v in SciGK_translation.items()
+            if v.get("metadata", False)
         ]
+
+    @staticmethod
+    def database_info():
+        """Prints database information."""
+        sciglass_dbinfo()

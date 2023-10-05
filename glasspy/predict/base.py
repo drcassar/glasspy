@@ -3,6 +3,7 @@
 import os
 import pickle
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from math import sqrt
 from pathlib import Path
 from typing import Dict, List, Tuple, NamedTuple, Union, Any
