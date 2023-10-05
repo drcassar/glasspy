@@ -2050,7 +2050,18 @@ class _BaseGlassNet(MTL):
 
     @staticmethod
     def citation(bibtex: bool = False) -> str:
-        raise NotImplementedError("Not implemented yet.")
+        if bibtex:
+            c = "@article{Cassar_2023, title={GlassNet: A multitask deep "
+            "neural network for predicting many glass properties}, "
+            "volume={49}, ISSN={0272-8842}, "
+            "DOI={10.1016/j.ceramint.2023.08.281}, number={22, Part B}, "
+            "journal={Ceramics International}, author={Cassar, Daniel R.}, "
+            "year={2023}, pages={36013–36024}}"
+        else:
+            c = "Cassar, D.R. (2023). GlassNet: A multitask deep neural "
+            "network for predicting many glass properties. Ceramics "
+            "International 49, 36013–36024. 10.1016/j.ceramint.2023.08.281."
+        return c
 
 
 class _BaseGlassNetViscosity(ABC):

@@ -21,7 +21,7 @@ pip install glasspy
 GlassPy is under development. API changes are not only likely, but expected as development continues.
 
 ## How to cite
-D.R. Cassar, GlassNet: a multitask deep neural network for predicting many glass properties, (2023). https://doi.org/10.48550/arXiv.2303.15538.
+Cassar, D.R. (2023). GlassNet: A multitask deep neural network for predicting many glass properties. Ceramics International 49, 36013–36024. 10.1016/j.ceramint.2023.08.281.
 
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
