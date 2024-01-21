@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="glasspy",
-    version="0.4.5",
+    version="0.4.6",
     author="Daniel Roberto Cassar",
     author_email="daniel.r.cassar@gmail.com",
     description="Python module for scientists working with glass materials",
@@ -25,15 +25,13 @@ setuptools.setup(
         "lightning>=2.0.0",
         "platformdirs",
     ],
-    extras_require={
-        "extra": ["glasspy_extra"],
-    },
     keywords="glass, non-crystalline materials",
     classifiers=[
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: GNU General Public License v3 "
-            "or later (GPLv3+)",
+        "or later (GPLv3+)",
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
         "Topic :: Scientific/Engineering",

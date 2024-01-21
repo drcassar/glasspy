@@ -11,7 +11,11 @@ GlassPy's current focus is on providing an easy way to load SciGlass data and us
 ## How to install
 The source code is available on GitHub at https://github.com/drcassar/glasspy.
 
-Binary installers for the latest released version are available from the [Python Package Index](https://pypi.org/project/glasspy/). To install GlassPy with pip run
+Binary installers for the latest released version are available from the [Python Package Index](https://pypi.org/project/glasspy/).
+
+Before installing GlassPy, make sure that you have `pytorch` installed (see the instructions [here](https://pytorch.org/get-started/locally/)).
+
+To install GlassPy with pip run
 
 ```sh
 pip install glasspy
@@ -21,12 +25,15 @@ pip install glasspy
 GlassPy is under development. API changes are not only likely, but expected as development continues.
 
 ## How to cite
-D.R. Cassar, GlassNet: a multitask deep neural network for predicting many glass properties, (2023). https://doi.org/10.48550/arXiv.2303.15538.
+
+If GlassPy or GlassNet was useful in your research, please cite the following paper:
+
+> Cassar, D.R. (2023). GlassNet: A multitask deep neural network for predicting many glass properties. Ceramics International 49, 36013–36024. 10.1016/j.ceramint.2023.08.281.
 
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
 
-GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2023 Daniel Roberto Cassar
+GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2024 Daniel Roberto Cassar
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
