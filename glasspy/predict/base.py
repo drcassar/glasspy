@@ -105,7 +105,7 @@ GLASSNET_TARGETS = [
     "Permittivity",
     "TangentOfLossAngle",
     "TresistivityIs1MOhm.m",
-    "Resistivity273K",
+    "Resistivity293K",
     "Resistivity373K",
     "Resistivity423K",
     "Resistivity573K",
@@ -375,7 +375,7 @@ def _load_data_glassnet():
             "min": 1.7,
             "max": 3.5,
         },
-        "Resistivity273K": {
+        "Resistivity293K": {
             "log": True,
             "max": 1e40,
         },

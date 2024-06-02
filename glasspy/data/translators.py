@@ -301,8 +301,8 @@ SciGK_translation = {
         "unit": "K",
     },
     "RO20": {
-        "info": "Specific electrical resistivity measured at 273 K",
-        "rename": "Resistivity273K",
+        "info": "Specific electrical resistivity measured at 293 K",
+        "rename": "Resistivity293K",
         "convert": lambda x: 10 ** (x - 4),
         "unit": "Ohm.m",
     },
