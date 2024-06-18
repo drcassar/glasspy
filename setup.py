@@ -19,7 +19,7 @@ setuptools.setup(
         "pandas>=1.3",
         "lmfit>=1.0.0",
         "chemparse>=0.1.0",
-        "scikit-learn==1.2.0",
+        "scikit-learn==1.5.0",
         "compress_pickle>=2.1.0",
         "torch",
         "lightning>=2.0.0",
