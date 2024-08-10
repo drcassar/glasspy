@@ -3,19 +3,19 @@
 import pickle
 from typing import List
 
-import torch
-import torch.nn as nn
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
+from glasspy.chemistry import CompositionLike, physchem_featurizer
 from torch.nn import functional as F
 
-from glasspy.chemistry import physchem_featurizer, CompositionLike
 from .base import (
-    _BaseViscNet,
-    _BaseGlassNet,
-    _BaseGlassNetViscosity,
     _BASEMODELPATH,
     GLASSNET_TARGETS,
+    _BaseGlassNet,
+    _BaseGlassNetViscosity,
+    _BaseViscNet,
 )
 
 
