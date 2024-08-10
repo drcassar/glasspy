@@ -1,4 +1,4 @@
-#fmt: off
+# fmt: off
 AtMol_translation = {
     "1": "H", "2": "He", "3": "Li", "4": "Be", "5": "B", "6": "C", "7": "N",
     "8": "O", "9": "F", "10": "Ne", "11": "Na", "12": "Mg", "13": "Al",
@@ -303,49 +303,49 @@ SciGK_translation = {
     "RO20": {
         "info": "Specific electrical resistivity measured at 293 K",
         "rename": "Resistivity293K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "RO100": {
         "info": "Specific electrical resistivity measured at 373 K",
         "rename": "Resistivity373K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "RO150": {
         "info": "Specific electrical resistivity measured at 423 K",
         "rename": "Resistivity423K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "RO300": {
         "info": "Specific electrical resistivity measured at 573 K",
         "rename": "Resistivity573K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "ro800": {
         "info": "Specific electrical resistivity measured at 1073 K",
         "rename": "Resistivity1073K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "ro1000": {
         "info": "Specific electrical resistivity measured at 1273 K",
         "rename": "Resistivity1273K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "ro1200": {
         "info": "Specific electrical resistivity measured at 1473 K",
         "rename": "Resistivity1473K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
     "ro1400": {
         "info": "Specific electrical resistivity measured at 1673 K",
         "rename": "Resistivity1673K",
-        "convert": lambda x: 10 ** (x - 4),
+        "convert": lambda x: 10 ** (x - 2),
         "unit": "Ohm.m",
     },
 
@@ -551,4 +551,4 @@ SciGK_translation = {
         "unit": "J/m2",
     },
 }
-#fmt: on
+# fmt: on
