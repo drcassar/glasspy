@@ -1834,6 +1834,7 @@ class _BaseGlassNet(MTL):
     Args:
       hparams:
         Dictionary of the hyperparameters of the neural network.
+
     """
 
     # fmt: off
@@ -1906,6 +1907,7 @@ class _BaseGlassNet(MTL):
         Returns:
           DataFrame with the all the data used to train and validate
           GlassNet.
+
         """
         if not hasattr(self, "data"):
             self.data = _load_data_glassnet()
@@ -1917,6 +1919,7 @@ class _BaseGlassNet(MTL):
         Returns:
           DataFrame containing the training dataset used in the GlassNet
           paper.
+
         """
         self.get_all_data()
         indices = self.data.index
@@ -1934,6 +1937,7 @@ class _BaseGlassNet(MTL):
         Returns:
           DataFrame containing the holdout dataset used in the GlassNet
           paper.
+
         """
         self.get_all_data()
         indices = self.data.index
@@ -1973,6 +1977,7 @@ class _BaseGlassNet(MTL):
         Returns:
           Array with the computed features. Optionally, the name of the coulmns
           can also be returned if `return_cols` is True.
+
         """
         feat_array, cols = physchem_featurizer(
             x=composition,
@@ -2003,6 +2008,7 @@ class _BaseGlassNet(MTL):
 
         Returns
           Tensor with the predictions.
+
         """
         return self.output_layer(self.hidden_layers(x))
 
@@ -2028,6 +2034,7 @@ class _BaseGlassNet(MTL):
         Returns:
           Predicted values of properties. Will be a DataFrame if
           `return_dataframe` is True, otherwise will be an array.
+
         """
         is_training = self.training
         if is_training:
