@@ -6,26 +6,23 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from math import sqrt
 from pathlib import Path
-from typing import Dict, List, Tuple, NamedTuple, Union, Any
+from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
+import joblib
 import numpy as np
 import numpy.ma as ma
-import joblib
+import pandas as pd
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pandas as pd
-from torch.nn import functional as F
-from torch.optim import SGD, Adam, AdamW
-import pytorch_lightning as pl
-from sklearn.model_selection import train_test_split
+from glasspy.chemistry import CompositionLike, physchem_featurizer
+from glasspy.data import SciGlass
+from glasspy.viscosity.equilibrium_log import myega_alt
 from scipy.optimize import least_squares
 from scipy.stats import theilslopes
+from sklearn.model_selection import train_test_split
 from torch.nn import functional as F
-
-
-from glasspy.viscosity.equilibrium_log import myega_alt
-from glasspy.chemistry import physchem_featurizer, CompositionLike
-from glasspy.data import SciGlass
+from torch.optim import SGD, Adam, AdamW
 
 _BASEMODELPATH = Path(os.path.dirname(__file__)) / "models"
 
