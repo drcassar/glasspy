@@ -12,15 +12,17 @@ Typical usage example:
   df = source.data
 
 """
+
 import io
 import shutil
 import zipfile
 from pathlib import Path
-import requests
+
 import pandas as pd
+import requests
+from glasspy.chemistry.convert import to_element_array, wt_to_mol
 from platformdirs import user_data_dir
 
-from glasspy.chemistry.convert import to_element_array, wt_to_mol
 from .translators import AtMol_translation, SciGK_translation
 
 
@@ -105,7 +107,9 @@ class SciGlass:
 
     Attributes:
       data: DataFrame of the collected data.
+
     """
+
     def __init__(
         self,
         elements_cfg: dict | None = None,
@@ -155,7 +159,6 @@ class SciGlass:
                 "translate": SciGK_translation,
                 "keep": self.available_properties(),
             }
-
 
         dfs = {}
 
