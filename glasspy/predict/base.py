@@ -3,6 +3,7 @@
 import os
 import pickle
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Iterable
 from math import sqrt
 from pathlib import Path
@@ -1663,7 +1664,7 @@ class _BaseViscNet(MLP):
         parameters_unc = self.viscosity_parameters_unc(
             composition, input_cols, confidence, num_samples
         )
-        m = parameters["m"]
+        m = parameters_unc["m"]
         return m
 
     def predict_log10_eta_infinity_unc(
