@@ -1,10 +1,11 @@
-"""This is the module to load available data in GlassPy.
+"""This is the module for loading available data using GlassPy.
 
-Right now, the main source of GlassPy data is the SciGlass database. The
-SciGlass database is available at https://github.com/epam/SciGlass licensed
-under ODC Open Database License (ODbL). For a plain text version of this
-database, see the for at https://github.com/drcassar/SciGlass. Data that ships
-with GlassPy is the same as the data in the plain text fork.
+Currently the main source of GlassPy data is the SciGlass database.
+The SciGlass database is available at https://github.com/epam/SciGlass
+and is licensed under the ODC Open Database License (ODbL). A
+text-only version of this database can be found at
+https://github.com/drcassar/SciGlass. The data shipped with GlassPy is
+the same as the data in the plain text fork.
 
 Typical usage example:
 
@@ -236,12 +237,18 @@ class SciGlass:
           translate : dict
             Dictionary with the information on how to read and convert the
             properties. See variable `SciSK_translation` for an example.
+          must_have_or: list
+            List of properties that must be present in the final
+            DataFrame (using OR logic)
+          must_have_and: list
+            List of properties that must be present in the final
+            DataFrame (using AND logic)
           IDs : pd.Index
             IDs of the dataset to consider. Each glass in the SciGlass database
             has a glass number and a paper number. This ID used in GlassPy is an
             integer that merges both numbers
-        """
 
+        """
         path_dict = _sciglass_path_dict()
 
         df = pd.read_csv(
@@ -260,7 +267,11 @@ class SciGlass:
             for k, v in translate.items()
             if "convert" in v
         }
-        df = self._process_df(df, rename=rename, convert=convert, **kwargs)
+
+        df = self._process_df(
+            df, rename=rename, convert=convert, origin="properties", **kwargs
+        )
+
         return df
 
     def get_elements(self, **kwargs):
@@ -287,10 +298,17 @@ class SciGlass:
             The final sum of all atomic fractions is normalized to this value.
             Usual values are 1 if you want atomic fractions or 100 if you want
             atomic percentages.
+          must_have_or: list
+            List of elements that must be present in the final
+            DataFrame (using OR logic)
+          must_have_and: list
+            List of elements that must be present in the final
+            DataFrame (using AND logic)
           IDs : pd.Index
             IDs of the dataset to consider. Each glass in the SciGlass database
             has a glass number and a paper number. This ID used in GlassPy is an
             integer that merges both numbers
+
         """
         path_dict = _sciglass_path_dict()
 
@@ -306,7 +324,9 @@ class SciGlass:
         if "IDs" in kwargs:
             idx = df.index.intersection(kwargs["IDs"])
             df = df.loc[idx]
-        df = self._process_df(df, rename=translate, **kwargs)
+        df = self._process_df(
+            df, rename=translate, origin="elements", **kwargs
+        )
         return df
 
     def get_compounds(self, **kwargs):
@@ -333,10 +353,17 @@ class SciGlass:
           return_weight : bool
             If `True`, the chemical information stored in the DataFrame will be
             in weight%. Otherwise it will be in mol%.
+          must_have_or: list
+            List of compounds that must be present in the final
+            DataFrame (using OR logic)
+          must_have_and: list
+            List of compounds that must be present in the final
+            DataFrame (using AND logic)
           IDs : pd.Index
             IDs of the dataset to consider. Each glass in the SciGlass database
             has a glass number and a paper number. This ID used in GlassPy is an
             integer that merges both numbers
+
         """
         path_dict = _sciglass_path_dict()
 
@@ -374,7 +401,8 @@ class SciGlass:
             .dropna(axis=0, how="all")
             .fillna(0)
         )
-        df = self._process_df(data, **kwargs)
+
+        df = self._process_df(data, origin="compounds", **kwargs)
         return df
 
     @staticmethod
@@ -386,16 +414,30 @@ class SciGlass:
 
         if "rename" in kwargs:
             df = df.rename(columns=kwargs["rename"])
+        if kwargs["origin"] == "properties":
+            if "must_have_or" in kwargs:
+                strings = [
+                    f"{prop}.notna()" for prop in kwargs["must_have_or"]
+                ]
+                query = " or ".join(strings)
+                df = df.query(query)
+            if "must_have_and" in kwargs:
+                strings = [
+                    f"{prop}.notna()" for prop in kwargs["must_have_and"]
+                ]
+                query = " and ".join(strings)
+                df = df.query(query)
+        else:
+            if "must_have_or" in kwargs:
+                strings = [f"{comp} > 0" for comp in kwargs["must_have_or"]]
+                query = " or ".join(strings)
+                df = df.query(query)
+            if "must_have_and" in kwargs:
+                strings = [f"{comp} > 0" for comp in kwargs["must_have_and"]]
+                query = " and ".join(strings)
+                df = df.query(query)
         if "keep" in kwargs:
             df = df.reindex(kwargs["keep"], axis=1)
-        if "must_have_or" in kwargs:
-            strings = [f"{el} > 0" for el in kwargs["must_have_or"]]
-            query = " or ".join(strings)
-            df = df.query(query)
-        if "must_have_and" in kwargs:
-            strings = [f"{el} > 0" for el in kwargs["must_have_and"]]
-            query = " and ".join(strings)
-            df = df.query(query)
         if "drop" in kwargs:
             df = df.drop(kwargs["drop"], axis=1, errors="ignore")
         if "drop_compound_with_element" in kwargs:
@@ -405,6 +447,7 @@ class SciGlass:
                     if el in col:
                         df = df.loc[df[col] == 0]
                         drop_cols.append(col)
+                        # no need to check other elements, the column is gone
                         break
             df = df.drop(drop_cols, axis=1, errors="ignore")
         if "dropline" in kwargs:
@@ -442,8 +485,8 @@ class SciGlass:
         """Remove duplicate compositions from the `data` attribute.
 
         Note that the original ID and the metadata are lost upon this operation.
-        """
 
+        """
         assert scope in ["elements", "compounds"]
         assert "property" in self.data.columns.levels[0]
         assert scope in self.data.columns.levels[0]
@@ -469,8 +512,8 @@ class SciGlass:
             If `True`, then assume that the compounds fractions are in weight%,
             otherwise assume that the compounds fractions are in mol%. Default
             value is `False`.
-        """
 
+        """
         assert "compounds" in self.data.columns.levels[0]
         assert "elements" not in self.data.columns.levels[0]
 
