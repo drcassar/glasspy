@@ -138,6 +138,7 @@ class ViscNet(_BaseViscNet):
 
         state_dict = pickle.load(open(self.state_dict_path, "rb"))
         self.load_state_dict(state_dict)
+        self.eval()
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
         """Computes the base-10 logarithm of viscosity using the MYEGA equation."""
