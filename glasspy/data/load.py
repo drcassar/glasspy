@@ -267,6 +267,8 @@ class SciGlass:
             for k, v in translate.items()
             if "convert" in v
         }
+        if "keep" not in kwargs:
+            kwargs["keep"] = self.available_properties()
 
         df = self._process_df(
             df, rename=rename, convert=convert, origin="properties", **kwargs
