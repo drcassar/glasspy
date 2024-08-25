@@ -438,6 +438,14 @@ class SciGlass:
                 strings = [f"{comp} > 0" for comp in kwargs["must_have_and"]]
                 query = " and ".join(strings)
                 df = df.query(query)
+            if "must_have_only" in kwargs:
+                strings = [f"{comp} > 0" for comp in kwargs["must_have_only"]]
+                query = " or ".join(strings)
+                df = df.query(query)
+                drop = df.columns.drop(kwargs["must_have_only"])
+                for col in drop:
+                    df = df.loc[df[col] == 0]
+                df = df.drop(drop, axis=1, errors="ignore")
         if "keep" in kwargs:
             df = df.reindex(kwargs["keep"], axis=1)
         if "drop" in kwargs:
