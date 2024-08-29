@@ -28,7 +28,6 @@ from torch.optim import SGD, Adam, AdamW
 _BASEMODELPATH = Path(os.path.dirname(__file__)) / "models"
 
 # fmt: off
-
 _VISCOSITY_COLUMNS_FOR_REGRESSION = [
     "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10",
     "T11", "T12", "Viscosity773K", "Viscosity873K", "Viscosity973K",
@@ -62,7 +61,6 @@ GLASSNET_TARGETS = [
     "SurfaceTension1173K", "SurfaceTension1473K",
     "SurfaceTension1573K", "SurfaceTension1673K",
 ]
-
 # fmt: on
 
 
@@ -742,8 +740,8 @@ class MLP(L.LightningModule, Predict):
     Raises:
       NotImplementedError:
         When the selected hyperparameters is not one of the permited values.
-    """
 
+    """
     learning_curve_train = []
     learning_curve_val = []
 
