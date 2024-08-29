@@ -750,6 +750,12 @@ class MLP(L.LightningModule, Predict):
 
         self.hidden_layers = _gen_architecture(hparams, reverse=False)
 
+        dim = int(hparams[f'layer_{hparams["num_layers"]}_size'])
+
+        self.output_layer = nn.Sequential(
+            nn.Linear(dim, hparams["n_targets"]),
+        )
+
         if hparams.get("loss", "mse") == "mse":
             self.loss_fun = F.mse_loss
         elif hparams["loss"] == "huber":
@@ -762,6 +768,22 @@ class MLP(L.LightningModule, Predict):
         # for lightning
         self.training_step_outputs = []
         self.validation_step_outputs = []
+
+    def forward(self, x):
+        return self.output_layer(self.hidden_layers(x))
+
+    def predict(self, x):
+        is_training = self.training
+        if is_training:
+            self.eval()
+
+        with torch.no_grad():
+            x = self(x).detach().numpy()
+
+        if is_training:
+            self.train()
+
+        return x
 
     @property
     def domain(self) -> Domain:
@@ -815,9 +837,8 @@ class MLP(L.LightningModule, Predict):
         x, y = batch
         loss = self.loss_fun(self(x), y)
         self.training_step_outputs.append(loss)
-        return {
-            "loss": loss,
-        }
+        self.log("loss", loss, prog_bar=True)
+        return loss
 
     def on_train_epoch_end(self):
         avg_loss = torch.stack(self.training_step_outputs).mean()
@@ -829,15 +850,20 @@ class MLP(L.LightningModule, Predict):
         x, y = batch
         loss = self.loss_fun(self(x), y)
         self.validation_step_outputs.append(loss)
-        return {
-            "val_loss_step": loss,
-        }
+        self.log("val_loss_step", loss, prog_bar=True)
+        return loss
 
     def on_validation_epoch_end(self):
         avg_loss = torch.stack(self.validation_step_outputs).mean()
         self.log("val_loss", avg_loss)
         self.learning_curve_val.append(float(avg_loss))
         self.validation_step_outputs.clear()  # free memory
+
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self.loss_fun(self(x), y)
+        self.log("test_loss", loss)
+        return loss
 
     def save_training(self, path):
         if not isinstance(path, Path):
