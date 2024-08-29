@@ -13,7 +13,7 @@ import joblib
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
-import pytorch_lightning as pl
+import lightning as L
 import torch
 import torch.nn as nn
 from glasspy.chemistry import CompositionLike, physchem_featurizer
@@ -703,7 +703,7 @@ class Predict(ABC):
             return R2.data
 
 
-class MLP(pl.LightningModule, Predict):
+class MLP(L.LightningModule, Predict):
     """Base class for creating Multilayer Perceptrons.
 
     Args:
@@ -953,7 +953,7 @@ class MTL(MLP):
         return {"val_loss_step": loss}
 
 
-class AE(pl.LightningModule, Predict):
+class AE(L.LightningModule, Predict):
     """Base class for creating Autoencoders.
 
     Args:
