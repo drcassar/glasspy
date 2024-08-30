@@ -43,7 +43,7 @@ class ViscNet(_BaseViscNet):
         "m": [10, 130],
     }
 
-    hparams = {
+    _hparams = {
         "batch_size": 64,
         "layer_1_activation": "ReLU",
         "layer_1_batchnorm": False,
@@ -133,7 +133,7 @@ class ViscNet(_BaseViscNet):
 
     def __init__(self):
         super().__init__(
-            self.parameters_range, self.hparams, self.x_mean, self.x_std
+            self.parameters_range, self._hparams, self.x_mean, self.x_std
         )
 
         state_dict = pickle.load(open(self.state_dict_path, "rb"))
@@ -268,7 +268,7 @@ class GlassNetMTMLP(_BaseGlassNet, _BaseGlassNetViscosity):
     This is the MT-MLP model.
     """
 
-    hparams = {
+    _hparams = {
         "batch_size": 256,
         "layer_1_activation": "Softplus",
         "layer_1_batchnorm": True,
@@ -309,7 +309,7 @@ class GlassNetMTMLP(_BaseGlassNet, _BaseGlassNetViscosity):
     training_file = _BASEMODELPATH / "GlassNet.p"
 
     def __init__(self):
-        super().__init__(self.hparams)
+        super().__init__(self._hparams)
 
         dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 
@@ -325,7 +325,7 @@ class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
     This is the MT-MH model.
     """
 
-    hparams = {
+    _hparams = {
         "batch_size": 256,
         "layer_1_activation": "Softplus",
         "layer_1_batchnorm": True,
@@ -366,7 +366,7 @@ class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
     training_file = _BASEMODELPATH / "GlassNetMH.p"
 
     def __init__(self):
-        super().__init__(self.hparams)
+        super().__init__(self._hparams)
 
         dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 
@@ -402,7 +402,7 @@ class GlassNetSTNN(_BaseGlassNet):
 
     """
 
-    hparams = {
+    _hparams = {
         "batch_size": 256,
         "layer_1_activation": "Softplus",
         "layer_1_batchnorm": True,
@@ -431,7 +431,7 @@ class GlassNetSTNN(_BaseGlassNet):
     }
 
     def __init__(self, model_name):
-        super().__init__(self.hparams)
+        super().__init__(self._hparams)
 
         dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 

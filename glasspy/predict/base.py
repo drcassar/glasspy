@@ -745,15 +745,17 @@ class MLP(L.LightningModule, Predict):
     learning_curve_train = []
     learning_curve_val = []
 
-    def __init__(self, hparams: Dict[str, Any]):
+    def __init__(self, **hparams: Dict[str, Any]):
         super().__init__()
+
+        self.save_hyperparameters()
 
         self.hidden_layers = _gen_architecture(hparams, reverse=False)
 
         dim = int(hparams[f'layer_{hparams["num_layers"]}_size'])
 
         self.output_layer = nn.Sequential(
-            nn.Linear(dim, hparams["n_targets"]),
+            nn.Linear(dim, hparams.get("n_targets", 1)),
         )
 
         if hparams.get("loss", "mse") == "mse":
@@ -930,7 +932,7 @@ class MTL(MLP):
     """
 
     def __init__(self, hparams: Dict[str, Any]):
-        super().__init__(hparams)
+        super().__init__(**hparams)
 
         self.n_outputs = hparams["n_targets"]
         self.loss_weights = nn.Parameter(
@@ -938,7 +940,7 @@ class MTL(MLP):
         )
 
     def _compute_loss(self, yhat, y):
-        """Computes the loss of multi-task learning with missing values.
+        """Computes the loss of multitask learning with missing values.
 
         Reference:
           Liebel, L., and Körner, M. (2018). Auxiliary Tasks in Multi-task
@@ -1148,10 +1150,9 @@ class _BaseViscNet(MLP):
         https://arxiv.org/abs/2007.03719
     """
 
-    def __init__(self, parameters_range, hparams={}, x_mean=0, x_std=1):
-        super().__init__(hparams)
+    def __init__(self, parameters_range, _hparams={}, x_mean=0, x_std=1):
+        super().__init__(**_hparams)
 
-        self.hparams = hparams
         self.x_mean = x_mean
         self.x_std = x_mean
         self.parameters_range = parameters_range
