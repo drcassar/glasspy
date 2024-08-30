@@ -292,11 +292,11 @@ def _load_data_glassnet():
         },
         "Resistivity293K": {
             "log": True,
-            "max": 1e40,
+            "max": 1e42,
         },
         "Resistivity373K": {
             "log": True,
-            "max": 1e28,
+            "max": 1e30,
         },
         "Resistivity423K": {
             "log": True,
@@ -305,11 +305,11 @@ def _load_data_glassnet():
             "log": True,
         },
         "Resistivity1073K": {
-            "max": 10**4,
+            "max": 10**6,
             "log": True,
         },
         "Resistivity1273K": {
-            "max": 10**5,
+            "max": 10**7,
             "log": True,
         },
         "Resistivity1473K": {
