@@ -10,18 +10,20 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 import joblib
+import lightning as L
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
-import lightning as L
 import torch
 import torch.nn as nn
 from glasspy.chemistry import CompositionLike, physchem_featurizer
 from glasspy.data import SciGlass
 from glasspy.viscosity.equilibrium_log import myega_alt
+from platformdirs import user_data_dir
 from scipy.optimize import least_squares
 from scipy.stats import theilslopes
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 from torch.nn import functional as F
 from torch.optim import SGD, Adam, AdamW
 
@@ -1926,13 +1928,36 @@ class _BaseGlassNet(MTL):
         ("FusionEnthalpy", "max"),
     ]
 
-    scaler_x_file = _BASEMODELPATH / "GlassNet_scaler_x.joblib"
-    scaler_y_file = _BASEMODELPATH / "GlassNet_scaler_y.joblib"
-
     def __init__(self, hparams: dict, num_neurons_per_head=None):
         super().__init__(hparams, num_neurons_per_head)
-        self.scaler_x = joblib.load(self.scaler_x_file)
-        self.scaler_y = joblib.load(self.scaler_y_file)
+        self._load_scalers()
+
+    def _load_scalers(self):
+        """Load or create the GlassNet scalers."""
+
+        base_path = Path(user_data_dir("GlassPy"))
+        x_scaler_path = base_path / "GlassNet_scaler_x.joblib"
+        y_scaler_path = base_path / "GlassNet_scaler_y.joblib"
+
+        try:
+            self.scaler_x = joblib.load(x_scaler_path)
+            self.scaler_y = joblib.load(y_scaler_path)
+
+        except FileNotFoundError:
+            print("Creating GlassNet scalers...")
+
+            training_data = self.get_training_dataset()
+
+            x = self.featurizer(training_data["elements"], auto_scale=False)
+            y = training_data["property"].values
+
+            self.scaler_x = MinMaxScaler().fit(x)
+            self.scaler_y = MinMaxScaler().fit(y)
+
+            joblib.dump(self.scaler_x, x_scaler_path)
+            joblib.dump(self.scaler_y, y_scaler_path)
+
+            print("Scalers successfully created.")
 
     def get_all_data(self):
         """Loads the data used to train GlassNet.
