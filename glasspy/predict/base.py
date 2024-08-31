@@ -742,6 +742,7 @@ class MLP(L.LightningModule, Predict):
         When the selected hyperparameters is not one of the permited values.
 
     """
+
     learning_curve_train = []
     learning_curve_val = []
 
@@ -772,6 +773,18 @@ class MLP(L.LightningModule, Predict):
         self.validation_step_outputs = []
 
     def forward(self, x):
+        """Method used for training the neural network.
+
+        Consider using other methods for prediction.
+
+        Args:
+          x:
+            Feature tensor.
+
+        Returns
+          Tensor with the predictions.
+
+        """
         return self.output_layer(self.hidden_layers(x))
 
     def predict(self, x):
@@ -891,7 +904,7 @@ class MLP(L.LightningModule, Predict):
 
 
 class MTL(MLP):
-    """Base class for creating Multi-task Learning NN.
+    """Base class for creating Multitask Learning NN.
 
     Args:
       hparams:
@@ -929,6 +942,7 @@ class MTL(MLP):
     Raises:
       NotImplementedError:
         When the selected hyperparameters is not one of the permited values.
+
     """
 
     def __init__(self, hparams: Dict[str, Any]):
@@ -945,8 +959,8 @@ class MTL(MLP):
         Reference:
           Liebel, L., and Körner, M. (2018). Auxiliary Tasks in Multi-task
           Learning (arXiv).
-        """
 
+        """
         not_nan = y.isnan().logical_not()
         good_cols = not_nan.any(dim=0)
         y = y[:, good_cols]
@@ -971,12 +985,23 @@ class MTL(MLP):
     def training_step(self, batch, batch_idx):
         x, y = batch
         loss = self._compute_loss(self(x), y)
-        return {"loss": loss}
+        self.training_step_outputs.append(loss)
+        self.log("loss", loss, prog_bar=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         loss = self._compute_loss(self(x), y)
-        return {"val_loss_step": loss}
+        self.validation_step_outputs.append(loss)
+        self.log("val_loss_step", loss, prog_bar=True)
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self._compute_loss(self(x), y)
+        self.log("test_loss", loss)
+        return loss
+
 
 
 class AE(L.LightningModule, Predict):
@@ -1940,21 +1965,6 @@ class _BaseGlassNet(MTL):
             return feat_array, cols
         else:
             return feat_array
-
-    def forward(self, x):
-        """Method used for training the neural network.
-
-        Consider using the other methods for prediction.
-
-        Args:
-          x:
-            Feature tensor.
-
-        Returns
-          Tensor with the predictions.
-
-        """
-        return self.output_layer(self.hidden_layers(x))
 
     def predict(
         self,
