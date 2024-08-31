@@ -310,12 +310,6 @@ class GlassNetMTMLP(_BaseGlassNet, _BaseGlassNetViscosity):
 
     def __init__(self):
         super().__init__(self._hparams)
-
-        dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
-
-        self.output_layer = nn.Sequential(
-            nn.Linear(dim, self.hparams["n_targets"]),
-        )
         self.load_training(self.training_file)
 
 
@@ -435,12 +429,16 @@ class GlassNetSTNN(_BaseGlassNet):
 
         dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 
-        self.loss_fun = F.mse_loss
+        num_neurons_per_head = 10
 
         self.output_layer = nn.Identity()
         self.tasks = nn.ModuleList(
             [
-                nn.Sequential(nn.Linear(dim, 10), nn.ReLU(), nn.Linear(10, 1))
+                nn.Sequential(
+                    nn.Linear(dim, num_neurons_per_head),
+                    nn.ReLU(),
+                    nn.Linear(num_neurons_per_head, 1),
+                )
                 for n in range(self.hparams["n_targets"])
             ]
         )
@@ -451,7 +449,7 @@ class GlassNetSTNN(_BaseGlassNet):
     def forward(self, x):
         """Method used for training the neural network.
 
-        Consider using the other methods for prediction.
+        Consider using other methods for prediction.
 
         Args:
           x:
@@ -459,6 +457,7 @@ class GlassNetSTNN(_BaseGlassNet):
 
         Returns
           Tensor with the predictions.
+
         """
         dense = self.hidden_layers(x)
         return torch.hstack([task(dense) for task in self.tasks])
@@ -466,12 +465,22 @@ class GlassNetSTNN(_BaseGlassNet):
     def training_step(self, batch, batch_idx):
         x, y = batch
         loss = self.loss_fun(self(x).ravel(), y.ravel())
-        return {"loss": loss}
+        self.training_step_outputs.append(loss)
+        self.log("loss", loss, prog_bar=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         loss = self.loss_fun(self(x).ravel(), y.ravel())
-        return {"val_loss_step": loss}
+        self.validation_step_outputs.append(loss)
+        self.log("loss", loss, prog_bar=True)
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        loss = self.loss_fun(self(x).ravel(), y.ravel())
+        self.log("test_loss", loss)
+        return loss
 
 
 class GlassNet(GlassNetMTMH):
@@ -557,11 +566,12 @@ class GlassNet(GlassNetMTMH):
             Due to a typo, the specific electrical resistivity predicted by the
             original GlassNet model was in logarithm of Ohm.hm instead of
             logarithm of Ohm.m. Setting this argument to `False` restores the
-            original behavior.
+            original behavior. It is here only for legacy reasons.
 
         Returns:
           Predicted values of properties. Will be a DataFrame if
           `return_dataframe` is True, otherwise will be an array.
+
         """
         with torch.no_grad():
             features = self.featurizer(composition, input_cols)
