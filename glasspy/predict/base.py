@@ -61,6 +61,34 @@ GLASSNET_TARGETS = [
     "SurfaceTension1173K", "SurfaceTension1473K",
     "SurfaceTension1573K", "SurfaceTension1673K",
 ]
+
+GLASSNET_HP = {
+    "batch_size": 256,
+    "layer_1_activation": "Softplus",
+    "layer_1_batchnorm": True,
+    "layer_1_dropout": 0.08118311665886885,
+    "layer_1_size": 280,
+    "layer_2_activation": "Mish",
+    "layer_2_batchnorm": True,
+    "layer_2_dropout": 0.0009472891190852595,
+    "layer_2_size": 500,
+    "layer_3_activation": "LeakyReLU",
+    "layer_3_batchnorm": False,
+    "layer_3_dropout": 0.08660291424886811,
+    "layer_3_size": 390,
+    "layer_4_activation": "PReLU",
+    "layer_4_batchnorm": False,
+    "layer_4_dropout": 0.16775047518280012,
+    "layer_4_size": 480,
+    "loss": "mse",
+    "lr": 1.3252600209332101e-05,
+    "max_epochs": 2000,
+    "n_features": 98,
+    "n_targets": 85,
+    "num_layers": 4,
+    "optimizer": "AdamW",
+    "patience": 27,
+}
 # fmt: on
 
 
@@ -938,6 +966,10 @@ class MTL(MLP):
         + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
         + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
           (defaults to 1e-8).
+      num_neurons_per_head:
+        Positive integer or None. The number of neurons for each head
+        of the NN. If `None`, then the neural network will not have
+        multi-head.
 
     Raises:
       NotImplementedError:
@@ -945,13 +977,31 @@ class MTL(MLP):
 
     """
 
-    def __init__(self, hparams: Dict[str, Any]):
+    def __init__(self, hparams: Dict[str, Any], num_neurons_per_head=None):
         super().__init__(**hparams)
 
         self.n_outputs = hparams["n_targets"]
         self.loss_weights = nn.Parameter(
             torch.ones(self.n_outputs, requires_grad=True)
         )
+
+        if num_neurons_per_head:
+
+            dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
+
+            self.output_layer = nn.Identity()
+            self.tasks = nn.ModuleList(
+                [
+                    nn.Sequential(
+                        nn.Linear(dim, num_neurons_per_head),
+                        nn.ReLU(),
+                        nn.Linear(num_neurons_per_head, 1),
+                    )
+                    for n in range(self.hparams["n_targets"])
+                ]
+            )
+
+            self.forward = self.forward_multihead
 
     def _compute_loss(self, yhat, y):
         """Computes the loss of multitask learning with missing values.
@@ -982,6 +1032,22 @@ class MTL(MLP):
 
         return loss
 
+    def forward_multihead(self, x):
+        """Method used for training the neural network with multihead.
+
+        Consider using other methods for prediction.
+
+        Args:
+          x:
+            Feature tensor.
+
+        Returns
+          Tensor with the predictions.
+
+        """
+        dense = self.hidden_layers(x)
+        return torch.hstack([task(dense) for task in self.tasks])
+
     def training_step(self, batch, batch_idx):
         x, y = batch
         loss = self._compute_loss(self(x), y)
@@ -1001,7 +1067,6 @@ class MTL(MLP):
         loss = self._compute_loss(self(x), y)
         self.log("test_loss", loss)
         return loss
-
 
 
 class AE(L.LightningModule, Predict):
@@ -1803,6 +1868,10 @@ class _BaseGlassNet(MTL):
     Args:
       hparams:
         Dictionary of the hyperparameters of the neural network.
+      num_neurons_per_head:
+        Positive integer or None. The number of neurons for each head
+        of the NN. If `None`, then the neural network will not have
+        multi-head.
 
     """
 
@@ -1860,8 +1929,8 @@ class _BaseGlassNet(MTL):
     scaler_x_file = _BASEMODELPATH / "GlassNet_scaler_x.joblib"
     scaler_y_file = _BASEMODELPATH / "GlassNet_scaler_y.joblib"
 
-    def __init__(self, hparams: dict):
-        super().__init__(self.hparams)
+    def __init__(self, hparams: dict, num_neurons_per_head=None):
+        super().__init__(hparams, num_neurons_per_head)
         self.scaler_x = joblib.load(self.scaler_x_file)
         self.scaler_y = joblib.load(self.scaler_y_file)
 
