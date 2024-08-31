@@ -6,13 +6,13 @@ from typing import List
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 from glasspy.chemistry import CompositionLike, physchem_featurizer
 from torch.nn import functional as F
 
 from .base import (
     _BASEMODELPATH,
     GLASSNET_TARGETS,
+    GLASSNET_HP,
     _BaseGlassNet,
     _BaseGlassNetViscosity,
     _BaseViscNet,
@@ -266,50 +266,19 @@ class GlassNetMTMLP(_BaseGlassNet, _BaseGlassNetViscosity):
     """Multitask neural network for predicting glass properties.
 
     This is the MT-MLP model.
+
     """
 
-    _hparams = {
-        "batch_size": 256,
-        "layer_1_activation": "Softplus",
-        "layer_1_batchnorm": True,
-        "layer_1_dropout": 0.08118311665886885,
-        "layer_1_size": 280,
-        "layer_2_activation": "Mish",
-        "layer_2_batchnorm": True,
-        "layer_2_dropout": 0.0009472891190852595,
-        "layer_2_size": 500,
-        "layer_3_activation": "LeakyReLU",
-        "layer_3_batchnorm": False,
-        "layer_3_dropout": 0.08660291424886811,
-        "layer_3_size": 390,
-        "layer_4_activation": "PReLU",
-        "layer_4_batchnorm": False,
-        "layer_4_dropout": 0.16775047518280012,
-        "layer_4_size": 480,
-        "loss": "mse",
-        "lr": 1.3252600209332101e-05,
-        "max_epochs": 2000,
-        "n_features": 98,
-        "n_targets": 85,
-        "num_layers": 4,
-        "optimizer": "AdamW",
-        "patience": 27,
-    }
-
-    targets = GLASSNET_TARGETS
-
-    target_trans = {p: i for i, p in enumerate(targets)}
-
-    _visc_parameters = [
-        "log10_eta_infinity (Pa.s)",
-        "Tg_MYEGA (K)",
-        "fragility",
-    ]
-
-    training_file = _BASEMODELPATH / "GlassNet.p"
-
     def __init__(self):
-        super().__init__(self._hparams)
+        self.targets = GLASSNET_TARGETS.copy()
+        self.target_trans = {p: i for i, p in enumerate(self.targets)}
+        self._visc_parameters = [
+            "log10_eta_infinity (Pa.s)",
+            "Tg_MYEGA (K)",
+            "fragility",
+        ]
+        self.training_file = _BASEMODELPATH / "GlassNet.p"
+        super().__init__(GLASSNET_HP)
         self.load_training(self.training_file)
 
 
@@ -317,76 +286,20 @@ class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
     """Multitask neural network for predicting glass properties.
 
     This is the MT-MH model.
+
     """
 
-    _hparams = {
-        "batch_size": 256,
-        "layer_1_activation": "Softplus",
-        "layer_1_batchnorm": True,
-        "layer_1_dropout": 0.08118311665886885,
-        "layer_1_size": 280,
-        "layer_2_activation": "Mish",
-        "layer_2_batchnorm": True,
-        "layer_2_dropout": 0.0009472891190852595,
-        "layer_2_size": 500,
-        "layer_3_activation": "LeakyReLU",
-        "layer_3_batchnorm": False,
-        "layer_3_dropout": 0.08660291424886811,
-        "layer_3_size": 390,
-        "layer_4_activation": "PReLU",
-        "layer_4_batchnorm": False,
-        "layer_4_dropout": 0.16775047518280012,
-        "layer_4_size": 480,
-        "loss": "mse",
-        "lr": 1.3252600209332101e-05,
-        "max_epochs": 2000,
-        "n_features": 98,
-        "n_targets": 85,
-        "num_layers": 4,
-        "optimizer": "AdamW",
-        "patience": 27,
-    }
-
-    targets = GLASSNET_TARGETS
-
-    target_trans = {p: i for i, p in enumerate(targets)}
-
-    _visc_parameters = [
-        "log10_eta_infinity (Pa.s)",
-        "Tg_MYEGA (K)",
-        "fragility",
-    ]
-
-    training_file = _BASEMODELPATH / "GlassNetMH.p"
-
     def __init__(self):
-        super().__init__(self._hparams)
-
-        dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
-
-        self.output_layer = nn.Identity()
-        self.tasks = nn.ModuleList(
-            [
-                nn.Sequential(nn.Linear(dim, 10), nn.ReLU(), nn.Linear(10, 1))
-                for n in range(self.hparams["n_targets"])
-            ]
-        )
+        self.targets = GLASSNET_TARGETS.copy()
+        self.target_trans = {p: i for i, p in enumerate(self.targets)}
+        self._visc_parameters = [
+            "log10_eta_infinity (Pa.s)",
+            "Tg_MYEGA (K)",
+            "fragility",
+        ]
+        self.training_file = _BASEMODELPATH / "GlassNetMH.p"
+        super().__init__(GLASSNET_HP, 10)
         self.load_training(self.training_file)
-
-    def forward(self, x):
-        """Method used for training the neural network.
-
-        Consider using the other methods for prediction.
-
-        Args:
-          x:
-            Feature tensor.
-
-        Returns
-          Tensor with the predictions.
-        """
-        dense = self.hidden_layers(x)
-        return torch.hstack([task(dense) for task in self.tasks])
 
 
 class GlassNetSTNN(_BaseGlassNet):
@@ -396,71 +309,12 @@ class GlassNetSTNN(_BaseGlassNet):
 
     """
 
-    _hparams = {
-        "batch_size": 256,
-        "layer_1_activation": "Softplus",
-        "layer_1_batchnorm": True,
-        "layer_1_dropout": 0.08118311665886885,
-        "layer_1_size": 280,
-        "layer_2_activation": "Mish",
-        "layer_2_batchnorm": True,
-        "layer_2_dropout": 0.0009472891190852595,
-        "layer_2_size": 500,
-        "layer_3_activation": "LeakyReLU",
-        "layer_3_batchnorm": False,
-        "layer_3_dropout": 0.08660291424886811,
-        "layer_3_size": 390,
-        "layer_4_activation": "PReLU",
-        "layer_4_batchnorm": False,
-        "layer_4_dropout": 0.16775047518280012,
-        "layer_4_size": 480,
-        "loss": "mse",
-        "lr": 1.3252600209332101e-05,
-        "max_epochs": 2000,
-        "n_features": 98,
-        "n_targets": 1,
-        "num_layers": 4,
-        "optimizer": "AdamW",
-        "patience": 27,
-    }
-
     def __init__(self, model_name):
-        super().__init__(self._hparams)
-
-        dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
-
-        num_neurons_per_head = 10
-
-        self.output_layer = nn.Identity()
-        self.tasks = nn.ModuleList(
-            [
-                nn.Sequential(
-                    nn.Linear(dim, num_neurons_per_head),
-                    nn.ReLU(),
-                    nn.Linear(num_neurons_per_head, 1),
-                )
-                for n in range(self.hparams["n_targets"])
-            ]
-        )
-
+        hparams = GLASSNET_HP.copy()
+        hparams["n_targets"] = 1
+        super().__init__(hparams, 10)
         self.training_file = _BASEMODELPATH / f"st-nn/{model_name}.p"
         self.load_training(self.training_file)
-
-    def forward(self, x):
-        """Method used for training the neural network.
-
-        Consider using other methods for prediction.
-
-        Args:
-          x:
-            Feature tensor.
-
-        Returns
-          Tensor with the predictions.
-
-        """
-        dense = self.hidden_layers(x)
-        return torch.hstack([task(dense) for task in self.tasks])
 
     def training_step(self, batch, batch_idx):
         x, y = batch
