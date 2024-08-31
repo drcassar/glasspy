@@ -353,11 +353,6 @@ class GlassNet(GlassNetMTMH):
     def __init__(self, st_models="default"):
         super().__init__()
 
-        self.resistivity_cols = [
-            True if n.startswith("Resistivity") else False
-            for n in self.targets
-        ]
-
         if st_models == "default":
             self._st_models = [
                 "AbbeNum",
@@ -402,7 +397,6 @@ class GlassNet(GlassNetMTMH):
         composition: CompositionLike,
         input_cols: List[str] = [],
         return_dataframe: bool = True,
-        convert_resistivity: bool = True,
     ):
         """Makes prediction of properties.
 
@@ -416,11 +410,6 @@ class GlassNet(GlassNetMTMH):
           return_dataframe:
             If `True`, then returns a pandas DataFrame, else returns an array.
             Default value is `True`.
-          convert_resistivity:
-            Due to a typo, the specific electrical resistivity predicted by the
-            original GlassNet model was in logarithm of Ohm.hm instead of
-            logarithm of Ohm.m. Setting this argument to `False` restores the
-            original behavior. It is here only for legacy reasons.
 
         Returns:
           Predicted values of properties. Will be a DataFrame if
@@ -440,9 +429,6 @@ class GlassNet(GlassNetMTMH):
                 )
 
             y_pred = self.scaler_y.inverse_transform(y_pred)
-
-            if convert_resistivity:
-                y_pred[:, self.resistivity_cols] += 2
 
         if return_dataframe:
             return pd.DataFrame(y_pred, columns=self.targets)
