@@ -65,10 +65,10 @@ def to_array(
     design choice was made because numpy arrays are fast. These arrays may be
     called "chemical arrays", but they are still instances of numpy array.
     Chemical arrays must follow three rules:
-      i. each row of the array is one chemical substance;
-      ii. each column of the array represents a chemical element or chemical
-        molecule;
-      iii. chemical arrays must be 2D arrays.
+    i. each row of the array is one chemical substance;
+    ii. each column of the array represents a chemical element or chemical
+      molecule;
+    iii. chemical arrays must be 2D arrays.
 
     Say, for example, that you have a chemical array x. The value stored in
     x[i][j] is the amount of the element/molecule j that the substance i has. It
