@@ -1,6 +1,5 @@
 """Predictive models offered by GlassPy."""
 
-import pickle
 from typing import List
 
 import numpy as np
@@ -129,15 +128,13 @@ class ViscNet(_BaseViscNet):
     ]).float()
     # fmt: on
 
-    state_dict_path = _BASEMODELPATH / "ViscNet_SD.p"
-
     def __init__(self):
         super().__init__(
             self.parameters_range, self._hparams, self.x_mean, self.x_std
         )
 
-        state_dict = pickle.load(open(self.state_dict_path, "rb"))
-        self.load_state_dict(state_dict)
+        state_dict_path = _BASEMODELPATH / "ViscNet.pth"
+        self.load_training(state_dict_path)
         self.eval()
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
@@ -199,18 +196,15 @@ class ViscNetHuber(ViscNet):
           index and the temperature-dependency of viscosity, Acta Materialia.
           206 (2021) 116602. https://doi.org/10.1016/j.actamat.2020.116602.
           https://arxiv.org/abs/2007.03719
+
     """
 
     def __init__(self):
         super().__init__()
 
-        self.hparams = self.hparams.copy()
-        self.hparams["loss"] = "huber"
         self.loss_fun = F.smooth_l1_loss
-
-        state_dict_path = _BASEMODELPATH / "ViscNetHuber_SD.p"
-        state_dict = pickle.load(open(state_dict_path, "rb"))
-        self.load_state_dict(state_dict)
+        state_dict_path = _BASEMODELPATH / "ViscNetHuber.pth"
+        self.load_training(state_dict_path)
 
 
 class ViscNetVFT(ViscNet):
@@ -238,9 +232,8 @@ class ViscNetVFT(ViscNet):
     def __init__(self):
         super().__init__()
 
-        state_dict_path = _BASEMODELPATH / "ViscNetVFT_SD.p"
-        state_dict = pickle.load(open(state_dict_path, "rb"))
-        self.load_state_dict(state_dict)
+        state_dict_path = _BASEMODELPATH / "ViscNetVFT.pth"
+        self.load_training(state_dict_path)
 
     def log_viscosity_fun(self, T, log_eta_inf, Tg, m):
         """Computes the base-10 logarithm of viscosity using the VFT equation.
@@ -277,9 +270,9 @@ class GlassNetMTMLP(_BaseGlassNet, _BaseGlassNetViscosity):
             "Tg_MYEGA (K)",
             "fragility",
         ]
-        self.training_file = _BASEMODELPATH / "GlassNet.p"
         super().__init__(GLASSNET_HP)
-        self.load_training(self.training_file)
+        self.load_training(_BASEMODELPATH / "GlassNet.pth")
+        self.load_learning_curve(_BASEMODELPATH / "GlassNet_lc.p")
 
 
 class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
@@ -297,9 +290,9 @@ class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
             "Tg_MYEGA (K)",
             "fragility",
         ]
-        self.training_file = _BASEMODELPATH / "GlassNetMH.p"
         super().__init__(GLASSNET_HP, 10)
-        self.load_training(self.training_file)
+        self.load_training(_BASEMODELPATH / "GlassNetMH.pth")
+        self.load_learning_curve(_BASEMODELPATH / "GlassNetMH_lc.p")
 
 
 class GlassNetSTNN(_BaseGlassNet):
@@ -313,8 +306,8 @@ class GlassNetSTNN(_BaseGlassNet):
         hparams = GLASSNET_HP.copy()
         hparams["n_targets"] = 1
         super().__init__(hparams, 10)
-        self.training_file = _BASEMODELPATH / f"st-nn/{model_name}.p"
-        self.load_training(self.training_file)
+        self.load_training(_BASEMODELPATH / f"st-nn/{model_name}.pth")
+        self.load_learning_curve(_BASEMODELPATH / f"st-nn/{model_name}_lc.p")
 
     def training_step(self, batch, batch_idx):
         x, y = batch

@@ -1,4 +1,3 @@
 include *.txt
 recursive-include docs *
-recursive-include glasspy/predict/models *
 recursive-include glasspy/chemistry/data *

@@ -1,6 +1,5 @@
 """Module with base classes for building predictive models."""
 
-import os
 import pickle
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -27,7 +26,7 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.nn import functional as F
 from torch.optim import SGD, Adam, AdamW
 
-_BASEMODELPATH = Path(os.path.dirname(__file__)) / "models"
+_BASEMODELPATH = Path(user_data_dir("GlassPy")) / "models"
 
 # fmt: off
 _VISCOSITY_COLUMNS_FOR_REGRESSION = [
@@ -914,23 +913,23 @@ class MLP(L.LightningModule, Predict):
         if not isinstance(path, Path):
             path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        data = (
-            self.state_dict(),
-            self.learning_curve_train,
-            self.learning_curve_val,
-            self.hparams,
-        )
+        torch.save(self.state_dict(), path)
+
+    def save_learning_curve(self, path):
+        if not isinstance(path, Path):
+            path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = (self.learning_curve_train, self.learning_curve_val)
         pickle.dump(data, open(path, "wb"))
 
     def load_training(self, path):
-        state_dict, learning_train, learning_val, hparams = pickle.load(
-            open(path, "rb")
-        )
+        state_dict = torch.load(path, weights_only=True)
         self.load_state_dict(state_dict)
+
+    def load_learning_curve(self, path):
+        learning_train, learning_val = pickle.load(open(path, "rb"))
         self.learning_curve_train = learning_train
         self.learning_curve_val = learning_val
-
-        return hparams
 
 
 class MTL(MLP):
@@ -1935,16 +1934,15 @@ class _BaseGlassNet(MTL):
     def _load_scalers(self):
         """Load or create the GlassNet scalers."""
 
-        base_path = Path(user_data_dir("GlassPy"))
-        x_scaler_path = base_path / "GlassNet_scaler_x.joblib"
-        y_scaler_path = base_path / "GlassNet_scaler_y.joblib"
+        x_scaler_path = _BASEMODELPATH / "GlassNet_scaler_x.joblib"
+        y_scaler_path = _BASEMODELPATH / "GlassNet_scaler_y.joblib"
 
         try:
             self.scaler_x = joblib.load(x_scaler_path)
             self.scaler_y = joblib.load(y_scaler_path)
 
         except FileNotFoundError:
-            print("Creating GlassNet scalers...")
+            print("[GlassPy] Creating GlassNet scalers...")
 
             training_data = self.get_training_dataset()
 
@@ -1957,7 +1955,7 @@ class _BaseGlassNet(MTL):
             joblib.dump(self.scaler_x, x_scaler_path)
             joblib.dump(self.scaler_y, y_scaler_path)
 
-            print("Scalers successfully created.")
+            print("[GlassPy] Scalers successfully created.")
 
     def get_all_data(self):
         """Loads the data used to train GlassNet.

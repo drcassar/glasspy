@@ -14,59 +14,25 @@ Typical usage example:
 
 """
 
-import io
-import shutil
-import zipfile
 from pathlib import Path
 
 import pandas as pd
-import requests
 from glasspy.chemistry.convert import to_element_array, wt_to_mol
 from platformdirs import user_data_dir
 
 from .translators import AtMol_translation, SciGK_translation
 
 
-def _download_sciglass_data(path_dict):
-    """Downloads the SciGlass database to your computer."""
-
-    print("Downloading SciGlass database to your computer...")
-    print("This is only required once and may take a few minutes.")
-
-    record_id = "8287159"
-    api_url = f"https://zenodo.org/api/records/{record_id}"
-    response = requests.get(api_url, timeout=60)
-    record_data = response.json()
-    url = record_data["files"][0]["links"]["self"]
-
-    download = requests.get(url, timeout=3600)
-    zip_file = io.BytesIO(download.content)
-
-    with zipfile.ZipFile(zip_file, "r") as zip_ref:
-        for item in zip_ref.namelist():
-            for name, path in path_dict.values():
-                if name in item:
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    with zip_ref.open(item) as source_file:
-                        with open(path, "wb") as target_file:
-                            shutil.copyfileobj(source_file, target_file)
-
-    print("Download completed!")
-
-
 def _sciglass_path_dict():
     """Get the SciGlass file paths in your system."""
 
-    data_dir = Path(user_data_dir("GlassPy"))
+    data_dir = Path(user_data_dir("GlassPy")) / "data"
 
     path_dict = {
         "elements": ("AtMol", data_dir / "select_AtMol.csv.zip"),
         "properties": ("SciGK", data_dir / "select_SciGK.csv.zip"),
         "compounds": ("Gcomp", data_dir / "select_Gcomp.csv.zip"),
     }
-
-    if not all(val[1].is_file() for val in path_dict.values()):
-        _download_sciglass_data(path_dict)
 
     return path_dict
 
