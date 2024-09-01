@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="glasspy",
-    version="0.5.0",
+    version="0.5.1",
     author="Daniel Roberto Cassar",
     author_email="daniel.r.cassar@gmail.com",
     description="Python module for scientists working with glass materials",
@@ -24,6 +24,7 @@ setuptools.setup(
         "torch",
         "lightning>=2.1.0",
         "platformdirs",
+        "requests",
     ],
     keywords="glass, non-crystalline materials",
     classifiers=[

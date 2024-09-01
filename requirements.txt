@@ -6,3 +6,4 @@ compress_pickle>=2.1.0
 torch
 lightning>=2.1.0
 platformdirs
+requests
