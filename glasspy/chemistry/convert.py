@@ -10,14 +10,15 @@ Check the function wt_to_mol and mol_to_wt to easily convert a ChemArray from
 wt% to mol% and vice versa.
 
 """
-from typing import Union, List, Dict, Tuple
 
-from chemparse import parse_formula
+from typing import List, Union
+
 import numpy as np
 import pandas as pd
+from chemparse import parse_formula
 
-from .types import CompositionLike, ChemArray
 from .data import elementmass
+from .types import ChemArray, CompositionLike
 
 
 def rescale_array(
@@ -42,8 +43,8 @@ def rescale_array(
     Raises:
       AssertionError:
         Raised when rescale_to_sum is negative.
-    """
 
+    """
     if rescale_to_sum:
         assert rescale_to_sum > 0, "Negative sum value to normalize"
         sum_ = x.sum(axis=1)
@@ -103,8 +104,8 @@ def to_array(
     Raises:
       ValueError:
         Raised when x is a list or an array that is not 1D or 2D.
-    """
 
+    """
     if isinstance(x, list):
         x = np.array(x)
         cols = input_cols
@@ -181,8 +182,8 @@ def to_element_array(
       AssertionError:
         Raised when the lenght of input_cols is different than the lenght of x
         along the column axis.
-    """
 
+    """
     x = to_array(x, input_cols)
 
     assert len(x.cols) > 0, "You forgot to pass the list of input_cols."
@@ -224,11 +225,14 @@ def wt_to_mol(
 
     Returns:
       A 2D array. Each row is a chemical substance.
-    """
 
+    """
     inv_molar_mass = np.diag(
         [
-            1 / sum([elementmass[el] * n for el, n in parse_formula(comp).items()])
+            1
+            / sum(
+                [elementmass[el] * n for el, n in parse_formula(comp).items()]
+            )
             for comp in input_cols
         ]
     )
@@ -257,8 +261,8 @@ def mol_to_wt(
 
     Returns:
       A 2D array. Each row is a chemical substance.
-    """
 
+    """
     molar_mass = np.diag(
         [
             sum([elementmass[el] * n for el, n in parse_formula(comp).items()])
