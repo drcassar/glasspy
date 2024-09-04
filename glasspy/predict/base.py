@@ -909,27 +909,57 @@ class MLP(L.LightningModule, Predict):
         self.log("test_loss", loss)
         return loss
 
-    def save_training(self, path):
-        if not isinstance(path, Path):
-            path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(self.state_dict(), path)
+    def save_training(
+        self,
+        state_dict_path=None,
+        learning_curve_path=None,
+        hparams_path=None,
+    ):
+        if state_dict_path:
+            if not isinstance(state_dict_path, Path):
+                state_dict_path = Path(state_dict_path)
+            state_dict_path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(self.state_dict(), state_dict_path)
 
-    def save_learning_curve(self, path):
-        if not isinstance(path, Path):
-            path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        data = (self.learning_curve_train, self.learning_curve_val)
-        pickle.dump(data, open(path, "wb"))
+        if learning_curve_path:
+            if not isinstance(learning_curve_path, Path):
+                learning_curve_path = Path(learning_curve_path)
+            learning_curve_path.parent.mkdir(parents=True, exist_ok=True)
+            data = (self.learning_curve_train, self.learning_curve_val)
+            pickle.dump(data, open(learning_curve_path, "wb"))
 
-    def load_training(self, path):
-        state_dict = torch.load(path, weights_only=True)
-        self.load_state_dict(state_dict)
+        if hparams_path:
+            if not isinstance(hparams_path, Path):
+                hparams_path = Path(hparams_path)
+            hparams_path.parent.mkdir(parents=True, exist_ok=True)
+            pickle.dump(self.hparams, open(hparams_path, "wb"))
 
-    def load_learning_curve(self, path):
-        learning_train, learning_val = pickle.load(open(path, "rb"))
-        self.learning_curve_train = learning_train
-        self.learning_curve_val = learning_val
+    def load_training(self, state_dict_path=None, learning_curve_path=None):
+        if state_dict_path:
+            state_dict = torch.load(state_dict_path, weights_only=True)
+            self.load_state_dict(state_dict)
+
+        if learning_curve_path:
+            learning_train, learning_val = pickle.load(
+                open(learning_curve_path, "rb")
+            )
+            self.learning_curve_train = learning_train
+            self.learning_curve_val = learning_val
+
+    @classmethod
+    def from_file(
+        cls, hparams_path, state_dict_path=None, learning_curve_path=None
+    ):
+        hparams = pickle.load(open(hparams_path, "rb"))
+        instance = cls(**hparams)
+
+        if state_dict_path:
+            instance.load_training(state_dict_path=state_dict_path)
+
+        if learning_curve_path:
+            instance.load_training(learning_curve_path=learning_curve_path)
+
+        return instance
 
 
 class MTL(MLP):
@@ -987,7 +1017,6 @@ class MTL(MLP):
         )
 
         if num_neurons_per_head:
-
             dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
 
             self.output_layer = nn.Identity()
