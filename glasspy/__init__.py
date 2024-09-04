@@ -1,5 +1,6 @@
 import io
 import json
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -42,7 +43,7 @@ def initial_config():
         )
 
         try:
-            config_dir.rmdir()
+            shutil.rmtree(config_dir)
         except FileNotFoundError:
             pass
 
