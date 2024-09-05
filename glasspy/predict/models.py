@@ -271,8 +271,9 @@ class GlassNetMTMLP(_BaseGlassNet, _BaseGlassNetViscosity):
             "fragility",
         ]
         super().__init__(GLASSNET_HP)
-        self.load_training(_BASEMODELPATH / "GlassNet.pth")
-        self.load_learning_curve(_BASEMODELPATH / "GlassNet_lc.p")
+        state_dict_path = _BASEMODELPATH / "GlassNet.pth"
+        learning_curve_path = _BASEMODELPATH / "GlassNet_lc.p"
+        self.load_training(state_dict_path, learning_curve_path)
 
 
 class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
@@ -291,8 +292,9 @@ class GlassNetMTMH(_BaseGlassNet, _BaseGlassNetViscosity):
             "fragility",
         ]
         super().__init__(GLASSNET_HP, 10)
-        self.load_training(_BASEMODELPATH / "GlassNetMH.pth")
-        self.load_learning_curve(_BASEMODELPATH / "GlassNetMH_lc.p")
+        state_dict_path = _BASEMODELPATH / "GlassNetMH.pth"
+        learning_curve_path = _BASEMODELPATH / "GlassNetMH_lc.p"
+        self.load_training(state_dict_path, learning_curve_path)
 
 
 class GlassNetSTNN(_BaseGlassNet):
@@ -306,8 +308,9 @@ class GlassNetSTNN(_BaseGlassNet):
         hparams = GLASSNET_HP.copy()
         hparams["n_targets"] = 1
         super().__init__(hparams, 10)
-        self.load_training(_BASEMODELPATH / f"st-nn/{model_name}.pth")
-        self.load_learning_curve(_BASEMODELPATH / f"st-nn/{model_name}_lc.p")
+        state_dict_path = _BASEMODELPATH / f"st-nn/{model_name}.pth"
+        learning_curve_path = _BASEMODELPATH / f"st-nn/{model_name}_lc.p"
+        self.load_training(state_dict_path, learning_curve_path)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
