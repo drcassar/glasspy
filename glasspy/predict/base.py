@@ -1098,6 +1098,25 @@ class MTL(MLP):
         self.log("test_loss", loss)
         return loss
 
+    @classmethod
+    def from_file(
+        cls,
+        hparams_path,
+        state_dict_path=None,
+        learning_curve_path=None,
+        num_neurons_per_head=None,
+    ):
+        hparams = pickle.load(open(hparams_path, "rb"))
+        instance = cls(hparams, num_neurons_per_head)
+
+        if state_dict_path:
+            instance.load_training(state_dict_path=state_dict_path)
+
+        if learning_curve_path:
+            instance.load_training(learning_curve_path=learning_curve_path)
+
+        return instance
+
 
 class _BaseViscNet(MLP):
     """Base class for creating ViscNet-like models.
