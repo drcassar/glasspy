@@ -9,7 +9,7 @@ import sklearn
 from platformdirs import user_data_dir
 
 name = "glasspy"
-version = "0.5.2"
+version = "0.5.3"
 
 
 def initial_config():
