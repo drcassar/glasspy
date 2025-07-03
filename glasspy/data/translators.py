@@ -283,7 +283,7 @@ SciGK_translation = {
 
     # Electrical and dielectrical
     "EPS730": {
-        "info": "Relative permittivity at ambient temperature anf frequency of"
+        "info": "Relative permittivity at ambient temperature and frequency of"
                 "1 MHz (or the nearest frequency in the range of 0.01 MHz to "
                 "10 MHz)",
         "rename": "Permittivity",
