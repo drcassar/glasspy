@@ -1,15 +1,17 @@
-import sys
 import warnings
 from functools import partial
-from math import gamma
+from math import cos
+from math import exp as exp_
+from math import factorial, gamma, sin
 
 import numpy as np
-from glasspy.viscosity.equilibrium_log import myega_alt as myega
-from joblib import Parallel, delayed
-from numpy import cos, exp, log, log10, sin
+from mpmath import inf, nsum
+from numpy import exp, log, log10
 from scipy.constants import pi
 from scipy.integrate import IntegrationWarning, quad
 from scipy.optimize import brentq
+
+from glasspy.viscosity.equilibrium_log import myega_alt as myega
 
 quadlimit = 1000
 
@@ -21,9 +23,85 @@ def inv_kohlrausch(phi, tau, beta):
 
 def tauk_from_tauave(tauAve, beta):
     try:
-        return beta * tauAve / (gamma(1 / beta))
+        return tauAve / (gamma(1 / beta + 1))
     except OverflowError:
         return np.inf
+
+
+def lambda_lp_22(x, beta=1 / 2):
+    """Eq. (22) from Lindsey and Patterson
+
+    input x is tauK / tau. Only works for beta=1/2.
+
+    Ref:
+      C.P. Lindsey, G.D. Patterson, Detailed comparison of the Williams–Watts
+      and Cole–Davidson functions, The Journal of Chemical Physics 73 (1980)
+      3348.
+    """
+
+    return (1 / 2) * pi ** (-1 / 2) * x ** (-3 / 2) * exp(-1 / (4 * x))
+
+
+def lambda_lp_23(x, beta):
+    """Eq. (23) from Lindsey and Patterson
+
+    input x is tauK / tau
+
+    Ref:
+      C.P. Lindsey, G.D. Patterson, Detailed comparison of the Williams–Watts
+      and Cole–Davidson functions, The Journal of Chemical Physics 73 (1980)
+      3348.
+    """
+
+    def intfun(u):
+        return (
+            exp_(-x * u)
+            * exp_(-(u**beta) * cos(pi * beta))
+            * sin((u**beta) * sin(pi * beta))
+        )
+
+    return (1 / pi) * quad(intfun, 0, np.inf, limit=quadlimit)[0]
+
+
+def lambda_lp_24(x, beta):
+    """Eq. (24) from Lindsey and Patterson
+
+    input x is tauK / tau
+
+    Ref:
+      C.P. Lindsey, G.D. Patterson, Detailed comparison of the Williams–Watts
+      and Cole–Davidson functions, The Journal of Chemical Physics 73 (1980)
+      3348.
+    """
+
+    def sumfun(k):
+        return (
+            (-1) ** k
+            / factorial(int(k))
+            * sin(pi * beta * k)
+            * gamma(beta * k + 1)
+            / x ** (beta * k + 1)
+        )
+
+    return -(1 / pi) * float(nsum(sumfun, [0, inf]))
+
+
+def lambda_bs(x, beta):
+    """From Berberan-Santos
+
+    Ref:
+      M.N. Berberan-Santos, E.N. Bodunov, B. Valeur, Mathematical functions for
+      the analysis of luminescence decays with underlying distributions 1.
+      Kohlrausch decay function (stretched exponential), Chemical Physics 315
+      (2005) 171–182.
+    """
+
+    def intfun(u):
+        return exp_((-(u**beta)) * cos(beta * pi / 2)) * cos(
+            (u**beta) * sin(beta * pi / 2) - x * u
+        )
+
+    return (1 / pi) * quad(intfun, 0, np.inf, limit=quadlimit)[0]
 
 
 class TNMG(object):
@@ -70,7 +148,7 @@ class TNMG(object):
         self.xi = self.getxi()
         self.taui = self.xi * self.tauK
 
-        self.gifun = self.getgifun(normalized=False)
+        self.gifun = self.getgifun()
         self.gi = self.getgi()
 
         self.Bi = log(self.taui / self.tauinf) * self.T1 / exp(self.K / self.T1)
@@ -85,55 +163,10 @@ class TNMG(object):
         lim2 = (10.34 - 10.14 * self.beta) ** (1 / self.beta)
         return np.logspace(log10(lim1), log10(lim2), self.num_xi)
 
-    def getgifun(self, normalized=False):
+    def getgifun(self):
 
-        beta = self.beta
-        tauK = self.tauK
-
-        if int(1000 * beta) == int(500):
-
-            def gi(tau):
-                ln_u = log(tau / tauK)
-                return exp(ln_u / 2) * exp(-exp(ln_u) / 4) / (2 * pi ** (1 / 2))
-
-        else:
-
-            if beta <= 0.51:
-
-                def lambda_(x):
-                    # Eq. (23) from lindsey and patterson
-
-                    def intfun(u):
-                        return (
-                            exp(-x * u)
-                            * exp(-(u**beta) * cos(pi * beta))
-                            * sin((u**beta) * sin(pi * beta))
-                        )
-
-                    return (1 / pi) * quad(intfun, 0, np.inf, limit=quadlimit)[0]
-
-            else:
-
-                def lambda_(x):
-                    # foi adaptado do artigo de berberan-santos
-
-                    def intfun(u):
-                        return exp((-(u**beta)) * cos(beta * pi / 2)) * cos(
-                            (u**beta) * sin(beta * pi / 2) - x * u
-                        )
-
-                    return (1 / pi) * quad(intfun, 0, np.inf, limit=quadlimit)[0]
-
-            def gi(tau):
-                return (tauK / (tau**2)) * lambda_(tauK / tau)
-
-        if normalized:
-            norm = quad(gi, 0, np.inf, limit=quadlimit)[0]
-
-            def ginorm(tau):
-                return gi(tau) / norm
-
-            return ginorm
+        def gi(tau):
+            return (self.tauK / (tau**2)) * lambda_lp_24(self.tauK / tau, self.beta)
 
         return gi
 
@@ -189,40 +222,23 @@ class TNMG(object):
     def Tfi_single(self, i, T2, time):
         # evolução isotérmica de Tfi com relação ao tempo t. Lembrar que cada i
         # é uma estrutura.
+
         def inverse(T):
             return self.time_single(i, T2, T) - time
 
         return brentq(inverse, self.T1, T2)
 
-    def time(self, T2, Tfi, n_jobs=-1):
-        i_arr = np.atleast_1d(range(len(self.gi)))
-
-        result = Parallel(n_jobs=n_jobs)(
-            delayed(self.time_single)(i_val, T2, Tfi) for i_val in i_arr
-        )
-
-        result = np.array(result)
-        return result.item() if np.isscalar(result) else result
-
-    def Tfi(self, T2, time, n_jobs=-1):
-        i_arr = np.atleast_1d(range(len(self.gi)))
-
-        result = Parallel(n_jobs=n_jobs)(
-            delayed(self.Tfi_single)(i_val, T2, time) for i_val in i_arr
-        )
-
-        result = np.array(result)
-        return result.item() if np.isscalar(result) else result
+    def Tfi(self, T2, time):
+        return np.array([self.Tfi_single(i, T2, time) for i in range(len(self.gi))])
 
     def TfH(self, T2, time, n_jobs=-1):
         # Relaxação da entalpia (ou outra propriedade) que depende dos gis e dos
         # Tfis de cada estrutura
-        Tfi = self.Tfi(T2, time, n_jobs)
-        return np.sum(Tfi * self.gi)
+        return np.sum(self.Tfi(T2, time) * self.gi)
 
-    def phi(self, T2, time, n_jobs=-1):
+    def phi(self, T2, time):
         # este é o phi do Kohlrausch
-        phi = (self.TfH(T2, time, n_jobs=-1) - T2) / (self.T1 - T2)
+        phi = (self.TfH(T2, time) - T2) / (self.T1 - T2)
         return phi
 
     def timeToPhi(self, T2, phi, maxiter=100):
@@ -244,6 +260,8 @@ class TNMG(object):
 
 
 if __name__ == "__main__":
+
+    # Experiment 1 - time to relax x percent
 
     fullyRelaxed = 99  # percent
     phiRelaxed = 1 - fullyRelaxed / 100
@@ -270,8 +288,61 @@ if __name__ == "__main__":
 
     model = TNMG(Tg, m, A, Ginf, beta, T1, 10)
 
-    for T2 in Trange_:
-        time = model.timeToPhi(T2, phiRelaxed)
-        y.append(time)
-        print(T2, time)
-        sys.stdout.flush()
+    # for T2 in Trange_:
+    #     time = model.timeToPhi(T2, phiRelaxed)
+    #     y.append(time)
+    #     print(T2, time)
+    #     sys.stdout.flush()
+
+    # ---
+
+    # Experiment 2 - compute phi from data
+
+    time = [0, 600, 1800, 4200, 9600, 20400, 42000, 85200, 171600, 344400, 689976]
+    phi = [1.000, 0.671, 0.529, 0.376, 0.259, 0.153, 0.059, 0.035, 0.000, 0.000, 0.000]
+
+    Tg = 867.71239
+    m = 37.3591
+    log_eta_inf = -1.30458
+
+    T1 = 868.15
+    T2 = 828.15
+
+    def Ginf(T):
+        return 30.02e9
+
+    beta = 0.90647165
+    num_xi = 10
+
+    model = TNMG(Tg, m, A, Ginf, beta, T1, num_xi)
+
+    phi_calc = []
+
+    for t in time:
+        phi_calc.append(model.phi(T2, t))
+
+    print(np.round(phi_calc, 3))
+    print(np.array(phi))
+
+    # ---
+
+    # Experiment 3 - beta regression
+
+    from scipy.optimize import curve_fit
+
+    def phi_calc(x, beta):
+        model = TNMG(Tg, m, A, Ginf, beta, T1, num_xi)
+        phi = [model.phi(T2, t) for t in x]
+        return phi
+
+    x0 = [0.5]
+
+    res, _ = curve_fit(
+        phi_calc,
+        time,
+        phi,
+        x0,
+        bounds=((0.05, 1)),
+    )
+
+    print(res)
