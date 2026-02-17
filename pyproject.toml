@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glasspy"
+version = "0.5.4"
+description = "Python module for scientists working with glass materials"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Daniel Roberto Cassar", email = "daniel.r.cassar@gmail.com"}
+]
+keywords = ["glass", "non-crystalline materials"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Science/Research",
+]
+dependencies = [
+    "pandas>=2.0.0",
+    "lmfit>=1.2.0",
+    "chemparse>=0.1.0",
+    "scikit-learn>=1.5.0",
+    "compress-pickle>=2.1.0",
+    "torch>=2.0.0",
+    "lightning>=2.1.0",
+    "platformdirs>=4.5.1",
+    "requests>=2.30.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/drcassar/glasspy"
+Repository = "https://github.com/drcassar/glasspy"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glasspy*"]
+
+[tool.setuptools.package-data]
+glasspy = ["chemistry/data/**/*"]
