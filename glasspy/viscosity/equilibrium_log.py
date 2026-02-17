@@ -1,6 +1,6 @@
 """Equations for the base-10 logarithm of equilibrium viscosity."""
 
-from numpy import exp, log, log10, where, inf, less_equal
+from numpy import exp, log, where, inf, less_equal
 
 
 def _belowT0correction(T, T0, viscosity):
@@ -49,7 +49,7 @@ def myega(T, log_eta_inf, K, C):
 
 
 def myega_alt(T, log_eta_inf, T12, m):
-    """ Computes the viscosity using the MYEGA equation.
+    """Computes the viscosity using the MYEGA equation.
 
     This is an alternate form of the MYEGA equation found in [1]
 
@@ -261,4 +261,3 @@ def ag(T, eta_inf, B, S_conf_fun):
     log10_viscosity = log_eta_inf + B / (T * S_conf_fun(T) * log(10))
 
     return log10_viscosity
-
