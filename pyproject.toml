@@ -7,7 +7,7 @@ name = "glasspy"
 version = "0.5.4"
 description = "Python module for scientists working with glass materials"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {file = "LICENSE"}
 authors = [
     {name = "Daniel Roberto Cassar", email = "daniel.r.cassar@gmail.com"}
