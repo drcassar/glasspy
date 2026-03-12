@@ -33,6 +33,8 @@ dependencies = [
     "lightning>=2.1.0",
     "platformdirs>=4.5.1",
     "requests>=2.30.0",
+    "onnxruntime>=1.23",
+    "joblib>=1.5.0",
 ]
 
 [project.urls]
