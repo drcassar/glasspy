@@ -50,3 +50,9 @@ include = ["glasspy*"]
 
 [tool.setuptools.package-data]
 glasspy = ["chemistry/data/**/*"]
+
+[project.optional-dependencies]
+docs = [
+  "sphinx",
+  "nbsphinx",  
+]
