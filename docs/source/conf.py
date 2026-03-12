@@ -36,9 +36,18 @@ napoleon_attr_annotations = True
 
 # autodoc settings
 autodoc_default_options = {
-    'members': True,
-    'inherited-members': False,
+    "members": True,
+    "inherited-members": False,
 }
+
+autodoc_mock_imports = [
+    "torch",
+    "lightning",
+    "onnxruntime",
+    "sklearn",
+    "lmfit",
+    "compress_pickle",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -48,7 +57,7 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -69,21 +78,21 @@ html_static_path = ["_static"]
 #
 html_theme_options = {
     #'canonical_url': '',
-    'logo_only': False,
-    'display_version': False,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'style_nav_header_background': '#FFFFFF',
+    "logo_only": False,
+    "display_version": False,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": False,
+    "style_nav_header_background": "#FFFFFF",
     # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
 }
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_favicon = 'logo/favicon.ico'
+html_favicon = "logo/favicon.ico"
 html_logo = "logo/logo_text_small.png"
 
-htmlhelp_basename = 'GlassPydoc'
+htmlhelp_basename = "GlassPydoc"
