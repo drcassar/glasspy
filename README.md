@@ -33,7 +33,7 @@ If GlassPy or GlassNet was useful in your research, please cite the following pa
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
 
-GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2024 Daniel Roberto Cassar
+GlassPy, Python module for scientists working with glass materials. Copyright (C) 2019-2026 Daniel Roberto Cassar
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

@@ -23,6 +23,21 @@ from platformdirs import user_data_dir
 from .translators import AtMol_translation, SciGK_translation
 
 
+def sciglass_dbinfo():
+    """Prints the SciGlass database information."""
+
+    print()
+
+    for key, value in SciGK_translation.items():
+        name = value.get("rename", key)
+        info = value.get("info", "")
+        units = value.get("unit", None)
+        units = f" ({units})" if units else ""
+        meta = value.get("metadata", False)
+        meta = " [metadata]" if meta else ""
+        print(f"{name}: {info}{units}{meta}")
+
+
 def _sciglass_path_dict():
     """Get the SciGlass file paths in your system."""
 
@@ -37,19 +52,162 @@ def _sciglass_path_dict():
     return path_dict
 
 
-def sciglass_dbinfo():
-    """Prints the SciGlass database information."""
+def _load_Gcomp(
+    path=_sciglass_path_dict()["compounds"][1],
+    weight_pct=False,
+):
 
-    print()
+    check = path == _sciglass_path_dict()["compounds"][1]
 
-    for key, value in SciGK_translation.items():
-        name = value.get("rename", key)
-        info = value.get("info", "")
-        units = value.get("unit", None)
-        units = f" ({units})" if units else ""
-        meta = value.get("metadata", False)
-        meta = " [metadata]" if meta else ""
-        print(f"{name}: {info}{units}{meta}")
+    if weight_pct:
+        save_path = Path(user_data_dir("GlassPy")) / "data" / "compounds_wt.p.zip"
+    else:
+        save_path = Path(user_data_dir("GlassPy")) / "data" / "compounds_mol.p.zip"
+
+    if check:
+        try:
+            df = pd.read_pickle(save_path)
+            return df
+
+        except FileNotFoundError:
+            print("[GlassPy] Parsing the SciGlass data (Gcomp).")
+            print("[GlassPy] This is only required once and may take a few " "minutes.")
+
+    df = pd.read_csv(path, sep="\t", low_memory=False)
+    df = pd.concat(
+        [
+            df.drop(["Kod", "GlasNo"], axis=1),
+            pd.Series(
+                df["Kod"] * 100000000 + df["GlasNo"],
+                name="ID",
+                index=df.index,
+            ),
+        ],
+        axis=1,
+    )
+
+    df = df.drop_duplicates("ID", keep=False)
+    df = df.set_index("ID", drop=True)
+
+    df = df["Composition"].str.slice(start=1, stop=-1)
+    df = df.str.split("\x7f")
+
+    add = 0 if weight_pct else 1
+
+    compound_list = []
+    for row in df.values:
+        compound_list.append(
+            {row[n * 4]: float(row[(n * 4 + 2 + add)]) for n in range(len(row) // 4)}
+        )
+
+    df = (
+        pd.DataFrame(compound_list)
+        .dropna(axis=1, how="all")
+        .set_index(df.index)
+        .dropna(axis=0, how="all")
+        .fillna(0)
+    )
+
+    if check:
+        df.to_pickle(save_path)
+
+    return df
+
+
+def _load_AtMol(
+    path=_sciglass_path_dict()["elements"][1],
+    translation=AtMol_translation,
+):
+
+    check1 = path == _sciglass_path_dict()["elements"][1]
+    check2 = translation == AtMol_translation
+
+    save_path = Path(user_data_dir("GlassPy")) / "data" / "elements.p.zip"
+
+    if check1 and check2:
+        try:
+            df = pd.read_pickle(save_path)
+            return df
+
+        except FileNotFoundError:
+            print("[GlassPy] Parsing the SciGlass data (AtMol).")
+            print("[GlassPy] This is only required once and may take a few " "minutes.")
+
+    df = pd.read_csv(path, sep="\t", low_memory=False)
+    df = pd.concat(
+        [
+            df.drop(["Kod", "GlasNo"], axis=1),
+            pd.Series(
+                df["Kod"] * 100000000 + df["GlasNo"],
+                name="ID",
+                index=df.index,
+            ),
+        ],
+        axis=1,
+    )
+
+    df = df.drop_duplicates("ID", keep=False)
+    df = df.set_index("ID", drop=True)
+
+    df = df.rename(columns=translation)
+
+    if check1 and check2:
+        df.to_pickle(save_path)
+
+    return df
+
+
+def _load_SciGK(
+    path=_sciglass_path_dict()["properties"][1],
+    translation=SciGK_translation,
+):
+
+    check1 = path == _sciglass_path_dict()["properties"][1]
+    check2 = translation == SciGK_translation
+
+    save_path = Path(user_data_dir("GlassPy")) / "data" / "properties.p.zip"
+
+    if check1 and check2:
+        try:
+            df = pd.read_pickle(save_path)
+            return df
+
+        except FileNotFoundError:
+            print("[GlassPy] Parsing the SciGlass data (SciGK).")
+            print("[GlassPy] This is only required once and may take a few " "minutes.")
+
+    df = pd.read_csv(path, sep="\t", low_memory=False)
+    df = pd.concat(
+        [
+            df.drop(["KOD", "GLASNO"], axis=1),
+            pd.Series(
+                df["KOD"] * 100000000 + df["GLASNO"],
+                name="ID",
+                index=df.index,
+            ),
+        ],
+        axis=1,
+    )
+
+    df = df.drop_duplicates("ID", keep=False)
+    df = df.set_index("ID", drop=True)
+
+    rename = {k: v["rename"] for k, v in translation.items() if "rename" in v}
+    df = df.rename(columns=rename)
+
+    convert = {
+        v.get("rename", k): v["convert"]
+        for k, v in translation.items()
+        if "convert" in v
+    }
+    for k, v in convert.items():
+        if k in df.columns:
+            df[k] = df[k].apply(v)
+
+    if check1 and check2:
+        df.to_pickle(save_path)
+
+    return df
 
 
 class SciGlass:
@@ -135,9 +293,7 @@ class SciGlass:
 
         if elements_cfg:
             if "property" in dfs:
-                df = self.get_elements(
-                    IDs=dfs["property"].index, **elements_cfg
-                )
+                df = self.get_elements(IDs=dfs["property"].index, **elements_cfg)
             else:
                 df = self.get_elements(**elements_cfg)
             dfs["elements"] = df
@@ -162,15 +318,11 @@ class SciGlass:
 
             if "elements" in dfs:
                 numelements = dfs["elements"].astype(bool).sum(axis=1)
-                dfs["metadata"] = dfs["metadata"].assign(
-                    NumberElements=numelements
-                )
+                dfs["metadata"] = dfs["metadata"].assign(NumberElements=numelements)
 
             if "compounds" in dfs:
                 numcompounds = dfs["compounds"].astype(bool).sum(axis=1)
-                dfs["metadata"] = dfs["metadata"].assign(
-                    NumberCompounds=numcompounds
-                )
+                dfs["metadata"] = dfs["metadata"].assign(NumberCompounds=numcompounds)
 
             dfs["metadata"] = dfs["metadata"].convert_dtypes()
 
@@ -217,28 +369,15 @@ class SciGlass:
         """
         path_dict = _sciglass_path_dict()
 
-        df = pd.read_csv(
+        df = _load_SciGK(
             kwargs.get("path", path_dict["properties"][1]),
-            sep="\t",
-            low_memory=False,
+            kwargs.get("translate", SciGK_translation),
         )
-        df = df.assign(ID=lambda x: x.KOD * 100000000 + x.GLASNO)
-        df = df.drop(["KOD", "GLASNO"], axis=1)
-        translate = kwargs.get("translate", SciGK_translation)
-        rename = {
-            k: v["rename"] for k, v in translate.items() if "rename" in v
-        }
-        convert = {
-            v.get("rename", k): v["convert"]
-            for k, v in translate.items()
-            if "convert" in v
-        }
+
         if "keep" not in kwargs:
             kwargs["keep"] = self.available_properties()
 
-        df = self._process_df(
-            df, rename=rename, convert=convert, origin="properties", **kwargs
-        )
+        df = self._process_df(df, origin="properties", **kwargs)
 
         return df
 
@@ -280,21 +419,17 @@ class SciGlass:
         """
         path_dict = _sciglass_path_dict()
 
-        df = pd.read_csv(
+        df = _load_AtMol(
             kwargs.get("path", path_dict["elements"][1]),
-            sep="\t",
-            low_memory=False,
+            kwargs.get("translate", AtMol_translation),
         )
-        df = df.assign(ID=lambda x: x.Kod * 100000000 + x.GlasNo)
-        df = df.drop(["Kod", "GlasNo"], axis=1)
-        translate = kwargs.get("translate", AtMol_translation)
-        df = df.set_index("ID", drop=False)
+
         if "IDs" in kwargs:
             idx = df.index.intersection(kwargs["IDs"])
             df = df.loc[idx]
-        df = self._process_df(
-            df, rename=translate, origin="elements", **kwargs
-        )
+
+        df = self._process_df(df, origin="elements", **kwargs)
+
         return df
 
     def get_compounds(self, **kwargs):
@@ -335,64 +470,32 @@ class SciGlass:
         """
         path_dict = _sciglass_path_dict()
 
-        df = pd.read_csv(
+        df = _load_Gcomp(
             kwargs.get("path", path_dict["compounds"][1]),
-            sep="\t",
-            low_memory=False,
+            kwargs.get("return_weight", False),
         )
-        df = df.assign(ID=lambda x: x.Kod * 100000000 + x.GlasNo)
-        df = df.drop(["Kod", "GlasNo"], axis=1)
-        df = df.set_index("ID", drop=True)
 
         if "IDs" in kwargs:
             idx = df.index.intersection(kwargs["IDs"])
             df = df.loc[idx]
 
-        df = df["Composition"].str.slice(start=1, stop=-1)
-        df = df.str.split("\x7f")
+        df = self._process_df(df, origin="compounds", **kwargs)
 
-        add = 0 if kwargs.get("return_weight", False) else 1
-
-        compound_list = []
-        for row in df.values:
-            compound_list.append(
-                {
-                    row[n * 4]: float(row[(n * 4 + 2 + add)])
-                    for n in range(len(row) // 4)
-                }
-            )
-
-        data = (
-            pd.DataFrame(compound_list)
-            .dropna(axis=1, how="all")
-            .assign(ID=df.index)
-            .dropna(axis=0, how="all")
-            .fillna(0)
-        )
-
-        df = self._process_df(data, origin="compounds", **kwargs)
         return df
 
     @staticmethod
     def _process_df(df, **kwargs):
         """Function to process the DataFrame."""
 
-        df = df.drop_duplicates("ID", keep=False)
-        df = df.set_index("ID", drop=True)
-
         if "rename" in kwargs:
             df = df.rename(columns=kwargs["rename"])
         if kwargs["origin"] == "properties":
             if "must_have_or" in kwargs:
-                strings = [
-                    f"{prop}.notna()" for prop in kwargs["must_have_or"]
-                ]
+                strings = [f"{prop}.notna()" for prop in kwargs["must_have_or"]]
                 query = " or ".join(strings)
                 df = df.query(query)
             if "must_have_and" in kwargs:
-                strings = [
-                    f"{prop}.notna()" for prop in kwargs["must_have_and"]
-                ]
+                strings = [f"{prop}.notna()" for prop in kwargs["must_have_and"]]
                 query = " and ".join(strings)
                 df = df.query(query)
         else:
@@ -493,9 +596,7 @@ class SciGlass:
         assert "compounds" in self.data.columns.levels[0]
         assert "elements" not in self.data.columns.levels[0]
 
-        chemarray = to_element_array(
-            self.data["compounds"], rescale_to_sum=final_sum
-        )
+        chemarray = to_element_array(self.data["compounds"], rescale_to_sum=final_sum)
 
         if compounds_in_weight:
             chemarray = wt_to_mol(chemarray, chemarray.cols, final_sum)

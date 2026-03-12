@@ -15,18 +15,18 @@ Subpackages
 Submodules
 ----------
 
-glasspy.support module
-----------------------
+glasspy.utils module
+--------------------
 
-.. automodule:: glasspy.support
+.. automodule:: glasspy.utils
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Module contents
 ---------------
 
 .. automodule:: glasspy
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

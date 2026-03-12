@@ -8,10 +8,11 @@ GlassPy is a Python module for researchers working with `glass materials`_ and
 `glass-forming liquids`_. Currently, GlassPy focuses on glass data and
 predictive models. GlassPy provides a convenient way to load data from the
 `SciGlass database`_ into a Pandas DataFrame. GlassPy is also the home to
-GlassNet and ViscNet. GlassNet is a predictive model for many glass properties.
-ViscNet is a predictive model for viscosity. GlassPy is still under heavy
-development; changes to the API are not only likely, but expected as
-development continues.
+GlassNet, VITRIFY, and ViscNet. GlassNet is a predictive model for many glass
+properties.  VITRIFY is a predictive model of the probability of glass
+formation. ViscNet is a predictive model for viscosity. GlassPy is still under
+development; changes to the API are not only likely, but expected as development
+continues.
 
 .. _glass materials: https://en.wikipedia.org/wiki/Glass
 .. _glass-forming liquids: https://en.wikipedia.org/wiki/Viscous_liquid

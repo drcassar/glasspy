@@ -1,17 +1,26 @@
 """Predictive models offered by GlassPy."""
 
+import gzip
+import warnings
 from typing import List
 
+import joblib
 import numpy as np
+import onnxruntime as rt
 import pandas as pd
 import torch
 from glasspy.chemistry import CompositionLike, physchem_featurizer
+from glasspy.utils import get_from_zenodo
+
+# Required for joblib deserialization of RandomForestClassifier models
+from sklearn.ensemble import RandomForestClassifier  # noqa: F401
 from torch.nn import functional as F
 
 from .base import (
     _BASEMODELPATH,
-    GLASSNET_TARGETS,
     GLASSNET_HP,
+    GLASSNET_TARGETS,
+    Predict,
     _BaseGlassNet,
     _BaseGlassNetViscosity,
     _BaseViscNet,
@@ -129,9 +138,7 @@ class ViscNet(_BaseViscNet):
     # fmt: on
 
     def __init__(self):
-        super().__init__(
-            self.parameters_range, self._hparams, self.x_mean, self.x_std
-        )
+        super().__init__(self.parameters_range, self._hparams, self.x_mean, self.x_std)
 
         state_dict_path = _BASEMODELPATH / "ViscNet.pth"
         self.load_training(state_dict_path)
@@ -420,9 +427,7 @@ class GlassNet(GlassNetMTMH):
 
             for target in self.st_dict:
                 pos = self.target_trans[target]
-                y_pred[:, pos] = (
-                    self.st_dict[target](features).ravel().detach()
-                )
+                y_pred[:, pos] = self.st_dict[target](features).ravel().detach()
 
             y_pred = self.scaler_y.inverse_transform(y_pred)
 
@@ -430,3 +435,296 @@ class GlassNet(GlassNetMTMH):
             return pd.DataFrame(y_pred, columns=self.targets)
         else:
             return y_pred
+
+
+class VITRIFY(Predict):
+    """Predictor of the probability of forming a glass using the VITRIFY model.
+
+    VITRIFY stands for *Vitrification Inference Tool for Rapid Identification
+    of glass-Forming abilitY*.
+
+    The original model was trained using the scikit-learn framework. During
+    conversion to ONNX, all float64 values were cast to float32. As a result,
+    compositions very close to decision boundaries may yield different
+    predictions due to floating-point rounding.
+
+    .. warning::
+        When using the `sklearn` framework, scikit-learn version 1.7.1 must be
+        installed. Other versions may produce inconsistent results.
+
+    Args:
+        model (str):
+          Name of the glass-formation predictive model to use.  Available
+          options are: `FEATENG`, `FEATENG+GS`, `CHEM`, and `GS`. Defaults to
+          `"CHEM"`.
+        framework (str):
+          Inference framework to use. Accepted values are `"onnx"` and
+          `"sklearn"`. Defaults to `"onnx"` if not specified. If `"sklearn"` is
+          selected, ensure scikit-learn version 1.7.1 is installed.
+    """
+
+    def __init__(self, model="CHEM", framework="onnx"):
+        super().__init__()
+
+        self.model_name = model
+        self.framework = framework
+
+        # fmt: off
+        pc_feats = [
+            'A|vdw_radius_uff|std', 'W|atomic_radius_rahm|mean',
+            'W|NpValence|mean', 'A|pettifor_number|sum', 'W|FusionEnthalpy|sum',
+            'W|num_oxistates|mean', 'A|FusionEnthalpy|mean', 'W|NdValence|mean',
+            'W|NsValence|sum', 'A|GSbandgap|std', 'W|GSvolume_pa|mean',
+            'W|GSbandgap|sum', 'A|num_oxistates|std', 'W|NdUnfilled|max',
+            'W|NpUnfilled|sum', 'A|melting_point|std', 'A|NUnfilled|sum',
+            'A|num_oxistates|max', 'W|covalent_radius_cordero|std',
+            'A|en_Martynov_Batsanov|std'
+        ]
+
+        abs_feats = [
+            ("vdw_radius_uff", "std"),
+            ("pettifor_number", "sum"),
+            ("FusionEnthalpy", "mean"),
+            ("GSbandgap", "std"),
+            ("num_oxistates", "std"),
+            ("melting_point", "std"),
+            ("NUnfilled", "sum"),
+            ("num_oxistates", "max"),
+            ("en_Martynov_Batsanov", "std"),
+        ]
+
+        wei_feats = [
+            ("atomic_radius_rahm", "mean"),
+            ("NpValence", "mean"),
+            ("FusionEnthalpy", "sum"),
+            ("num_oxistates", "mean"),
+            ("NdValence", "mean"),
+            ("NsValence", "sum"),
+            ("GSvolume_pa", "mean"),
+            ("GSbandgap", "sum"),
+            ("NdUnfilled", "max"),
+            ("NpUnfilled", "sum"),
+            ("covalent_radius_cordero", "std"),
+        ]
+
+        gs_feats = ['Kw_Tx', 'Kw_Tc', 'Kh_Tc', 'H_Tx', 'gamma_Tc', 'jezica']
+
+        chem_feats = [
+            'Ag', 'Al', 'As', 'B', 'Ba', 'Be', 'Bi', 'Br', 'Ca', 'Cd', 'Ce',
+            'Cl', 'Co', 'Cr', 'Cs', 'Cu', 'Dy', 'Er', 'Eu', 'F', 'Fe', 'Ga',
+            'Gd', 'Ge', 'H', 'Hf', 'Hg', 'Ho', 'I', 'In', 'K', 'La', 'Li', 'Lu',
+            'Mg', 'Mn', 'Mo', 'N', 'Na', 'Nb', 'Nd', 'Ni', 'O', 'P', 'Pb', 'Pr',
+            'Rb', 'S', 'Sb', 'Sc', 'Se', 'Si', 'Sm', 'Sn', 'Sr', 'Ta', 'Tb',
+            'Te', 'Ti', 'Tl', 'Tm', 'V', 'W', 'Y', 'Yb', 'Zn', 'Zr'
+        ]
+        # fmt: on
+
+        if framework == "onnx":
+            suffix = ".onnx.gz"
+        elif framework == "sklearn":
+            suffix = ".pkl"
+        else:
+            raise ValueError("Invalid framework name.")
+
+        self.comp_pc = False
+        self.comp_gs = False
+        self.comp_chem = False
+
+        match model:
+            case "FEATENG":
+                self.features = pc_feats
+                self.abs_feats = abs_feats
+                self.wei_feats = wei_feats
+                self.comp_pc = True
+                model_name = "FEATENG" + suffix
+            case "GS":
+                self.features = gs_feats
+                self.glassnet = GlassNet()
+                self.comp_gs = True
+                model_name = "GS" + suffix
+            case "CHEM":
+                self.features = chem_feats
+                self.comp_chem = True
+                model_name = "CHEM" + suffix
+            case "FEATENG+GS":
+                self.features = pc_feats + gs_feats
+                self.glassnet = GlassNet()
+                self.abs_feats = abs_feats
+                self.wei_feats = wei_feats
+                self.comp_pc = True
+                self.comp_gs = True
+                model_name = "FEATENG_GS" + suffix
+            case _:
+                raise ValueError("GlassPy: Invalid GFA model name.")
+
+        get_from_zenodo(
+            "18964978",
+            model_name,
+            _BASEMODELPATH / model_name,
+            verbose=True,
+        )
+
+        if framework == "onnx":
+            with gzip.open(_BASEMODELPATH / model_name, "rb") as f:
+                self.model = rt.InferenceSession(f.read())
+
+        elif framework == "sklearn":
+            self.model = joblib.load(_BASEMODELPATH / model_name)
+
+    def _featurizer(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+    ):
+        dfs = []
+
+        if self.comp_chem:
+            x, cols = physchem_featurizer(
+                composition,
+                input_cols,
+                elemental_features=self.features,
+                rescale_to_sum=1,
+            )
+            chem = pd.DataFrame(x, columns=cols)
+            if any(chem.sum(axis=1).round(3) < 1):
+                warnings.warn(
+                    "Chemical composition outside of training domain.", UserWarning
+                )
+            dfs.append(chem)
+
+        if self.comp_pc:
+            x, cols = physchem_featurizer(
+                composition,
+                input_cols,
+                weighted_features=self.wei_feats,
+                absolute_features=self.abs_feats,
+            )
+            pc = pd.DataFrame(x, columns=cols)
+            dfs.append(pc)
+
+        if self.comp_gs:
+            preds = self.glassnet.predict(composition, input_cols)
+            Tg = preds["Tg"]
+            Tc = preds["CrystallizationPeak"]
+            Tx = preds["CrystallizationOnset"]
+            Tm = preds["Tliquidus"]
+            eta_Tm = self.glassnet.predict_viscosity(Tm, composition, input_cols)
+            gs = pd.DataFrame(
+                {
+                    "Kw_Tx": (Tx - Tg) / Tm,
+                    "Kw_Tc": (Tc - Tg) / Tm,
+                    "Kh_Tc": (Tc - Tg) / (Tm - Tc),
+                    "H_Tx": (Tx - Tg) / Tg,
+                    "gamma_Tc": Tc / (Tg + Tm),
+                    "jezica": eta_Tm / Tm**2,
+                }
+            )
+            dfs.append(gs)
+
+        X = pd.concat(dfs, axis=1).reindex(self.features, axis=1)
+
+        return X
+
+    def predict(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+    ):
+        """Classifies the compositions with respect of glass formation.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Array with zeros and ones. Zero represent a prediction that the
+          composition will not form a glass while one represents the opposite.
+        """
+
+        X = self._featurizer(composition, input_cols)
+
+        if self.framework == "onnx":
+            dict = {"float_input": X.to_numpy(dtype=np.float32)}
+            return self.model.run(None, dict)[0]
+        else:
+            return self.model.predict(X.to_numpy())
+
+    def predict_proba(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+    ):
+        """Returns the predicted probabilities of the model.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          2D Numpy array with values between 0 and 1. First column represents
+          the probability of not forming a glass and second column represents
+          the probability of forming a glass.
+        """
+        X = self._featurizer(composition, input_cols)
+
+        if self.framework == "onnx":
+            dict_ = {"float_input": X.to_numpy(dtype=np.float32)}
+            proba = self.model.run(None, dict_)[1]
+            proba = np.array([[d[0], d[1]] for d in proba])
+            return proba
+        else:
+            return self.model.predict_proba(X.to_numpy())
+
+    def predict_proba_glass(
+        self,
+        composition: CompositionLike,
+        input_cols: List[str] = [],
+    ):
+        """Returns the predicted probability of forming a glass.
+
+        Args:
+          composition:
+            Any composition like object.
+          input_cols:
+            List of strings representing the chemical entities related to each
+            column of `composition`. Necessary only when `composition` is a list
+            or array, ignored otherwise.
+
+        Returns:
+          Numpy array with values between 0 and 1 representing the predicted
+          probability of glass formation.
+        """
+        return self.predict_proba(composition, input_cols)[:, 1]
+
+    @property
+    def domain(self):
+        # TODO
+        raise NotImplementedError("GlassPy error: not implemented.")
+
+    def is_within_domain(self):
+        # TODO
+        raise NotImplementedError("GlassPy error: not implemented.")
+
+    def get_training_dataset(self):
+        # TODO
+        raise NotImplementedError("GlassPy error: not implemented.")
+
+    def get_test_dataset(self):
+        # TODO
+        raise NotImplementedError("GlassPy error: not implemented.")
+
+    @staticmethod
+    def citation(bibtex: bool = False) -> str:
+        if bibtex:
+            c = "@unpublished{Carvalho2026glass, author={Carvalho, Diogo P. L. and Loponi, Ana C. B. and Cassar, Daniel R.}, title={Will it form a glass? {T}ackling glass formation using binary classification}, note={Currently in peer review}, year  ={2026},}"
+        else:
+            c = "Diogo P. L. Carvalho, Ana C. B. Loponi, Daniel R. Cassar. Will it form a glass? Tackling glass formation using binary classification. Currently in peer review. 2026."
+        return c

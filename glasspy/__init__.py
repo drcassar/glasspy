@@ -2,6 +2,7 @@ import io
 import json
 import shutil
 import zipfile
+from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
 import requests
@@ -9,12 +10,24 @@ import sklearn
 from platformdirs import user_data_dir
 
 name = "glasspy"
-version = "0.5.3"
+
+try:
+    version_ = version("glasspy")
+except PackageNotFoundError:
+    import tomllib
+
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    if pyproject_path.exists():
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomllib.load(f)
+            version_ = pyproject_data["project"]["version"]
+    else:
+        version_ = "unknown"
 
 
 def initial_config():
     current_versions = {
-        "glasspy": version,
+        "glasspy": version_,
         "sklearn": sklearn.__version__,
     }
 
@@ -38,9 +51,7 @@ def initial_config():
 
         print("[GlassPy] Initial installation or an update was detected.")
         print("[GlassPy] Downloading necessary files to your computer...")
-        print(
-            "[GlassPy] This is only required once and may take a few minutes."
-        )
+        print("[GlassPy] This is only required once and may take a few minutes.")
 
         try:
             shutil.rmtree(config_dir)

@@ -6,6 +6,7 @@ from .models import (
     GlassNetMTMLP,
     GlassNetMTMH,
     GlassNetSTNN,
+    VITRIFY,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "GlassNetMTMLP",
     "GlassNetMTMH",
     "GlassNetSTNN",
+    "VITRIFY",
 ]

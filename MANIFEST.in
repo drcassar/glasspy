@@ -1,3 +1,2 @@
 include *.txt
 recursive-include docs *
-recursive-include glasspy/chemistry/data *

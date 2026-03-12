@@ -9,37 +9,37 @@ glasspy.chemistry.convert module
 
 .. automodule:: glasspy.chemistry.convert
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 glasspy.chemistry.data module
 -----------------------------
 
 .. automodule:: glasspy.chemistry.data
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 glasspy.chemistry.featurizer module
 -----------------------------------
 
 .. automodule:: glasspy.chemistry.featurizer
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 glasspy.chemistry.types module
 ------------------------------
 
 .. automodule:: glasspy.chemistry.types
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Module contents
 ---------------
 
 .. automodule:: glasspy.chemistry
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
