@@ -9,7 +9,7 @@ Installation guide
 Supported Python versions
 =========================
 
-GlassPy requires Python 3.10+.
+GlassPy requires Python 3.11+.
 
 
 .. _faq-install:
@@ -20,7 +20,7 @@ Installing GlassPy
 Binary installers for the latest released version are available from the `Python
 Package Index`_.
 
-Before installing GlassPy, make sure that you have pytorch installed (see the instructions `here`_).
+Before installing GlassPy, make sure that you have PyTorch installed (see the instructions `here`_).
 
 To install GlassPy and all its necessary dependencies, use pip run::
 
