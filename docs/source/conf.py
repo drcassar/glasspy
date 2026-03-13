@@ -5,7 +5,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath(r"../.."))
 
-
 project = "GlassPy"
 copyright = f"2019-{datetime.now().year}, Daniel Roberto Cassar"
 author = "Daniel Roberto Cassar"
@@ -17,7 +16,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "nbsphinx",
 ]
-
 
 # Napoleon settings
 napoleon_google_docstring = True
