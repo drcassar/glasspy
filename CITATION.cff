@@ -1,9 +1,24 @@
-cff-version: 1.1.0
-message: "If you use this software, please cite it as below."
-authors:
-- family-names: Cassar
-  given-names: Daniel
-orcid: https://orcid.org/0000-0001-6472-2780
+cff-version: 1.2.0
 title: GlassPy
-version: v0.6.0
-date-released: 2026-03-13
+message: Python module for scientists working with glass 
+type: software
+authors:
+  - given-names: Daniel
+    family-names: Cassar
+    orcid: 'https://orcid.org/0000-0001-6472-2780'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.13926991
+    description: Zenodo Repository
+  - type: doi
+    value: 10.1016/j.ceramint.2023.08.281
+    description: GlassNet paper
+  - type: doi
+    value: 10.1016/j.actamat.2020.116602
+    description: ViscNet paper
+repository-code: 'https://github.com/drcassar/glasspy'
+keywords:
+  - glass
+  - predictive models
+  - viscosity
+license: GPL-3.0-or-later
