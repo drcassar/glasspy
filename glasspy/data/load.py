@@ -575,7 +575,7 @@ class SciGlass:
         df = self.data[[scope, "property"]].droplevel(0, axis=1)
         df[comp_cols] = df[comp_cols].round(decimals)
         grouped = df.groupby(comp_cols, sort=False)
-        df = getattr(grouped, aggregator)().reset_index()
+        df = getattr(grouped, aggregator)().reset_index().copy()
         df = {scope: df[comp_cols], "property": df[prop_cols]}
         self.data = pd.concat(df, axis=1, join="inner")
 
