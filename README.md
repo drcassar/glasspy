@@ -6,19 +6,26 @@ GlassPy is a Python module for scientists working with glass materials.
 ![Screenshot](docs/source/logo/logo_text_small.png)
 
 ## What is it?
-GlassPy's current focus is on providing an easy way to load SciGlass data and use GlassNet and ViscNet, two deep learning predictive models of glass and glass-forming liquid properties. Click [here](https://glasspy.readthedocs.io) for the documentation.
+GlassPy focuses on providing an easy way to load SciGlass data and use GlassNet, VITRIFY, and ViscNet — predictive models of glass and glass-forming liquid properties. Documentation is available [here](https://glasspy.readthedocs.io) (check the examples section for a quick overview).
 
 ## How to install
 The source code is available on GitHub at https://github.com/drcassar/glasspy.
 
 Binary installers for the latest released version are available from the [Python Package Index](https://pypi.org/project/glasspy/).
 
-Before installing GlassPy, make sure that you have `pytorch` installed (see the instructions [here](https://pytorch.org/get-started/locally/)).
+> [!WARNING]
+> Before installing GlassPy, make sure that you have `pytorch` installed (see the instructions [here](https://pytorch.org/get-started/locally/)).
 
-To install GlassPy with pip run
+To install GlassPy with `pip` run
 
 ```sh
 pip install glasspy
+```
+
+To install GlassPy with `uv` run 
+
+```sh
+uv pip install glasspy
 ```
 
 ## Development
@@ -28,7 +35,15 @@ GlassPy is under development. API changes are not only likely, but expected as d
 
 If GlassPy or GlassNet was useful in your research, please cite the following paper:
 
-> Cassar, D.R. (2023). GlassNet: A multitask deep neural network for predicting many glass properties. Ceramics International 49, 36013–36024. 10.1016/j.ceramint.2023.08.281.
+> Cassar, D.R. (2023). GlassNet: A multitask deep neural network for predicting many glass properties. Ceramics International 49, 36013–36024. https://doi.org/10.1016/j.ceramint.2023.08.281.
+
+If ViscNet was useful in your research, please cite the following paper:
+
+> Cassar, D.R. (2021). ViscNet: Neural network for predicting the fragility index and the temperature-dependency of viscosity. Acta Materialia 206, 116602. https://doi.org/10.1016/j.actamat.2020.116602.
+
+If VITRIFY was useful in your research, please cite the following paper:
+
+> Carvalho, D.P.L., Loponi, A.C.B., Cassar, D.R. (2026). Will it form a glass? Tackling glass formation using binary classification. Paper under peer review. 
 
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
