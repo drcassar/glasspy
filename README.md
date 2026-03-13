@@ -37,13 +37,14 @@ If GlassPy or GlassNet was useful in your research, please cite the following pa
 
 > Cassar, D.R. (2023). GlassNet: A multitask deep neural network for predicting many glass properties. Ceramics International 49, 36013–36024. https://doi.org/10.1016/j.ceramint.2023.08.281.
 
+If VITRIFY was useful in your research, please cite the following paper:
+
+> Carvalho, D.P.L., Loponi, A.C.B., Cassar, D.R. (2026). Will it form a glass? Tackling glass formation using binary classification. Paper under peer review. 
+
 If ViscNet was useful in your research, please cite the following paper:
 
 > Cassar, D.R. (2021). ViscNet: Neural network for predicting the fragility index and the temperature-dependency of viscosity. Acta Materialia 206, 116602. https://doi.org/10.1016/j.actamat.2020.116602.
 
-If VITRIFY was useful in your research, please cite the following paper:
-
-> Carvalho, D.P.L., Loponi, A.C.B., Cassar, D.R. (2026). Will it form a glass? Tackling glass formation using binary classification. Paper under peer review. 
 
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
