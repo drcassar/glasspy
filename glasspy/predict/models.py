@@ -724,7 +724,7 @@ class VITRIFY(Predict):
     @staticmethod
     def citation(bibtex: bool = False) -> str:
         if bibtex:
-            c = "@unpublished{Carvalho2026glass, author={Carvalho, Diogo P. L. and Loponi, Ana C. B. and Cassar, Daniel R.}, title={Will it form a glass? {T}ackling glass formation using binary classification}, note={Currently in peer review}, year  ={2026},}"
+            c = "@article{Carvalho_Loponi_Cassar_2026, title={Will it form a glass? Tackling glass formation using binary classification}, url={http://arxiv.org/abs/2603.15312}, DOI={10.48550/arXiv.2603.15312}, publisher={arXiv}, author={Carvalho, Diogo P. L. and Loponi, Ana C. B. and Cassar, Daniel R.}, year={2026}, month=mar }"
         else:
-            c = "Diogo P. L. Carvalho, Ana C. B. Loponi, Daniel R. Cassar. Will it form a glass? Tackling glass formation using binary classification. Currently in peer review. 2026."
+            c = "Diogo P. L. Carvalho, Ana C. B. Loponi, Daniel R. Cassar. Will it form a glass? Tackling glass formation using binary classification. Currently in peer review. 2026. https://doi.org/10.48550/arXiv.2603.15312"
         return c

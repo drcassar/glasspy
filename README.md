@@ -39,12 +39,11 @@ If GlassPy or GlassNet was useful in your research, please cite the following pa
 
 If VITRIFY was useful in your research, please cite the following paper:
 
-> Carvalho, D.P.L., Loponi, A.C.B., Cassar, D.R. (2026). Will it form a glass? Tackling glass formation using binary classification. Paper under peer review. 
+> Carvalho, D.P.L., Loponi, A.C.B., Cassar, D.R. (2026). Will it form a glass? Tackling glass formation using binary classification. Paper under peer review. https://doi.org/10.48550/arXiv.2603.15312 
 
 If ViscNet was useful in your research, please cite the following paper:
 
 > Cassar, D.R. (2021). ViscNet: Neural network for predicting the fragility index and the temperature-dependency of viscosity. Acta Materialia 206, 116602. https://doi.org/10.1016/j.actamat.2020.116602.
-
 
 ## GlassPy license
 [GPL](https://github.com/drcassar/glasspy/blob/master/LICENSE)
