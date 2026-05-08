@@ -71,7 +71,7 @@ def _load_Gcomp(
 
         except FileNotFoundError:
             print("[GlassPy] Parsing the SciGlass data (Gcomp).")
-            print("[GlassPy] This is only required once and may take a few " "minutes.")
+            print("[GlassPy] This is only required once and may take a few minutes.")
 
     df = pd.read_csv(path, sep="\t", low_memory=False)
     df = pd.concat(
@@ -131,7 +131,7 @@ def _load_AtMol(
 
         except FileNotFoundError:
             print("[GlassPy] Parsing the SciGlass data (AtMol).")
-            print("[GlassPy] This is only required once and may take a few " "minutes.")
+            print("[GlassPy] This is only required once and may take a few minutes.")
 
     df = pd.read_csv(path, sep="\t", low_memory=False)
     df = pd.concat(

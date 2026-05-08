@@ -1,5 +1,6 @@
 """Module with base classes for building predictive models."""
 
+import os
 import pickle
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -195,9 +196,7 @@ def _gen_architecture(
         elif activation_name == "Linear":
             l.append(nn.Linear())
         else:
-            raise NotImplementedError(
-                "Please add this activation to the model class."
-            )
+            raise NotImplementedError("Please add this activation to the model class.")
 
         layers.append(nn.Sequential(*l))
         input_dim = layer_size
@@ -222,8 +221,28 @@ def _load_data_glassnet():
     """Returns the data used to train GlassNet.
 
     Returns:
-        DataFrame with the all the data used to train GlassNet."""
+        DataFrame with the all the data used to train GlassNet.
+    """
+    cur_path = os.path.dirname(__file__)
+    data_path = os.path.join(cur_path, "data/glassnet_data.zip")
+    df = pd.from_pickle(data_path)
+    return df
 
+
+def _create_data_glassnet():
+    """Steps used to create the GlassNet dataset.
+
+    Due to changes in the way SciGlass data is loaded in GlassPy, there is no
+    guarantee that this function will return the exact DataFrame that was used
+    to train GlassNet. If you want the exact dataset that was used to train
+    GlassNet, please use the function `_load_data_glassnet`. This function is
+    here to show the pipeline used to generade the GlassNet dataset when GlassPy
+    was at version 0.5.3.
+
+    Returns:
+        DataFrame generated from SciGlass using the pipeline proposed in the
+        GlassNet paper.
+    """
     remove_dupe_decimals = 3
 
     # fmt: off
@@ -433,18 +452,12 @@ def _load_data_glassnet():
         },
     }
 
-    min_cols = [
-        col for col in treatment if treatment[col].get("min", None) is not None
-    ]
+    min_cols = [col for col in treatment if treatment[col].get("min", None) is not None]
 
-    max_cols = [
-        col for col in treatment if treatment[col].get("max", None) is not None
-    ]
+    max_cols = [col for col in treatment if treatment[col].get("max", None) is not None]
 
     log_cols = [
-        ("property", col)
-        for col in treatment
-        if treatment[col].get("log", False)
+        ("property", col) for col in treatment if treatment[col].get("log", False)
     ]
 
     propconf = {"keep": GLASSNET_TARGETS}
@@ -582,9 +595,7 @@ class Predict(ABC):
             return MAE
         else:
             y_true = ma.masked_invalid(y_true)
-            MAE = np.sum(np.abs(y_true - y_pred), axis=0) / y_true.count(
-                axis=0
-            )
+            MAE = np.sum(np.abs(y_true - y_pred), axis=0) / y_true.count(axis=0)
             return MAE.data
 
     @staticmethod
@@ -674,9 +685,7 @@ class Predict(ABC):
 
         if len(y_true.shape) == 1 or y_true.shape[1] == 1:
             y_mean = sum(y_true) / len(y_true)
-            RRMSE = sqrt(
-                sum((y_true - y_pred) ** 2) / sum((y_true - y_mean) ** 2)
-            )
+            RRMSE = sqrt(sum((y_true - y_pred) ** 2) / sum((y_true - y_mean) ** 2))
             return RRMSE
         else:
             y_true = ma.masked_invalid(y_true)
@@ -688,9 +697,7 @@ class Predict(ABC):
             return RRMSE.data
 
     @staticmethod
-    def R2(
-        y_true: np.ndarray, y_pred: np.ndarray, one_param: bool = True
-    ) -> float:
+    def R2(y_true: np.ndarray, y_pred: np.ndarray, one_param: bool = True) -> float:
         """Computes the coefficient of determination.
 
         Args:
@@ -723,9 +730,7 @@ class Predict(ABC):
             if one_param:
                 denominator = np.sum(y_true**2, axis=0)
             else:
-                denominator = np.sum(
-                    (y_true - np.mean(y_true, axis=0)) ** 2, axis=0
-                )
+                denominator = np.sum((y_true - np.mean(y_true, axis=0)) ** 2, axis=0)
             R2 = 1 - nominator / denominator
             return R2.data
 
@@ -940,16 +945,12 @@ class MLP(L.LightningModule, Predict):
             self.load_state_dict(state_dict)
 
         if learning_curve_path:
-            learning_train, learning_val = pickle.load(
-                open(learning_curve_path, "rb")
-            )
+            learning_train, learning_val = pickle.load(open(learning_curve_path, "rb"))
             self.learning_curve_train = learning_train
             self.learning_curve_val = learning_val
 
     @classmethod
-    def from_file(
-        cls, hparams_path, state_dict_path=None, learning_curve_path=None
-    ):
+    def from_file(cls, hparams_path, state_dict_path=None, learning_curve_path=None):
         hparams = pickle.load(open(hparams_path, "rb"))
         instance = cls(**hparams)
 
@@ -1012,9 +1013,7 @@ class MTL(MLP):
         super().__init__(**hparams)
 
         self.n_outputs = hparams["n_targets"]
-        self.loss_weights = nn.Parameter(
-            torch.ones(self.n_outputs, requires_grad=True)
-        )
+        self.loss_weights = nn.Parameter(torch.ones(self.n_outputs, requires_grad=True))
 
         if num_neurons_per_head:
             dim = int(self.hparams[f'layer_{self.hparams["num_layers"]}_size'])
@@ -1136,9 +1135,7 @@ class _BaseViscNet(MLP):
         self.parameters_range = parameters_range
 
         input_dim = int(
-            self.hparams.get(
-                f'layer_{self.hparams.get("num_layers",1)}_size', 10
-            )
+            self.hparams.get(f'layer_{self.hparams.get("num_layers",1)}_size', 10)
         )
 
         self.output_layer = nn.Sequential(
@@ -1212,9 +1209,7 @@ class _BaseViscNet(MLP):
 
         features = self.featurizer(composition, input_cols)
         features = torch.from_numpy(features).float()
-        parameters = self.viscosity_parameters_from_tensor(
-            features, return_tensor
-        )
+        parameters = self.viscosity_parameters_from_tensor(features, return_tensor)
         return parameters
 
     def viscosity_parameters_dist(
@@ -1290,9 +1285,7 @@ class _BaseViscNet(MLP):
         """
 
         q = [(100 - 100 * confidence) / 2, 100 - (100 - 100 * confidence) / 2]
-        dist = self.viscosity_parameters_dist(
-            composition, input_cols, num_samples
-        )
+        dist = self.viscosity_parameters_dist(composition, input_cols, num_samples)
         bands = {k: np.percentile(v, q, axis=1).T for k, v in dist.items()}
         return bands
 
@@ -1357,9 +1350,7 @@ class _BaseViscNet(MLP):
 
                 else:
                     T = torch.tensor(T).float()
-                    params = [
-                        p.expand(len(T), len(p)).T for p in parameters.values()
-                    ]
+                    params = [p.expand(len(T), len(p)).T for p in parameters.values()]
                     log_viscosity = self.log_viscosity_fun(T, *params).numpy()
 
             else:
@@ -1689,10 +1680,7 @@ class _BaseViscNet(MLP):
                 all_curves = np.zeros((1, num_compositions, num_samples))
                 T = torch.tensor(T).float()
                 for i in range(num_samples):
-                    params = [
-                        torch.from_numpy(p).float()
-                        for p in parameters[:, :, i]
-                    ]
+                    params = [torch.from_numpy(p).float() for p in parameters[:, :, i]]
                     viscosity = self.log_viscosity_fun(T, *params).numpy()
                     all_curves[:, :, i] = viscosity
 
@@ -1701,9 +1689,7 @@ class _BaseViscNet(MLP):
                 T = torch.tensor(T).float()
                 for i in range(num_samples):
                     params = [
-                        torch.from_numpy(
-                            np.broadcast_to(p, (len(T), len(p))).T
-                        ).float()
+                        torch.from_numpy(np.broadcast_to(p, (len(T), len(p))).T).float()
                         for p in parameters[:, :, i]
                     ]
                     viscosity = self.log_viscosity_fun(T, *params).numpy()
@@ -1713,9 +1699,7 @@ class _BaseViscNet(MLP):
             all_curves = np.zeros((1, num_compositions, num_samples))
             T = torch.tensor(T).float()
             for i in range(num_samples):
-                params = [
-                    torch.from_numpy(p).float() for p in parameters[:, :, i]
-                ]
+                params = [torch.from_numpy(p).float() for p in parameters[:, :, i]]
                 viscosity = self.log_viscosity_fun(T, *params).numpy()
                 all_curves[:, :, i] = viscosity
 
@@ -2104,9 +2088,7 @@ class _BaseGlassNetViscosity(ABC):
           Viscosity parameters.
         """
 
-        data = self._viscosity_table_single(
-            prediction, log_visc_limit, columns
-        )
+        data = self._viscosity_table_single(prediction, log_visc_limit, columns)
 
         try:
             slope, _, _, _ = theilslopes(
@@ -2182,9 +2164,7 @@ class _BaseGlassNetViscosity(ABC):
 
         predictions = self.predict(composition, input_cols, False)
         parameters = [
-            self._viscosity_param_single(
-                i, log_visc_limit, columns, n_points_low
-            )
+            self._viscosity_param_single(i, log_visc_limit, columns, n_points_low)
             for i in predictions
         ]
 
