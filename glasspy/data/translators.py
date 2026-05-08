@@ -598,7 +598,7 @@ prop_symb = {
     "Permittivity": r"$\varepsilon$",
     "TangentOfLossAngle": r"$\log_{10}(\tan (\delta))$",
     "TresistivityIs1MOhm.m": r"$T_{\rho = 10^6\,\Omega .m}$",
-    "Resistivity273K": r"$\log_{10}(\rho(273 \,\mathrm{K}))$",
+    "Resistivity293K": r"$\log_{10}(\rho(293 \,\mathrm{K}))$",
     "Resistivity373K": r"$\log_{10}(\rho(373 \,\mathrm{K}))$",
     "Resistivity423K": r"$\log_{10}(\rho(423 \,\mathrm{K}))$",
     "Resistivity573K": r"$\log_{10}(\rho(573 \,\mathrm{K}))$",
@@ -686,7 +686,7 @@ prop_units = {
     "Permittivity": "",
     "TangentOfLossAngle": "",
     "TresistivityIs1MOhm.m": "K",
-    "Resistivity273K": r"($\log_{10}$ of Ohm.m)",
+    "Resistivity293K": r"($\log_{10}$ of Ohm.m)",
     "Resistivity373K": r"($\log_{10}$ of Ohm.m)",
     "Resistivity423K": r"($\log_{10}$ of Ohm.m)",
     "Resistivity573K": r"($\log_{10}$ of Ohm.m)",
@@ -785,4 +785,13 @@ physchem = {
     "vdw_radius_mm3": r"r_{W,MM3}",
     "vdw_radius_uff": r"r_{W,UFF}",
     "zeff": r"Z_{\mathrm{eff}}",
+}
+
+aggregators = {
+    "max": r"\max",
+    "min": r"\min",
+    "sum": r"\mathrm{sum}",
+    "std1": r"\mathrm{std}",
+    "std": r"\mathrm{std}",
+    "mean": r"\mathrm{mean}",
 }
