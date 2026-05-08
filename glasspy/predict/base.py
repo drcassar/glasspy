@@ -225,7 +225,7 @@ def _load_data_glassnet():
     """
     cur_path = os.path.dirname(__file__)
     data_path = os.path.join(cur_path, "data/glassnet_data.zip")
-    df = pd.from_pickle(data_path)
+    df = pd.read_pickle(data_path)
     return df
 
 
