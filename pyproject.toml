@@ -57,3 +57,5 @@ docs = [
   "nbsphinx",  
   "sphinx-rtd-theme",   
 ]
+test = ["pytest"]
+
