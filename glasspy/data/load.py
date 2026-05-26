@@ -70,23 +70,26 @@ def _load_Gcomp(
             return df
 
         except FileNotFoundError:
+            m = "[GlassPy] This is only required once and may take a few minutes."
             print("[GlassPy] Parsing the SciGlass data (Gcomp).")
-            print("[GlassPy] This is only required once and may take a few minutes.")
+            print(m)
 
     df = pd.read_csv(path, sep="\t", low_memory=False)
+    # fmt: off
     df = pd.concat(
         [
             df.drop(["Kod", "GlasNo"], axis=1),
             pd.Series(
-                df["Kod"] * 100000000 + df["GlasNo"],
+                df["Kod"].astype("int64") * 100000000 \
+                + df["GlasNo"].astype("int64"),
                 name="ID",
                 index=df.index,
-            ),
+            ).astype("int64"),
         ],
         axis=1,
     )
+    # fmt: on
 
-    df = df.drop_duplicates("ID", keep=False)
     df = df.set_index("ID", drop=True)
 
     df = df["Composition"].str.slice(start=1, stop=-1)
@@ -130,24 +133,27 @@ def _load_AtMol(
             return df
 
         except FileNotFoundError:
+            m = "[GlassPy] This is only required once and may take a few minutes."
             print("[GlassPy] Parsing the SciGlass data (AtMol).")
-            print("[GlassPy] This is only required once and may take a few minutes.")
+            print(m)
 
     df = pd.read_csv(path, sep="\t", low_memory=False)
+    # fmt: off
     df = pd.concat(
         [
             df.drop(["Kod", "GlasNo"], axis=1),
             pd.Series(
-                df["Kod"] * 100000000 + df["GlasNo"],
+                df["Kod"].astype("int64") * 100000000 \
+                + df["GlasNo"].astype("int64"),
                 name="ID",
                 index=df.index,
-            ),
+            ).astype("int64"),
         ],
         axis=1,
     )
+    # fmt: on
 
-    df = df.drop_duplicates("ID", keep=False)
-    df = df.set_index("ID", drop=True)
+    df = df.set_index("ID", drop=False)
 
     df = df.rename(columns=translation)
 
@@ -173,24 +179,25 @@ def _load_SciGK(
             return df
 
         except FileNotFoundError:
+            m = "[GlassPy] This is only required once and may take a few minutes."
             print("[GlassPy] Parsing the SciGlass data (SciGK).")
-            print("[GlassPy] This is only required once and may take a few " "minutes.")
+            print(m)
 
     df = pd.read_csv(path, sep="\t", low_memory=False)
+    # fmt: off
     df = pd.concat(
         [
             df.drop(["KOD", "GLASNO"], axis=1),
             pd.Series(
-                df["KOD"] * 100000000 + df["GLASNO"],
+                df["KOD"].astype("int64") * 100000000 \
+                + df["GLASNO"].astype("int64"),
                 name="ID",
                 index=df.index,
-            ),
+            ).astype("int64"),
         ],
         axis=1,
     )
-
-    df = df.drop_duplicates("ID", keep=False)
-    df = df.set_index("ID", drop=True)
+    # fmt: on
 
     rename = {k: v["rename"] for k, v in translation.items() if "rename" in v}
     df = df.rename(columns=rename)
@@ -486,6 +493,12 @@ class SciGlass:
     @staticmethod
     def _process_df(df, **kwargs):
         """Function to process the DataFrame."""
+
+        if "ID" in df.columns:
+            df = df.drop_duplicates("ID", keep=False)
+            df = df.set_index("ID", drop=True)
+        elif df.index.name == "ID":
+            df = df[~df.index.duplicated(keep=False)]
 
         if "rename" in kwargs:
             df = df.rename(columns=kwargs["rename"])
