@@ -490,7 +490,9 @@ def _create_data_glassnet():
         aggregator="median",
     )
 
-    return sg.data
+    df = sg.data.copy()
+
+    return df
 
 
 class Domain(NamedTuple):
