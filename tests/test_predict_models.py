@@ -1,5 +1,6 @@
-from glasspy.predict.models import ViscNet, GlassNet, VITRIFY
+import numpy as np
 import pandas as pd
+from glasspy.predict.models import VITRIFY, GlassNet, ViscNet
 
 data = [
     [1, 0, 2],
@@ -22,7 +23,7 @@ def test_viscnet():
     model = ViscNet()
     for comp in all_comps:
         log10_viscosity = model.predict(T=1000, composition=comp)
-        assert isinstance(log10_viscosity, list)
+        assert isinstance(log10_viscosity, np.ndarray)
 
 
 def test_glassnet():
@@ -36,4 +37,4 @@ def test_vitrify():
     model = VITRIFY()
     for comp in all_comps:
         prediction = model.predict(comp)
-        assert isinstance(prediction, list)
+        assert isinstance(prediction, np.ndarray)
