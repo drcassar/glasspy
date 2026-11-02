@@ -455,7 +455,7 @@ class VITRIFY(Predict):
     Args:
         model (str):
           Name of the glass-formation predictive model to use.  Available
-          options are: `FEATENG`, `FEATENG+GS`, `CHEM`, and `GS`. Defaults to
+          options are: `FEATENG`, or `CHEM`. Defaults to
           `"CHEM"`.
         framework (str):
           Inference framework to use. Accepted values are `"onnx"` and
@@ -507,8 +507,6 @@ class VITRIFY(Predict):
             ("covalent_radius_cordero", "std"),
         ]
 
-        gs_feats = ['Kw_Tx', 'Kw_Tc', 'Kh_Tc', 'H_Tx', 'gamma_Tc', 'jezica']
-
         chem_feats = [
             'Ag', 'Al', 'As', 'B', 'Ba', 'Be', 'Bi', 'Br', 'Ca', 'Cd', 'Ce',
             'Cl', 'Co', 'Cr', 'Cs', 'Cu', 'Dy', 'Er', 'Eu', 'F', 'Fe', 'Ga',
@@ -537,28 +535,15 @@ class VITRIFY(Predict):
                 self.wei_feats = wei_feats
                 self.comp_pc = True
                 model_name = "FEATENG" + suffix
-            case "GS":
-                self.features = gs_feats
-                self.glassnet = GlassNet()
-                self.comp_gs = True
-                model_name = "GS" + suffix
             case "CHEM":
                 self.features = chem_feats
                 self.comp_chem = True
                 model_name = "CHEM" + suffix
-            case "FEATENG+GS":
-                self.features = pc_feats + gs_feats
-                self.glassnet = GlassNet()
-                self.abs_feats = abs_feats
-                self.wei_feats = wei_feats
-                self.comp_pc = True
-                self.comp_gs = True
-                model_name = "FEATENG_GS" + suffix
             case _:
                 raise ValueError("GlassPy: Invalid GFA model name.")
 
         get_from_zenodo(
-            "18964978",
+            "23370601",
             model_name,
             _BASEMODELPATH / model_name,
             verbose=True,
