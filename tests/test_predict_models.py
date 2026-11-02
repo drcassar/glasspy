@@ -1,3 +1,5 @@
+from itertools import product
+
 import numpy as np
 import pandas as pd
 from glasspy.predict.models import VITRIFY, GlassNet, ViscNet
@@ -34,7 +36,10 @@ def test_glassnet():
 
 
 def test_vitrify():
-    model = VITRIFY()
-    for comp in all_comps:
-        prediction = model.predict(comp)
-        assert isinstance(prediction, np.ndarray)
+    models = ["CHEM", "FEATENG"]
+    frameworks = ["onnx", "sklearn"]
+    for config in product(models, frameworks):
+        model = VITRIFY(*config)
+        for comp in all_comps:
+            prediction = model.predict(comp)
+            assert isinstance(prediction, np.ndarray)
