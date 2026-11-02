@@ -218,11 +218,17 @@ def _myega_residuals(x, T, y):
 
 
 def _load_data_glassnet():
-    """Returns the data used to train GlassNet.
+    """Returns the data used to train GlassNet in the original GlassNet paper.
 
     Returns:
         DataFrame with the all the data used to train GlassNet.
+
+    References:
+        [1] D.R. Cassar, GlassNet: A multitask deep neural network for
+        predicting many glass properties, Ceramics International 49 (2023)
+        36013–36024. https://doi.org/10.1016/j.ceramint.2023.08.281.
     """
+
     cur_path = os.path.dirname(__file__)
     data_path = os.path.join(cur_path, "data/glassnet_data.zip")
     df = pd.read_pickle(data_path)
@@ -232,24 +238,29 @@ def _load_data_glassnet():
 def _create_data_glassnet():
     """Steps used to create the GlassNet dataset.
 
-    Due to changes in the way SciGlass data is loaded in GlassPy, there is no
-    guarantee that this function will return the exact DataFrame that was used
-    to train GlassNet. If you want the exact dataset that was used to train
-    GlassNet, please use the function `_load_data_glassnet`. This function is
-    here to show the pipeline used to generade the GlassNet dataset when GlassPy
-    was at version 0.5.3.
+    These are the same steps that were used to create the dataset used to train
+    GlassNet. However, due to changes in the code and the way float arithmetic
+    works, this function does not return the same DataFrame that is returned by
+    `_load_data_glassnet` (it is almost the same, but not identical). If you
+    want the exact dataset that was used to train GlassNet, please use the
+    function `_load_data_glassnet` or use GlassPy version 0.5.3.
 
     Returns:
         DataFrame generated from SciGlass using the pipeline proposed in the
         GlassNet paper.
+
+    References:
+        [1] D.R. Cassar, GlassNet: A multitask deep neural network for
+        predicting many glass properties, Ceramics International 49 (2023)
+        36013–36024. https://doi.org/10.1016/j.ceramint.2023.08.281.
     """
+
     remove_dupe_decimals = 3
 
     # fmt: off
     removed_compounds = [
         "", "Al2O3+Fe2O3", "MoO3+WO3", "CaO+MgO", "FeO+Fe2O3", "Li2O+Na2O+K2O",
-        "Na2O+K2O", "F2O-1", "FemOn", "HF+H2O", "R2O", "R2O3", "R2O3", "RO",
-        "RmOn",
+        "Na2O+K2O", "F2O-1", "FemOn", "HF+H2O", "R2O", "R2O3", "RO", "RmOn",
     ]
 
     removed_elements = [
