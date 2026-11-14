@@ -5,6 +5,10 @@ import sys
 
 sys.path.insert(0, os.path.abspath(r"../.."))
 
+os.environ["GLASSPY_SKIP_INIT"] = "1"  # no downloads during the docs build
+
+nbsphinx_execute = "never"  # copy notebooks as-is, never run them
+
 project = "GlassPy"
 copyright = f"2019-{datetime.now().year}, Daniel Roberto Cassar"
 author = "Daniel Roberto Cassar"
@@ -38,14 +42,8 @@ autodoc_default_options = {
     "inherited-members": False,
 }
 
-autodoc_mock_imports = [
-    "torch",
-    "lightning",
-    "onnxruntime",
-    "sklearn",
-    "lmfit",
-    "compress_pickle",
-]
+# Heavy dependencies are not installed in the docs environment
+autodoc_mock_imports = ["torch", "lightning", "onnxruntime"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -68,7 +66,7 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = []
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -77,7 +75,7 @@ html_static_path = ["_static"]
 html_theme_options = {
     #'canonical_url': '',
     "logo_only": False,
-    "display_version": False,
+    # "display_version": False,
     "prev_next_buttons_location": "bottom",
     "style_external_links": False,
     "style_nav_header_background": "#FFFFFF",
