@@ -16,6 +16,9 @@ identifiers:
   - type: doi
     value: 10.1016/j.actamat.2020.116602
     description: ViscNet paper
+  - type: doi
+    value: 10.48550/arXiv.2603.15312
+    description: VITRIFY preprint
 repository-code: 'https://github.com/drcassar/glasspy'
 keywords:
   - glass
