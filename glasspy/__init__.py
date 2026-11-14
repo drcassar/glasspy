@@ -50,11 +50,9 @@ def initial_config():
 
     loaded_versions = _read_versions(config_file)
 
-    check = any(
+    must_update = loaded_versions is None or any(
         loaded_versions.get(key) != value for key, value in current_versions.items()
     )
-
-    must_update = loaded_versions is None or check
 
     if not must_update:
         return
