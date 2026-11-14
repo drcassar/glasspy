@@ -20,22 +20,6 @@ glasspy.predict.models module
    :show-inheritance:
    :undoc-members:
 
-glasspy.predict.test module
----------------------------
-
-.. automodule:: glasspy.predict.test
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-glasspy.predict.test2 module
-----------------------------
-
-.. automodule:: glasspy.predict.test2
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 Module contents
 ---------------
 
