@@ -449,7 +449,7 @@ class VITRIFY(Predict):
     predictions due to floating-point rounding.
 
     .. warning::
-        When using the `sklearn` framework, scikit-learn version 1.7.1 must be
+        When using the `sklearn` framework, scikit-learn version 1.9.0 must be
         installed. Other versions may produce inconsistent results.
 
     Args:
@@ -460,10 +460,13 @@ class VITRIFY(Predict):
         framework (str):
           Inference framework to use. Accepted values are `"onnx"` and
           `"sklearn"`. Defaults to `"onnx"` if not specified. If `"sklearn"` is
-          selected, ensure scikit-learn version 1.7.1 is installed.
+          selected, ensure scikit-learn version 1.9.0 is installed.
+        calibrated (bool):
+          Wether to use the calibrated model (considering 5-fold
+          cross-validation) or not. Defaults to `True`.
     """
 
-    def __init__(self, model="CHEM", framework="onnx"):
+    def __init__(self, model="CHEM", framework="onnx", calibrated=True):
         super().__init__()
 
         self.model_name = model
@@ -517,15 +520,19 @@ class VITRIFY(Predict):
         ]
         # fmt: on
 
+        if calibrated:
+            suffix = "_calibrated"
+        else:
+            suffix = ""
+
         if framework == "onnx":
-            suffix = ".onnx.gz"
+            suffix += ".onnx.gz"
         elif framework == "sklearn":
-            suffix = ".pkl"
+            suffix += ".pkl"
         else:
             raise ValueError("Invalid framework name.")
 
         self.comp_pc = False
-        self.comp_gs = False
         self.comp_chem = False
 
         match model:
@@ -543,7 +550,7 @@ class VITRIFY(Predict):
                 raise ValueError("GlassPy: Invalid GFA model name.")
 
         get_from_zenodo(
-            "23370601",
+            "24172366",
             model_name,
             _BASEMODELPATH / model_name,
             verbose=True,
@@ -587,25 +594,6 @@ class VITRIFY(Predict):
             pc = pd.DataFrame(x, columns=cols)
             dfs.append(pc)
 
-        if self.comp_gs:
-            preds = self.glassnet.predict(composition, input_cols)
-            Tg = preds["Tg"]
-            Tc = preds["CrystallizationPeak"]
-            Tx = preds["CrystallizationOnset"]
-            Tm = preds["Tliquidus"]
-            eta_Tm = self.glassnet.predict_viscosity(Tm, composition, input_cols)
-            gs = pd.DataFrame(
-                {
-                    "Kw_Tx": (Tx - Tg) / Tm,
-                    "Kw_Tc": (Tc - Tg) / Tm,
-                    "Kh_Tc": (Tc - Tg) / (Tm - Tc),
-                    "H_Tx": (Tx - Tg) / Tg,
-                    "gamma_Tc": Tc / (Tg + Tm),
-                    "jezica": eta_Tm / Tm**2,
-                }
-            )
-            dfs.append(gs)
-
         X = pd.concat(dfs, axis=1).reindex(self.features, axis=1)
 
         return X
@@ -614,6 +602,7 @@ class VITRIFY(Predict):
         self,
         composition: CompositionLike,
         input_cols: List[str] = [],
+        thres=None,
     ):
         """Classifies the compositions with respect of glass formation.
 
@@ -624,19 +613,26 @@ class VITRIFY(Predict):
             List of strings representing the chemical entities related to each
             column of `composition`. Necessary only when `composition` is a list
             or array, ignored otherwise.
+          thres:
+            change the decision threshold to predict the positive class (ie,
+            forms glass). `None` means default threshold of 0.5. Defaults to
+            `None`.
 
         Returns:
           Array with zeros and ones. Zero represent a prediction that the
           composition will not form a glass while one represents the opposite.
         """
+        if thres is None:
+            X = self._featurizer(composition, input_cols)
 
-        X = self._featurizer(composition, input_cols)
-
-        if self.framework == "onnx":
-            dict = {"float_input": X.to_numpy(dtype=np.float32)}
-            return self.model.run(None, dict)[0]
+            if self.framework == "onnx":
+                dict = {"float_input": X.to_numpy(dtype=np.float32)}
+                return self.model.run(None, dict)[0]
+            else:
+                return self.model.predict(X.to_numpy())
         else:
-            return self.model.predict(X.to_numpy())
+            proba = self.predict_proba_glass(composition, input_cols)
+            return (proba >= thres).astype("int64")
 
     def predict_proba(
         self,
