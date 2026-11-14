@@ -60,3 +60,21 @@ docs = [
 ]
 test = ["pytest"]
 
+
+[dependency-groups]
+# Lightweight environment used only to build the documentation. It leaves out
+# torch, lightning, and onnxruntime (mocked in docs/source/conf.py).
+docs = [
+    "sphinx",
+    "nbsphinx",
+    "ipython",
+    "sphinx-rtd-theme",
+    "pandas>=2.0.0",
+    "lmfit>=1.2.0",
+    "chemparse>=0.1.0",
+    "scikit-learn>=1.5.0",
+    "compress-pickle>=2.1.0",
+    "platformdirs>=4.5.1",
+    "requests>=2.30.0",
+    "joblib>=1.5.0",
+]

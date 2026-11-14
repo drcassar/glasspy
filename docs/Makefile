@@ -19,5 +19,5 @@ help:
 %: Makefile
 	rm -rf ./build
 	rm -rf ./source/modules
-	sphinx-apidoc -f -o source/modules .. ../*setup*
+	sphinx-apidoc -f -o source/modules ../glasspy
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
