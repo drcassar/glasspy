@@ -65,10 +65,11 @@ def to_array(
     design choice was made because numpy arrays are fast. These arrays may be
     called "chemical arrays", but they are still instances of numpy array.
     Chemical arrays must follow three rules:
-    i. each row of the array is one chemical substance;
-    ii. each column of the array represents a chemical element or chemical
-      molecule;
-    iii. chemical arrays must be 2D arrays.
+
+    1. each row of the array is one chemical substance;
+    2. each column of the array represents a chemical element or chemical
+       molecule;
+    3. chemical arrays must be 2D arrays.
 
     Say, for example, that you have a chemical array x. The value stored in
     x[i][j] is the amount of the element/molecule j that the substance i has. It
@@ -78,7 +79,7 @@ def to_array(
     definition is the same for all values stored in this chemical array x. Check
     the function wt_to_mol and mol_to_wt to easily convert array from wt% to
     mol% and vice versa. Note: even if your array hold only one substance, it
-    must still meet condition iii, that is: it must still be a 2D array (in this
+    must still meet condition 3, that is: it must still be a 2D array (in this
     case with only one row).
 
     Args:
@@ -138,9 +139,7 @@ def to_array(
 
     if output_cols != "default":
         x_reorder = np.zeros((len(x), len(output_cols)))
-        idx = [
-            (i, cols.index(c)) for i, c in enumerate(output_cols) if c in cols
-        ]
+        idx = [(i, cols.index(c)) for i, c in enumerate(output_cols) if c in cols]
         for i, j in idx:
             x_reorder[:, i] = x[:, j]
         x, cols = x_reorder, output_cols
@@ -229,10 +228,7 @@ def wt_to_mol(
     """
     inv_molar_mass = np.diag(
         [
-            1
-            / sum(
-                [elementmass[el] * n for el, n in parse_formula(comp).items()]
-            )
+            1 / sum([elementmass[el] * n for el, n in parse_formula(comp).items()])
             for comp in input_cols
         ]
     )

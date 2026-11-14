@@ -755,39 +755,39 @@ class MLP(L.LightningModule, Predict):
       hparams:
         Dictionary with the hyperparemeters of the network. The possible
         parameters are:
-        + "n_features": number of input features (required). Must be a positive
+
+        + `n_features`: number of input features (required). Must be a positive
           integer.
-        + "num_layers": number of hidden layers (defaults to 1). Must be a
+        + `num_layers`: number of hidden layers (defaults to 1). Must be a
           positive integer.
-        + "layer_n_size": number of neurons in layer n (replace n for an integer
+        + `layer_n_size`: number of neurons in layer n (replace n for an integer
           starting at 1, defaults to 10). Must be a positive integer.
-        + "layer_n_activation": activation function of layer n (replace n for an
+        + `layer_n_activation`: activation function of layer n (replace n for an
           integer starting at 1, defaults to Tanh). Available values are
           ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
           "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
-        + "layer_n_dropout": dropout of layer n (replace n for an integer
+        + `layer_n_dropout`: dropout of layer n (replace n for an integer
           starting at 1, defaults to False meaning no dropout). Any value
           between 0 and 1 (or False) is permitted.
-        + "layer_n_batchnorm": `True` will use batch normalization in layer n,
+        + `layer_n_batchnorm`: `True` will use batch normalization in layer n,
           `False` will not use batch normalization in layer n (replace n for an
           integer starting at 1, defaults to False meaning no batch
           normalization).
-        + "loss": loss function to use for the backpropagation algorithm
+        + `loss`: loss function to use for the backpropagation algorithm
           (defaults to `mse`). Use `mse` for mean squared error loss (L2) or
           `huber` for a smooth L1 loss.
-        + "optimizer": optimizer algorithm to use (defaults `SGD`). Use `SGD`
+        + `optimizer`: optimizer algorithm to use (defaults `SGD`). Use `SGD`
           for stochastic gradient descend, `Adam` for Adam, or `AdamW` for
           weighted Adam.
-        + "lr": optimizer learning rate (defaults to 1e-4 if optimizer is `SGD`
+        + `lr`: optimizer learning rate (defaults to 1e-4 if optimizer is `SGD`
           or 1e-3 if optimizer is `Adam` or `AdamW`).
-        + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
-        + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
+        + `momentum`: momentum to use when optmizer is `SGD` (defaults to 0).
+        + `optimizer_Adam_eps`: eps to use for Adam or AdamW optimizers
           (defaults to 1e-8).
 
     Raises:
       NotImplementedError:
         When the selected hyperparameters is not one of the permited values.
-
     """
 
     learning_curve_train = []
@@ -983,33 +983,34 @@ class MTL(MLP):
       hparams:
         Dictionary with the hyperparemeters of the network. The possible
         parameters are:
-        + "n_features": number of input features (required). Must be a positive
+
+        + `n_features`: number of input features (required). Must be a positive
           integer.
-        + "num_layers": number of hidden layers (defaults to 1). Must be a
+        + `num_layers`: number of hidden layers (defaults to 1). Must be a
           positive integer.
-        + "layer_n_size": number of neurons in layer n (replace n for an integer
+        + `layer_n_size`: number of neurons in layer n (replace n for an integer
           starting at 1, defaults to 10). Must be a positive integer.
-        + "layer_n_activation": activation function of layer n (replace n for an
+        + `layer_n_activation`: activation function of layer n (replace n for an
           integer starting at 1, defaults to Tanh). Available values are
           ["Tanh", "Sigmoid", "ReLU", "LeakyReLU", "SELU", "GELU", "ELU",
           "PReLU", "SiLU", "Mish", "Softplus", "Linear"].
-        + "layer_n_dropout": dropout of layer n (replace n for an integer
+        + `layer_n_dropout`: dropout of layer n (replace n for an integer
           starting at 1, defaults to False meaning no dropout). Any value
           between 0 and 1 (or False) is permitted.
-        + "layer_n_batchnorm": `True` will use batch normalization in layer n,
+        + `layer_n_batchnorm`: `True` will use batch normalization in layer n,
           `False` will not use batch normalization in layer n (replace n for an
           integer starting at 1, defaults to False meaning no batch
           normalization).
-        + "loss": loss function to use for the backpropagation algorithm
+        + `loss`: loss function to use for the backpropagation algorithm
           (defaults to `mse`). Use `mse` for mean squared error loss (L2) or
           `huber` for a smooth L1 loss.
-        + "optimizer": optimizer algorithm to use (defaults `SGD`). Use `SGD`
+        + `optimizer`: optimizer algorithm to use (defaults `SGD`). Use `SGD`
           for stochastic gradient descend, `Adam` for Adam, or `AdamW` for
           weighted Adam.
-        + "lr": optimizer learning rate (defaults to 1e-4 if optimizer is `SGD`
+        + `lr`: optimizer learning rate (defaults to 1e-4 if optimizer is `SGD`
           or 1e-3 if optimizer is `Adam` or `AdamW`).
-        + "momentum": momentum to use when optmizer is `SGD` (defaults to 0).
-        + "optimizer_Adam_eps": eps to use for Adam or AdamW optimizers
+        + `momentum`: momentum to use when optmizer is `SGD` (defaults to 0).
+        + `optimizer_Adam_eps`: eps to use for Adam or AdamW optimizers
           (defaults to 1e-8).
       num_neurons_per_head:
         Positive integer or None. The number of neurons for each head
