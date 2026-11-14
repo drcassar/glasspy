@@ -41,9 +41,7 @@ _all_aggregate_functions = ["sum", "mean", "min", "max", "std", "std1"]
 
 prop_idx = {p: i for i, p in enumerate(_prop)}
 
-all_features = [
-    (p, a) for p, a in product(_prop, _all_aggregate_functions)
-]
+all_features = [(p, a) for p, a in product(_prop, _all_aggregate_functions)]
 
 
 def _aggregate(array: np.array, function_name: str) -> np.ndarray:
@@ -104,7 +102,7 @@ def physchem_featurizer(
       input_cols:
         List of strings representing the chemical entities related to each
         column of x. Necessary only when x is a list or array, ignored otherwise.
-      absolute_features:
+      elemental_features:
         List of chemical elements that will be part of the features.
       absolute_features:
         List of tuples containing the name of the feature to be extracted and
@@ -130,12 +128,11 @@ def physchem_featurizer(
         for absolute features.
 
     Returns:
-      features:
-        A 2D array. Each row is a chemical substance.
-      feature_columns;
-        A list of strings containing the name of the extracted chemical feature.
-        Strings starting with "A" are absolute features and strings starting
-        with "W" are weighted.
+      A tuple `(features, feature_columns)`. The first element, `features`, is a
+      2D array in which each row is a chemical substance. The second element,
+      `feature_columns`, is a list of strings containing the name of each
+      extracted chemical feature. Strings starting with "A" are absolute
+      features and strings starting with "W" are weighted.
 
     Raises:
       AssertionError:
@@ -150,9 +147,7 @@ def physchem_featurizer(
     msg = '"rescale_to_sum" must be a positive number, try 1 or 100'
     assert rescale_to_sum > 0, msg
 
-    o_elements = to_element_array(
-        x, input_cols, output_element_cols="default"
-    ).cols
+    o_elements = to_element_array(x, input_cols, output_element_cols="default").cols
 
     if not set(o_elements).issubset(set(_elements)):
         outofdomain = set(o_elements) - set(_elements)
@@ -172,9 +167,7 @@ def physchem_featurizer(
         if len(unavailable_features) > 0:
             raise ValueError(f"Invalid features: {set(unavailable_features)}")
 
-    chemarray = to_element_array(
-        x, input_cols, list(_elements), rescale_to_sum
-    )
+    chemarray = to_element_array(x, input_cols, list(_elements), rescale_to_sum)
 
     # Weighted wfeatures
     if "w" in order:
@@ -189,9 +182,7 @@ def physchem_featurizer(
         cache = {feat: chemarray_ * _data[:, prop_idx[feat]] for feat in feats}
         for feat, stat in weighted_features:
             donthavenan = np.logical_not(np.isnan(cache[feat]).sum(axis=1))
-            wfeatures[donthavenan, pos] = _aggregate(
-                cache[feat][donthavenan], stat
-            )
+            wfeatures[donthavenan, pos] = _aggregate(cache[feat][donthavenan], stat)
             pos += 1
         wfeatures_columns = [
             f"W{sep}{feat}{sep}{stat}" for feat, stat in weighted_features
@@ -211,9 +202,7 @@ def physchem_featurizer(
         cache = {feat: chemarray_ * _data[:, prop_idx[feat]] for feat in feats}
         for feat, stat in absolute_features:
             donthavenan = np.logical_not(np.isnan(cache[feat]).sum(axis=1))
-            afeatures[donthavenan, pos] = _aggregate(
-                cache[feat][donthavenan], stat
-            )
+            afeatures[donthavenan, pos] = _aggregate(cache[feat][donthavenan], stat)
             pos += 1
         afeatures_columns = [
             f"A{sep}{feat}{sep}{stat}" for feat, stat in absolute_features
