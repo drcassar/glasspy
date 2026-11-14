@@ -17,7 +17,8 @@ def get_from_zenodo(ID, filename, savepath, verbose=True):
       savepath (str or Path):
         Local path where the file will be saved.
       verbose (bool, optional):
-        If `True`, prints progress messages during the download. Defaults to `True`.
+        If `True`, prints progress messages during the download. Defaults to
+        `True`.
 
     Returns:
       None: Returns immediately without downloading if the file already exists

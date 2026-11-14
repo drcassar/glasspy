@@ -38,7 +38,8 @@ def test_glassnet():
 def test_vitrify():
     models = ["CHEM", "FEATENG"]
     frameworks = ["onnx", "sklearn"]
-    for config in product(models, frameworks):
+    calibration = [True, False]
+    for config in product(models, frameworks, calibration):
         model = VITRIFY(*config)
         for comp in all_comps:
             prediction = model.predict(comp)
